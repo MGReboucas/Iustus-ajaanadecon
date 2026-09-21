@@ -1,5 +1,9 @@
 # Estado atual e evidências
 
+## Atualização de 21/09/2026 — documentos
+
+Documentos privados implementados localmente: upload em etapas, metadados, versões, quarentena, worker com integração ClamAV, download temporário e anexos em respostas de complemento. 47 testes no PostgreSQL, incluindo concorrência de versões. [Operação e evidências](DOCUMENTOS.md). Scanner real e armazenamento produtivo não foram homologados. Os achados financeiros abaixo permanecem abertos; o inventário de 16/09 é histórico.
+
 > Evidências locais de 16/09/2026. Implementação e testes locais não equivalem a homologação produtiva.
 
 A organização anterior preservou os 14 arquivos originais por SHA-256 e o histórico Git; foi publicada no commit 4b8d21f. Neste incremento, a tela de acesso foi substituída por integração TypeScript/Django, com cadastro, verificação, recuperação, sessões por portal, convites, MFA e painéis iniciais. PostgreSQL isolado do projeto está em operação local, com migrações aplicadas. O worker entrega e-mails de identidade em arquivos locais. Acesso foi publicado em e38ea41 com workflow GitHub aprovado. Casos agora têm persistência, atribuição, triagem, complemento e histórico; subdomínios reais, documentos e pagamentos integrados continuam pendentes.

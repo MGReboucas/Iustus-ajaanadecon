@@ -85,7 +85,7 @@ ${rf.length} histórias correspondentes aos requisitos funcionais. Cada históri
 ${rf.map(r=>`## US-${r.id.slice(3)} — ${r.title}\n\nComo **${r.actor.toLowerCase()}**, preciso **${r.description.charAt(0).toLowerCase()+r.description.slice(1)}**, para **${r.benefit}**.\n\n**Aceite:** ${r.acceptance}.\n\n**Requisito:** ${r.id}. **Tarefas:** ${tasks.filter(t=>t.requirements.includes(r.id)).map(t=>t.id).join(', ')}.`).join('\n\n')}
 `);
 doc('BACKLOG.md','Backlog executável',`
-${tasks.length} tarefas, ${technical} horas técnicas. Toda tarefa tem prioridade MUST nesta baseline; funcionalidades posteriores estão explicitamente excluídas em [MVP](MVP.md). Situação: planejadas. A documentação inicial foi produzida; a fase 0 estima a conferência e validação humana, não contabiliza retroativamente o tempo desta sessão.
+${tasks.length} tarefas, ${technical} horas técnicas. Toda tarefa tem prioridade MUST nesta baseline; funcionalidades posteriores estão explicitamente excluídas em [MVP](MVP.md). Os estados distinguem planejamento e incrementos locais; não significam aceite produtivo. Para acesso e casos, consulte também [Estado atual](ESTADO_ATUAL.md). A fase 0 estima a conferência e validação humana, não contabiliza retroativamente o tempo desta sessão.
 
 ${config.architectureNote} Acesso local possui evidências em [Acesso local](ACESSO.md). Contrato OpenAPI, domínios reais e operação produtiva ainda não foram concluídos.
 
@@ -97,7 +97,7 @@ ${config.architectureNote} Acesso local possui evidências em [Acesso local](ACE
 
 ${table(['ID','Fase','Atividade','Horas','Dependências técnicas','Prioridade'],tasks.map(t=>[t.id,t.phase,t.title,t.hours,t.dependencies.join(', ')||'—',t.priority]))}
 
-${tasks.map((t,i)=>`## ${t.id} — ${t.title}\n\n- **Fase:** ${t.phase} — ${phases.find(p=>p.id===t.phase).title}.\n- **Prioridade / estado:** ${t.priority} / ${t.status}.\n- **Estimativa:** ${t.hours}h (${t.hours/8} dias de capacidade).\n- **Dependências técnicas:** ${t.dependencies.join(', ')||'nenhuma'}.\n- **Predecessora por capacidade:** ${i?tasks[i-1].id:'nenhuma'}.\n- **Requisitos relacionados:** ${t.requirements.join(', ')}.\n- **Descrição e critério de conclusão:** ${t.acceptance}.\n- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.`).join('\n\n')}
+${tasks.map((t,i)=>`## ${t.id} — ${t.title}\n\n- **Fase:** ${t.phase} — ${phases.find(p=>p.id===t.phase).title}.\n- **Prioridade / estado:** ${t.priority} / ${t.status}.\n- **Estimativa:** ${t.hours}h (${t.hours/8} dias de capacidade).\n- **Dependências técnicas:** ${t.dependencies.join(', ')||'nenhuma'}.\n- **Predecessora por capacidade:** ${i?tasks[i-1].id:'nenhuma'}.\n- **Requisitos relacionados:** ${t.requirements.join(', ')}.\n- **Descrição e critério de conclusão:** ${t.acceptance}.\n- **Evidência:** ${t.evidence || "demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução"}.`).join('\n\n')}
 `);
 const summary = `**Início de referência:** ${br(config.startDate)}\n\n**Desenvolvedor:** 1 · **Carga:** 8h/dia · **Carga semanal:** 40h\n\n**Horas técnicas planejadas:** ${technical}h\n\n**Contingência:** ${contingency}h (${fmt(contingency/technical*100)}% efetivos)\n\n**Total:** ${total}h · **Dias de capacidade:** ${total/8} · **Semanas de capacidade:** ${fmt(total/40)}\n\n**MVP Feature Complete:** ${br(m('M8').end)}\n\n**Homologação concluída:** ${br(m('M9').end)}\n\n**Produção validada:** ${br(m('M10').end)}`;
 doc('CRONOGRAMA.md','Cronograma e previsão do MVP',`
@@ -168,7 +168,7 @@ Antes de cada commit: revisar diff, remover segredos/dados reais, executar verif
 ${table(['Tarefa','Título proposto','Verificação'],tasks.map(t=>[t.id,`${t.phase==='0'?'docs':t.phase==='13'||t.phase==='14'?'test':t.phase==='15'?'chore':'feat'}(${t.phase==='2A'?'billing':({0:'planning',1:'foundation',2:'auth',3:'cases',4:'documents',5:'client',6:'lawyer',7:'mandates',8:'timeline',9:'notifications',10:'legal',11:'admin',12:'security',13:'quality',14:'acceptance',15:'release'})[t.phase]}): ${t.title.charAt(0).toLowerCase()+t.title.slice(1)}`,`Critério de ${t.id} e Definition of Done`]))}
 `);
 doc('RESUMO_EXECUTIVO.md','Resumo executivo do planejamento',`
-**Situação:** acesso e incremento local de casos/triagem implementados. Baseline e hipóteses operacionais aguardam validação. As horas abaixo representam a estimativa integral, não o saldo restante.
+**Situação:** acesso, casos/triagem e documentos privados implementados localmente. Scanner real e armazenamento produtivo aguardam homologação. Baseline e hipóteses operacionais aguardam validação. As horas abaixo representam a estimativa integral, não o saldo restante.
 
 Stack atual: Next.js 15.5.25, React 19.1.9 e TypeScript incremental; Django 5.2.17 e DRF 3.18.1 com PostgreSQL, cadastro, sessões por portal, MFA e worker de e-mails de identidade. PagBank permanece no legado Next.js; casos possuem rascunho, atribuição e triagem. Arquivos e elegibilidade financeira continuam pendentes.
 
@@ -184,7 +184,7 @@ ${summary}
 
 ${config.calendarNote}
 
-**Próxima tarefa recomendada:** implementar documentos privados, mantendo permissões por caso, quarentena e revisão. Antes de cobrança/publicação, corrigir o checkout e homologar dependências produtivas. Os testes locais de acesso não significam aceite integral dos requisitos nem aprovação operacional.
+**Próxima tarefa recomendada:** pagamentos e assinatura, iniciando por DEV-012/013. O incremento de [documentos privados](DOCUMENTOS.md) está implementado localmente; scanner real e armazenamento produtivo aguardam homologação. Antes de cobrança/publicação, corrigir o checkout e homologar dependências produtivas. Os testes locais não significam aceite integral dos requisitos nem aprovação operacional.
 `);
 // Sincronizar apenas bloco gerado do README; conteúdo editorial permanece intacto.
 const readmePath = path.join(root,'README.md');
@@ -207,4 +207,4 @@ console.log(`RF: ${rf.length}; RNF: ${rnf.length}; RN: ${rules.length}; US: ${rf
 console.log(`Horas técnicas: ${technical}; contingência: ${contingency}; total: ${total}; dias: ${total/8}; semanas: ${fmt(total/40)}`);
 console.log(`MVP: ${br(m('M8').end)}; homologação: ${br(m('M9').end)}; produção: ${br(m('M10').end)}`);
 console.log(config.calendarNote);
-console.log('Próxima tarefa: documentos privados com autorização e quarentena. Casos/triagem locais; elegibilidade financeira e produção pendentes.');
+console.log('Próxima tarefa: pagamentos e assinatura (DEV-012/013). Documentos locais implementados; scanner real, armazenamento produtivo e produção pendentes.');

@@ -1,5 +1,9 @@
 # Verificação da documentação e do incremento
 
+## Incremento de documentos — 21/09/2026
+
+47 testes Django passaram no PostgreSQL, incluindo concorrência de versões e isolamento dos documentos. Build e TypeScript passaram. Quatro jornadas Playwright passaram no Edge instalado, incluindo upload, bloqueio em quarentena, download pelo cliente/advogado e complemento com anexo em tela de 390 px, sem transbordamento horizontal. Testes de scanner usam respostas controladas, inclusive um servidor TCP para o protocolo ClamAV; scanner real e armazenamento produtivo ainda não foram homologados. [Escopo, comandos e limitações](DOCUMENTOS.md). As evidências de 16/09 abaixo são históricas.
+
 > Evidências de 16/09/2026. Testes locais não equivalem a homologação produtiva.
 
 ## Planejamento

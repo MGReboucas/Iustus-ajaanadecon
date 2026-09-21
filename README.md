@@ -2,7 +2,7 @@
 
 Plataforma por assinatura para solicitar, acompanhar e receber defesas jurídicas online. A jornada pretendida reúne contratação, envio de casos e documentos, procuração, acompanhamento pelo cliente e preparação da defesa por advogado designado.
 
-**Estado em 16/09/2026:** acesso de cliente/equipe com MFA publicado no GitHub (e38ea41, CI aprovado). O incremento local de casos implementa rascunho, submissão de teste, atribuição, transferência, triagem, complemento textual e histórico. PostgreSQL, sessões e permissões são verificados no servidor. Arquivos privados, assinatura, integração financeira e operação produtiva permanecem pendentes.
+**Estado em 21/09/2026:** acesso de cliente/equipe com MFA publicado no GitHub (e38ea41, CI aprovado). Casos implementam rascunho, submissão de teste, atribuição, transferência, triagem, complemento e histórico. Documentos privados têm upload, versões, quarentena, download autorizado e anexos em complementos. Scanner real, armazenamento produtivo, assinatura e integração financeira permanecem pendentes.
 
 [Documentação completa](docs/README.md) · [Estado atual](docs/ESTADO_ATUAL.md) · [MVP](docs/MVP.md) · [Backlog](docs/BACKLOG.md) · [Cronograma](docs/CRONOGRAMA.md)
 
@@ -25,7 +25,7 @@ A landing apresenta proposta de valor, jornada em três etapas, benefícios, pla
 | Login e cadastro | Cadastro, confirmação, login, recuperação e sessões persistentes testados localmente |
 | Fundação técnica | Next.js/TypeScript, Django/DRF e PostgreSQL; MFA, isolamento de portais e worker de identidade |
 | Casos e triagem | Rascunho, atribuição, triagem e complemento persistidos; submissão restrita a liberação de teste |
-| Assinatura e documentos | Integração financeira e arquivos privados pendentes |
+| Assinatura e documentos | Documentos implementados localmente; scanner/armazenamento produtivo e integração financeira pendentes |
 | Dashboards e gestão jurídica | Perfil, lista de casos e triagem; documentos e etapas processuais pendentes |
 | Documentação do MVP | Revisão 1.5; acesso e triagem implementados e validação operacional pendente |
 | Produção | Nenhuma evidência de homologação ou implantação verificada nesta etapa |
@@ -167,6 +167,6 @@ A fonte única de requisitos e estimativas está em [dados.cjs](docs/planejament
 
 ## Próximo passo e limite desta etapa
 
-**Próximo incremento:** documentos privados vinculados ao caso, com autorização, quarentena e validação de arquivos. Antes de operação comercial, integrar elegibilidade à assinatura, corrigir o checkout e homologar infraestrutura/políticas. A estimativa de 1696h continua sendo a baseline integral, sem desconto automático do trabalho realizado.
+**Incremento entregue:** [documentos privados](docs/DOCUMENTOS.md) vinculados ao caso, com versões, autorização, quarentena e validação de arquivos. **Próximo passo recomendado:** pagamentos e assinatura (DEV-012 a DEV-016 e DEV-062), começando pela confirmação do produto PagBank e correção do checkout. Scanner real, armazenamento produtivo e infraestrutura/políticas ainda exigem homologação antes da operação comercial. A estimativa de 1696h continua sendo a baseline integral, sem desconto automático do trabalho realizado.
 
 A comunicação jurídica, critérios de atendimento, modelos, condições comerciais, retenção de dados e fluxos de contratação devem ser revisados pelos responsáveis da operação antes da publicação.

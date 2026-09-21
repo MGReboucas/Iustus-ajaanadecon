@@ -1,6 +1,6 @@
 # Backend Django
 
-Django 5.2.17 + DRF 3.18.1, organizado por domínio. Identidade implementa cadastro, confirmação, login, recuperação, convite de advogado, MFA TOTP, sessões por portal, auditoria e fila durável de e-mails. GET /api/v1/health/ verifica somente o processo. Casos têm rascunho, atribuição, triagem, complemento e histórico; documentos e pagamentos são estrutura futura. [Casos](../docs/CASOS.md). Django Admin não está publicado.
+Django 5.2.17 + DRF 3.18.1, organizado por domínio. Identidade implementa cadastro, confirmação, login, recuperação, convite de advogado, MFA TOTP, sessões por portal, auditoria e fila durável de e-mails. GET /api/v1/health/ verifica somente o processo. Casos têm rascunho, atribuição, triagem, complemento e histórico; documentos privados têm upload, versões, quarentena, worker e download autorizado. Pagamentos continuam pendentes. [Casos](../docs/CASOS.md) · [Documentos](../docs/DOCUMENTOS.md). Django Admin não está publicado.
 
 Instalação, PostgreSQL isolado, configuração, primeiro administrador e testes: [Acesso local](../docs/ACESSO.md). A venv e os segredos são locais e ignorados pelo Git. Dependências estão em requirements.lock; não substituir as chaves persistentes ao reiniciar.
 

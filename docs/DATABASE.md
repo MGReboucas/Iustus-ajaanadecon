@@ -82,6 +82,8 @@ erDiagram
 
 ## Invariantes transacionais
 
+Incremento de 21/09/2026: `Document`, `DocumentVersion` e `RequestAttachment` possuem migração Django em `apps/documents`. Implementam apenas anexos compartilhados de caso e vínculo com resposta de complemento; escopo TEMPLATE, visibilidade interna, exclusão lógica e demais entidades desta proposta continuam pendentes. [Contrato e limites implementados](DOCUMENTOS.md).
+
 - Troca de advogado encerra atribuição anterior e abre nova na mesma transação; índice parcial impede dois responsáveis.
 - Submissão e transição fazem `UPDATE ... WHERE id = ? AND version = ?`, verificam linha afetada e gravam evento/outbox juntos. Conflito retorna 409.
 - Confirmação financeira bloqueia o pedido, deduplica evento e cria no máximo uma assinatura por pedido. Renovação não sobrepõe período anterior; política exata deve ser validada em H-01.

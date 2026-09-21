@@ -2,7 +2,7 @@
 
 > Revisão 1.5 · Base: 16/09/2026 · Arquitetura aprovada; validação operacional pendente.
 
-64 tarefas, 1360 horas técnicas. Toda tarefa tem prioridade MUST nesta baseline; funcionalidades posteriores estão explicitamente excluídas em [MVP](MVP.md). Situação: planejadas. A documentação inicial foi produzida; a fase 0 estima a conferência e validação humana, não contabiliza retroativamente o tempo desta sessão.
+64 tarefas, 1360 horas técnicas. Toda tarefa tem prioridade MUST nesta baseline; funcionalidades posteriores estão explicitamente excluídas em [MVP](MVP.md). Os estados distinguem planejamento e incrementos locais; não significam aceite produtivo. Para acesso e casos, consulte também [Estado atual](ESTADO_ATUAL.md). A fase 0 estima a conferência e validação humana, não contabiliza retroativamente o tempo desta sessão.
 
 Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Framework no backend, PostgreSQL e worker Python separado. DEV-059 a DEV-064 acrescentam 80h técnicas para integração, isolamento dos portais e operação; reserva recalculada por fase. Acesso local possui evidências em [Acesso local](ACESSO.md). Contrato OpenAPI, domínios reais e operação produtiva ainda não foram concluídos.
 
@@ -89,7 +89,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** nenhuma.
 - **Requisitos relacionados:** RF-008, RF-009, RNF-003.
 - **Descrição e critério de conclusão:** Reproduzir revisão estática, confirmar arquivos e registrar achados com evidência; não executar cobrança.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-002 — Validar escopo e regras com responsáveis
 
@@ -100,7 +100,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-001.
 - **Requisitos relacionados:** RF-010, RF-012, RF-022, RF-029, RN-004, RN-006, RN-013, RN-015.
 - **Descrição e critério de conclusão:** Registrar decisões H-01 a H-06, catálogo de trânsito/civil, fases cobertas e responsabilidade pelo protocolo no escritório com dois advogados; espera externa não conta como hora trabalhada.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-003 — Revisar arquitetura, contratos e planejamento
 
@@ -111,7 +111,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-002.
 - **Requisitos relacionados:** RNF-001, RNF-009, RNF-013.
 - **Descrição e critério de conclusão:** Revisar modelo, permissões, tarefas e calendário; aprovar baseline ou registrar mudanças; concluir M0 somente com revisão.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-004 — Preparar estrutura, configuração e verificação contínua
 
@@ -122,7 +122,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-003.
 - **Requisitos relacionados:** RNF-013, RNF-014, RNF-016.
 - **Descrição e critério de conclusão:** Fixar runtimes Node/Python compatíveis, revisar versões e configurar lint, testes e build em CI para frontend e backend; falha bloqueia entrega.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-059 — Preparar backend Django e contrato DRF
 
@@ -133,7 +133,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-004.
 - **Requisitos relacionados:** RNF-013, RNF-014, RNF-016.
 - **Descrição e critério de conclusão:** Criar base backend, settings separados, dependências travadas, usuário customizado e esquema OpenAPI; comprovar inicialização/testes sem alterar a landing.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-005 — Criar esquema inicial e migrações Django
 
@@ -144,7 +144,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-059.
 - **Requisitos relacionados:** RNF-006, RF-007, RF-010, RF-011.
 - **Descrição e critério de conclusão:** Modelar chaves e índices no Django ORM com usuário customizado definido antes da primeira migração; migrar e restaurar banco de teste sem perda.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-006 — Configurar ambientes e armazenamento privado
 
@@ -155,7 +155,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-005.
 - **Requisitos relacionados:** RNF-002, RNF-013, RNF-016.
 - **Descrição e critério de conclusão:** Provisionar homologação com segredos separados e bucket privado; acesso anônimo negado.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-060 — Configurar entrada HTTPS e API por portal
 
@@ -166,7 +166,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-006.
 - **Requisitos relacionados:** RNF-001, RNF-002, RNF-013.
 - **Descrição e critério de conclusão:** Encaminhar /api/v1 dos portais ao Django e telas ao Next.js; validar hosts, remover headers forjados e impedir acesso direto não confiável à origem.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-007 — Criar camada de domínio, erros e autorização
 
@@ -177,7 +177,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-060.
 - **Requisitos relacionados:** RNF-001, RNF-012.
 - **Descrição e critério de conclusão:** Padronizar serializers DRF, erros, transaction.atomic, eventos/outbox e vínculo; filtrar queryset e validar criação; testes negam consulta cruzada.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-008 — Implementar cadastro e verificação de e-mail
 
@@ -188,7 +188,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-007.
 - **Requisitos relacionados:** RF-002, RF-037, RN-022.
 - **Descrição e critério de conclusão:** Conectar frontend à identidade Django e componente mantido de verificação, incluindo envio mínimo de e-mail; testar duplicidade, aceite e token inválido.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-009 — Implementar login, logout e sessões Django
 
@@ -199,7 +199,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-008.
 - **Requisitos relacionados:** RF-003, RF-005, RNF-001.
 - **Descrição e critério de conclusão:** Criar sessão Django persistida, expiração, rotação e revogação; proteger login por CSRF; testar logout e conta bloqueada.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-061 — Integrar frontend e sessões isoladas por portal
 
@@ -210,7 +210,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-009.
 - **Requisitos relacionados:** RF-003, RF-005, RNF-001.
 - **Descrição e critério de conclusão:** Conectar cliente HTTP TypeScript a sessão Django e CSRF; negar cookie copiado para outro portal, desabilitar cache privado compartilhado e validar renovação do token após login.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-010 — Implementar recuperação e alteração de perfil
 
@@ -221,7 +221,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-061.
 - **Requisitos relacionados:** RF-004, RF-007.
 - **Descrição e critério de conclusão:** Token único e temporário; invalidar sessões e revalidar novo e-mail; testar reutilização.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-011 — Implementar convites, papéis e MFA da equipe
 
@@ -232,7 +232,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-010.
 - **Requisitos relacionados:** RF-006, RF-033, RN-022.
 - **Descrição e critério de conclusão:** Provisionar equipe por convite, exigir MFA privilegiado e impedir autoelevação ou remoção do último administrador.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-012 — Validar produto PagBank e contrato de integração
 
@@ -243,7 +243,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-011.
 - **Requisitos relacionados:** RF-008, RF-009, RN-023, RN-024.
 - **Descrição e critério de conclusão:** Confirmar APIs habilitadas e contrato do adaptador Python em sandbox; documentar mapeamento de estados e mecanismo de verificação de eventos.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-013 — Corrigir payload e validação financeira do checkout
 
@@ -254,7 +254,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-012.
 - **Requisitos relacionados:** RF-008, RNF-003, RN-003, RN-023.
 - **Descrição e critério de conclusão:** Retirar PAN, CVV e validade do payload interno; validar cotação no servidor; provar com dados sintéticos e inspeção de rede.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-062 — Migrar checkout para API Django e retirar rotas legadas
 
@@ -265,7 +265,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-013.
 - **Requisitos relacionados:** RF-008, RF-009, RNF-003.
 - **Descrição e critério de conclusão:** Apontar frontend ao adaptador Django, manter payload mínimo e remover execução financeira das rotas Next.js; testes impedem cobrança por endpoint antigo.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-014 — Persistir pedidos e idempotência de cobrança
 
@@ -276,7 +276,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-062.
 - **Requisitos relacionados:** RF-008, RNF-005, RN-023.
 - **Descrição e critério de conclusão:** Criar pedido vinculado ao usuário, chave idempotente e estado indeterminado em timeout; repetição não cria outra cobrança.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-015 — Implementar notificações e conciliação financeira
 
@@ -287,7 +287,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-014.
 - **Requisitos relacionados:** RF-009, RN-002, RN-024, RNF-005.
 - **Descrição e critério de conclusão:** Autenticar ou verificar eventos conforme produto confirmado; consultar provedor, tratar repetição e ordem invertida sem ativação indevida.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-016 — Implementar vigência e estados da assinatura
 
@@ -298,7 +298,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-015.
 - **Requisitos relacionados:** RF-010, RF-034, RN-004, RN-006.
 - **Descrição e critério de conclusão:** Ativar atomicamente, expirar e reconciliar cancelamento; UI distingue pendente, pago e recusado; testar limites de data.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-017 — Implementar rascunho e submissão de caso
 
@@ -309,7 +309,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-016.
 - **Requisitos relacionados:** RF-011, RN-005, RN-007.
 - **Descrição e critério de conclusão:** Criar caso próprio com validação e vigência; submissão repetida não duplica e assinatura vencida é recusada.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-055 — Cadastrar processos, partes e posição do cliente
 
@@ -320,7 +320,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-017.
 - **Requisitos relacionados:** RF-041, RNF-001.
 - **Descrição e critério de conclusão:** Implementar caso civil como autor ou réu, partes privadas, órgão e número opcional antes de ajuizar; testar vínculo após protocolo e acesso cruzado.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-018 — Implementar triagem e atribuição
 
@@ -331,7 +331,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-055.
 - **Requisitos relacionados:** RF-012, RF-013, RN-008, RN-009, RN-020, RN-025.
 - **Descrição e critério de conclusão:** Designar profissional, aceitar ou recusar com motivo e transferir caso; aplicar exclusão de família/sucessões e permitir demais matérias civis conforme RN-025; testar perda de acesso após transferência.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-019 — Implementar máquina de estados e concorrência
 
@@ -342,51 +342,51 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-018.
 - **Requisitos relacionados:** RF-014, RF-039, RN-010, RNF-006.
 - **Descrição e critério de conclusão:** Aplicar matriz e versionamento otimista; conflito não grava histórico parcial; encerramento e reabertura auditados.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-020 — Implementar pendências de documentos e informações
 
 - **Fase:** 3 — Gestão de casos.
-- **Prioridade / estado:** MUST / Planejado.
+- **Prioridade / estado:** MUST / Implementado localmente: complemento com anexos.
 - **Estimativa:** 16h (2 dias de capacidade).
 - **Dependências técnicas:** DEV-019.
 - **Predecessora por capacidade:** DEV-019.
 - **Requisitos relacionados:** RF-015, RN-020.
 - **Descrição e critério de conclusão:** Criar, responder e resolver pendências; manter retorno ao estado anterior registrado sem permitir saltos inválidos.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** [Documentos privados](DOCUMENTOS.md): testes locais em 21/09/2026; não representa aceite produtivo.
 
 ## DEV-021 — Implementar upload privado e metadados
 
 - **Fase:** 4 — Documentos.
-- **Prioridade / estado:** MUST / Planejado.
+- **Prioridade / estado:** MUST / Implementado localmente; armazenamento produtivo pendente.
 - **Estimativa:** 24h (3 dias de capacidade).
 - **Dependências técnicas:** DEV-020, DEV-006.
 - **Predecessora por capacidade:** DEV-020.
 - **Requisitos relacionados:** RF-016, RNF-004, RN-007.
 - **Descrição e critério de conclusão:** Validar tamanho e formato, gerar chave privada e vincular arquivo ao caso; rejeitar upload para caso alheio.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** [Documentos privados](DOCUMENTOS.md): testes locais em 21/09/2026; não representa aceite produtivo.
 
 ## DEV-022 — Implementar quarentena e verificação de arquivo
 
 - **Fase:** 4 — Documentos.
-- **Prioridade / estado:** MUST / Planejado.
+- **Prioridade / estado:** MUST / Implementado; homologação do scanner real pendente.
 - **Estimativa:** 24h (3 dias de capacidade).
 - **Dependências técnicas:** DEV-021.
 - **Predecessora por capacidade:** DEV-021.
 - **Requisitos relacionados:** RF-016, RNF-004, RNF-018, RN-011.
 - **Descrição e critério de conclusão:** Integrar scanner, checksum e worker Python persistente com lease e retry; falhas não liberam download; testar retomada após encerramento do worker e fixture do scanner.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** [Documentos privados](DOCUMENTOS.md): testes locais em 21/09/2026; não representa aceite produtivo.
 
 ## DEV-023 — Implementar versões e download autorizado
 
 - **Fase:** 4 — Documentos.
-- **Prioridade / estado:** MUST / Planejado.
+- **Prioridade / estado:** MUST / Validado localmente; aceite produtivo pendente.
 - **Estimativa:** 24h (3 dias de capacidade).
 - **Dependências técnicas:** DEV-022.
 - **Predecessora por capacidade:** DEV-022.
 - **Requisitos relacionados:** RF-017, RF-018, RN-012, RNF-001.
 - **Descrição e critério de conclusão:** Preservar versões e emitir URL curta após checagem de vínculo; URL expirada ou arquivo não liberado é recusado.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** [Documentos privados](DOCUMENTOS.md): testes locais em 21/09/2026; não representa aceite produtivo.
 
 ## DEV-024 — Construir painel e busca do cliente
 
@@ -397,7 +397,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-023.
 - **Requisitos relacionados:** RF-019, RF-038, RNF-008, RNF-015.
 - **Descrição e critério de conclusão:** Listar casos, assinatura e pendências com paginação; testar dois clientes, teclado, vazio e erro.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-025 — Construir detalhe e resposta a pendências
 
@@ -408,7 +408,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-024.
 - **Requisitos relacionados:** RF-011, RF-015, RF-018, RF-019.
 - **Descrição e critério de conclusão:** Conectar formulários e documentos no painel; validar jornada abrir caso e enviar complemento em tela pequena.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-026 — Construir fila e filtros do advogado
 
@@ -419,7 +419,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-025.
 - **Requisitos relacionados:** RF-020, RF-038, RN-008.
 - **Descrição e critério de conclusão:** Exibir apenas casos atribuídos e ordenação por vencimento informado; testar filtros sem vazamento.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-027 — Construir área de trabalho e triagem
 
@@ -430,7 +430,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-026.
 - **Requisitos relacionados:** RF-012, RF-014, RF-020.
 - **Descrição e critério de conclusão:** Conectar triagem, documentos e ações permitidas; testar transferência e bloqueio de ações inválidas.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-028 — Implementar modelo versionado e geração de procuração
 
@@ -441,7 +441,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-027.
 - **Requisitos relacionados:** RF-021, RF-032, RN-013.
 - **Descrição e critério de conclusão:** Gerar PDF com campos validados, armazenar versão do modelo e hash; validar amostra com responsável jurídico.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-029 — Implementar devolução assinada e conferência
 
@@ -452,7 +452,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-028.
 - **Requisitos relacionados:** RF-022, RN-013.
 - **Descrição e critério de conclusão:** Cliente envia arquivo assinado; advogado aprova ou rejeita com motivo; assinatura externa não é validada automaticamente.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-030 — Publicar timeline a partir dos eventos persistidos
 
@@ -463,7 +463,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-029.
 - **Requisitos relacionados:** RF-023, RN-017, RNF-006.
 - **Descrição e critério de conclusão:** Expor histórico paginado e filtrado por público; eventos anteriores à tela também aparecem sem duplicar.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-031 — Implementar mensagens e notas internas
 
@@ -474,7 +474,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-030.
 - **Requisitos relacionados:** RF-026, RN-017.
 - **Descrição e critério de conclusão:** Criar conversa por caso e notas restritas; testar API, UI e exportação contra exposição interna e XSS.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-032 — Consolidar outbox e implementar notificações internas
 
@@ -485,7 +485,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-031.
 - **Requisitos relacionados:** RF-024, RNF-018, RN-018.
 - **Descrição e critério de conclusão:** Expandir consumidor existente para avisos com retry e deduplicação; leitura e destinatário respeitam autorização.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-033 — Implementar e-mails e modelos transacionais
 
@@ -496,7 +496,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-032.
 - **Requisitos relacionados:** RF-025, RNF-003, RN-018.
 - **Descrição e critério de conclusão:** Enviar links seguros e genéricos; capturar falhas e bounces; testar duplicação e indisponibilidade do provedor.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-034 — Implementar peças e revisão para publicação
 
@@ -507,7 +507,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-033.
 - **Requisitos relacionados:** RF-027, RF-028, RN-014.
 - **Descrição e critério de conclusão:** Manter minutas privadas e publicar versão revisada; verificar que cliente nunca consulta minuta.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-035 — Implementar registro de protocolo e movimentações
 
@@ -518,7 +518,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-034.
 - **Requisitos relacionados:** RF-029, RF-030, RN-015.
 - **Descrição e critério de conclusão:** Registrar fonte, data e comprovante privado; validar campos e separar data do evento da data de registro.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-036 — Implementar prazos e lembretes
 
@@ -529,7 +529,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-035.
 - **Requisitos relacionados:** RF-031, RN-016, RNF-018.
 - **Descrição e critério de conclusão:** Cadastrar vencimento confirmado, responsável e alertas; editar ou concluir prazo invalida lembretes obsoletos.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-056 — Implementar agenda de audiências e remarcações
 
@@ -540,7 +540,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-036.
 - **Requisitos relacionados:** RF-042, RF-031, RNF-018.
 - **Descrição e critério de conclusão:** Registrar audiência, responsável, local/link privado e resultado; avisar sobre choque de agenda e invalidar lembrete anterior ao remarcar.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-057 — Implementar etapas contratadas e ciclo judicial
 
@@ -551,7 +551,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-056.
 - **Requisitos relacionados:** RF-043, RF-028, RF-029, RF-039.
 - **Descrição e critério de conclusão:** Relacionar petição inicial, defesa e demais atos às etapas contratadas; publicação não encerra acompanhamento; impedir fechamento com ato bloqueante ou prazo pendente.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-037 — Implementar encerramento e exportação do caso
 
@@ -562,7 +562,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-057.
 - **Requisitos relacionados:** RF-039, RF-040, RN-006, RN-017.
 - **Descrição e critério de conclusão:** Encerrar com motivo e gerar pacote privado com expiração; excluir minutas e notas internas da exportação.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-038 — Construir gestão de usuários e atribuições
 
@@ -573,7 +573,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-037.
 - **Requisitos relacionados:** RF-013, RF-033, RN-009, RN-022.
 - **Descrição e critério de conclusão:** Administração usa serviços Django com MFA, auditoria e concessão por aprovador distinto; testar último administrador, expiração e revogação; restringir Django Admin para não contornar domínio.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-039 — Construir gestão de categorias e modelos
 
@@ -584,7 +584,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-038.
 - **Requisitos relacionados:** RF-032, RF-021, RN-025.
 - **Descrição e critério de conclusão:** Organizar catálogo civil conforme RN-025 sem limitá-lo aos exemplos; família/sucessões fora da oferta; inativar sem quebrar histórico; nova versão de modelo não altera documentos emitidos.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-040 — Construir consulta financeira e intervenção controlada
 
@@ -595,7 +595,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-039.
 - **Requisitos relacionados:** RF-034, RF-010, RN-024.
 - **Descrição e critério de conclusão:** Consultar pedidos, eventos e conciliação; solicitar estorno por fluxo confirmado do provedor; gravar evidência e motivo.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-041 — Consolidar auditoria e revisão de acesso
 
@@ -606,7 +606,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-040.
 - **Requisitos relacionados:** RF-035, RN-019, RNF-001.
 - **Descrição e critério de conclusão:** Auditar ações e downloads; limitar consulta administrativa e testar ausência de segredos; revisar todos os endpoints.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-042 — Implementar solicitações de privacidade e retenção
 
@@ -617,7 +617,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-041.
 - **Requisitos relacionados:** RF-036, RN-021, RNF-017.
 - **Descrição e critério de conclusão:** Registrar pedido, confirmar identidade, exportar ou eliminar sob política aprovada; testar retenção impeditiva e expiração de exportação.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-043 — Publicar políticas e revisar comunicação institucional
 
@@ -628,7 +628,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-042.
 - **Requisitos relacionados:** RF-001, RF-037, RN-001, RNF-008.
 - **Descrição e critério de conclusão:** Publicar textos aprovados e aceite versionado; substituir ou retirar depoimentos fictícios e links vazios.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-044 — Revisar segurança, segredos e minimização
 
@@ -639,7 +639,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-043.
 - **Requisitos relacionados:** RNF-002, RNF-003, RNF-016.
 - **Descrição e critério de conclusão:** Revisar ameaças, dependências, cookies, headers e payload; tratar achados e comprovar ausência de cartão em logs.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-045 — Executar regressão de regras e isolamento
 
@@ -650,7 +650,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-044.
 - **Requisitos relacionados:** RNF-001, RNF-005, RNF-006, RNF-014.
 - **Descrição e critério de conclusão:** Executar matriz de casos positivos, negativos e concorrentes; registrar resultados e corrigir defeitos conhecidos dentro do escopo.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-063 — Testar fronteiras Next.js, Django e portais
 
@@ -661,7 +661,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-045.
 - **Requisitos relacionados:** RNF-001, RNF-013, RNF-014.
 - **Descrição e critério de conclusão:** Validar CSRF no login, header de host forjado, sessão copiada, MFA pendente, cache privado, listagens/criação DRF e tentativas de contornar regras pelo Django Admin.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-046 — Executar jornada E2E e testes de falhas externas
 
@@ -672,7 +672,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-063.
 - **Requisitos relacionados:** RF-008, RF-009, RF-022, RF-028, RNF-012, RNF-018.
 - **Descrição e critério de conclusão:** Cobrir contratação até entrega, timeout financeiro, evento repetido, falha de scanner e retry de e-mail com sandbox e fixtures.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-058 — Validar jornadas judiciais como autor e réu
 
@@ -683,7 +683,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-046.
 - **Requisitos relacionados:** RF-041, RF-042, RF-043, RNF-014.
 - **Descrição e critério de conclusão:** Testar ajuizamento e defesa, cadastro de protocolo externo, remarcação de audiência, peça posterior e encerramento somente após revisão das pendências.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-047 — Verificar desempenho, acessibilidade e navegadores
 
@@ -694,7 +694,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-058.
 - **Requisitos relacionados:** RNF-007, RNF-008, RNF-015.
 - **Descrição e critério de conclusão:** Medir metas com massa sintética e registrar ambiente; corrigir impedimentos nas jornadas principais.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-048 — Ensaiar restauração e resposta a incidente
 
@@ -705,7 +705,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-047.
 - **Requisitos relacionados:** RNF-009, RNF-010, RNF-011, RNF-017.
 - **Descrição e critério de conclusão:** Restaurar banco e objetos em isolamento, medir RPO/RTO e simular incidente sem dados reais; registrar evidências.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-049 — Preparar roteiro e massa para homologação
 
@@ -716,7 +716,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-048.
 - **Requisitos relacionados:** RNF-014, RF-012, RF-028.
 - **Descrição e critério de conclusão:** Criar contas e casos sintéticos para todos os papéis, roteiro e lista de critérios; agendar avaliadores externos.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-050 — Acompanhar homologação funcional e operacional
 
@@ -727,7 +727,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-049.
 - **Requisitos relacionados:** RF-010, RF-022, RF-029, RF-036.
 - **Descrição e critério de conclusão:** Executar roteiro com responsáveis, registrar aceite ou defeitos; tempo de espera por avaliadores não é hora do programador.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-051 — Corrigir itens de aceite e fechar homologação
 
@@ -738,7 +738,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-050.
 - **Requisitos relacionados:** RNF-014, RNF-001.
 - **Descrição e critério de conclusão:** Resolver defeitos esperados de aceite e repetir cenários afetados; nenhum bloqueador aberto; obter decisão documentada.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-052 — Preparar produção, alertas e backups
 
@@ -749,7 +749,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-051.
 - **Requisitos relacionados:** RNF-002, RNF-009, RNF-010, RNF-011, RNF-013, RNF-016.
 - **Descrição e critério de conclusão:** Configurar produção isolada, segredos, domínio, monitoração e backups; verificar restauração e contatos operacionais.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-064 — Validar implantação coordenada de frontend, API e worker
 
@@ -760,7 +760,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-052.
 - **Requisitos relacionados:** RNF-011, RNF-013, RNF-016.
 - **Descrição e critério de conclusão:** Conferir artefatos e health checks de três processos, migração única Django, segredos somente no backend e compatibilidade para reversão coordenada.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-053 — Executar implantação controlada e reversão ensaiada
 
@@ -771,7 +771,7 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-064.
 - **Requisitos relacionados:** RNF-014, RNF-012.
 - **Descrição e critério de conclusão:** Migrar com cópia de segurança, implantar e executar smoke tests; demonstrar reversão compatível sem repetir cobranças.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
 
 ## DEV-054 — Validar operação assistida e entregar runbook
 
@@ -782,4 +782,4 @@ Arquitetura aprovada: Next.js + TypeScript no frontend, Python + Django REST Fra
 - **Predecessora por capacidade:** DEV-053.
 - **Requisitos relacionados:** RNF-010, RNF-011, RNF-018.
 - **Descrição e critério de conclusão:** Acompanhar fila, conciliação e alertas durante janela assistida; registrar responsável pela continuidade e pendências sem bloqueadores.
-- **Evidência esperada:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.
+- **Evidência:** demonstração do cenário descrito, resultado das verificações aplicáveis e referência da entrega; pendente de execução.

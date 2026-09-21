@@ -236,4 +236,14 @@ tasks.find(t=>t.id==='DEV-010').dependencies.push('DEV-061');
 tasks.find(t=>t.id==='DEV-014').dependencies.push('DEV-062');
 tasks.find(t=>t.id==='DEV-046').dependencies.push('DEV-063');
 tasks.find(t=>t.id==='DEV-053').dependencies.push('DEV-064');
+for (const [id, status] of Object.entries({
+ 'DEV-020': 'Implementado localmente: complemento com anexos',
+ 'DEV-021': 'Implementado localmente; armazenamento produtivo pendente',
+ 'DEV-022': 'Implementado; homologação do scanner real pendente',
+ 'DEV-023': 'Validado localmente; aceite produtivo pendente',
+})) {
+ const task = tasks.find(t => t.id === id);
+ task.status = status;
+ task.evidence = '[Documentos privados](DOCUMENTOS.md): testes locais em 21/09/2026; não representa aceite produtivo';
+}
 module.exports = {rf,rnf,rules,phases,tasks,config};

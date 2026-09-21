@@ -87,7 +87,7 @@ Identidade pertence ao Django; TOTP usa PyOTP e os segredos usam Fernet. O contr
 
 ## Casos e colaboração — contrato alvo
 
-O incremento implementado usa category (código do catálogo), scopeAcknowledged e liberação de teste; ainda não recebe documentos nem verifica assinatura real. Rotas, payloads e limites atuais estão em [Casos e triagem](CASOS.md). A tabela abaixo inclui capacidades futuras.
+O incremento implementado usa category (código do catálogo), scopeAcknowledged e liberação de teste; recebe documentos pelo incremento descrito em [Documentos](DOCUMENTOS.md), mas ainda não verifica assinatura real. Rotas, payloads e limites atuais estão em [Casos e triagem](CASOS.md). A tabela abaixo inclui capacidades futuras.
 
 | Método / rota | Autorização | Entrada → saída |
 | --- | --- | --- |
@@ -107,6 +107,8 @@ O incremento implementado usa category (código do catálogo), scopeAcknowledged
 Filtros não substituem autorização: aplicar escopo antes de paginação e contagem. `caseId` em URL deve coincidir com o documento, mensagem e pendência referenciados no corpo.
 
 ## Documentos e gestão jurídica
+
+Upload, conteúdo binário, confirmação, versões e download já possuem implementação local. O contrato exato, incluindo a ausência de `kind` neste incremento e o campo `previousVersion`, está em [Documentos privados](DOCUMENTOS.md). Procurações e peças abaixo continuam propostas.
 
 | Método / rota | Autorização | Entrada → saída |
 | --- | --- | --- |

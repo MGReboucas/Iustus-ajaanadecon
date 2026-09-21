@@ -12,7 +12,7 @@
 6. Resposta do cliente mantém o caso aguardando. O advogado confere a resposta e retoma a triagem explicitamente.
 7. Aceite exige confirmação de compatibilidade do escopo, análise de conflito e suficiência das informações. Esses itens registram a declaração profissional; o sistema não decide mérito jurídico automaticamente.
 
-Estados implementados: RASCUNHO, SUBMETIDO, EM_TRIAGEM, AGUARDANDO_CLIENTE, ACEITO e RECUSADO. ACEITO encerra somente este incremento de triagem; não significa peça pronta ou processo protocolado. RECUSADO é terminal neste fluxo. Ainda não há reabertura, exclusão, anexos, mensagens livres, notificações de casos ou etapas processuais.
+Estados implementados: RASCUNHO, SUBMETIDO, EM_TRIAGEM, AGUARDANDO_CLIENTE, ACEITO e RECUSADO. ACEITO encerra somente este incremento de triagem; não significa peça pronta ou processo protocolado. RECUSADO é terminal neste fluxo. Ainda não há reabertura, exclusão, mensagens livres, notificações de casos ou etapas processuais. Desde 21/09/2026, anexos privados e respostas com documentos estão implementados; consulte [Documentos](DOCUMENTOS.md).
 
 Categorias: trânsito, contratos, cobranças, responsabilidade civil, consumo, imobiliário/posse/propriedade e demais matérias civis. A última mantém o escopo civil aberto; família e sucessões não são categorias aceitas. O advogado confirma a classificação durante a triagem. Não há filtragem jurídica automática do texto.
 
@@ -63,4 +63,4 @@ Transferência revoga o acesso do advogado anterior na próxima consulta ou muta
 
 A suíte completa tem 35 testes Django no PostgreSQL: 22 de fundação/identidade e 13 de casos, incluindo uma disputa real por edição da mesma versão. A jornada de navegador adicional percorre rascunho, bloqueio sem liberação, distribuição, complemento e aceite, com cliente em tela de 390 px. Casos são sintéticos e ficam no banco iustus_e2e; testes Django criam/destroem banco separado. Comandos no [guia de acesso](ACESSO.md).
 
-Pendente: elegibilidade ligada a assinatura autoritativa; arquivos privados e verificados; checklists por matéria; processos, prazos e procuração; notificações de casos; papéis acumuláveis/concessões excepcionais; políticas, infraestrutura e homologação produtiva. O checkout legado continua sem alteração e sem autorização para cobrança real.
+Pendente: elegibilidade ligada a assinatura autoritativa; homologação do scanner e armazenamento produtivo; checklists por matéria; processos, prazos e procuração; notificações de casos; papéis acumuláveis/concessões excepcionais; políticas, infraestrutura e homologação produtiva. O checkout legado continua sem alteração e sem autorização para cobrança real.
