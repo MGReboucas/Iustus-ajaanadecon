@@ -109,6 +109,13 @@ test('rotas e headers de outro portal são recusados', async ({ request }) => {
   const login = await request.post(clientOrigin + '/api/v1/auth/login', { data: { email: email(), password } });
   expect(login.status()).toBe(403);
   expect((await login.json()).error.code).toBe('CSRF_FAILED');
+  const binary = { headers: { 'Content-Type': 'application/octet-stream' }, data: Buffer.from('test') };
+  expect((await request.post(clientOrigin + '/api/v1/cases', binary)).status()).toBe(415);
+  expect((await request.post(clientOrigin + `/api/v1/uploads/${randomUUID()}/content`, binary)).status()).toBe(403);
+  const tooLarge = await request.post(clientOrigin + `/api/v1/uploads/${randomUUID()}/content`, {
+    headers: binary.headers, data: Buffer.alloc(20 * 1024 * 1024 + 1),
+  });
+  expect(tooLarge.status()).toBe(413);
 });
 
 test('caso percorre rascunho, distribuição, complemento e aceite com isolamento', async ({ browser }) => {
@@ -131,8 +138,21 @@ test('caso percorre rascunho, distribuição, complemento e aceite com isolament
   fixture('case-grant', clientEmail);
   await clientPage.reload();
   await clientPage.getByRole('button', { name: /Cobrança contratual fictícia/ }).click();
+  const pdf = Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n');
+  await clientPage.getByLabel('Arquivo para anexar').setInputFiles({ name: 'contrato-ficticio.pdf', mimeType: 'application/pdf', buffer: pdf });
+  await clientPage.getByRole('button', { name: 'Enviar arquivo', exact: true }).click();
+  await expect(clientPage.getByText('Arquivo recebido. Aguarde a verificação e atualize a lista.')).toBeVisible();
+  await expect(clientPage.getByRole('button', { name: 'Baixar contrato-ficticio.pdf (v1)', exact: true })).toBeDisabled();
+  expect(fixture('document-scan-fixture', clientEmail).available).toBe(1);
+  await clientPage.getByRole('button', { name: 'Atualizar documentos', exact: true }).click();
+  await expect(clientPage.getByRole('button', { name: 'Baixar contrato-ficticio.pdf (v1)', exact: true })).toBeEnabled();
+  const downloadEvent = clientPage.waitForEvent('download');
+  await clientPage.getByRole('button', { name: 'Baixar contrato-ficticio.pdf (v1)', exact: true }).click();
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toBe('contrato-ficticio.pdf');
+  expect(await download.failure()).toBeNull();
   await clientPage.getByRole('button', { name: 'Enviar para triagem' }).click();
-  await expect(clientPage.locator('.case-detail .case-badge')).toHaveText('Enviado para distribuição');
+  await expect(clientPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Enviado para distribuição');
   const reference = (await clientPage.locator('#case-detail-title').innerText()).replace('Caso ', '');
   await signIn(lawyerPage, teamOrigin, lawyerEmail); await enroll(lawyerPage);
   await expect(lawyerPage.getByText('Nenhum caso encontrado neste filtro.')).toBeVisible();
@@ -148,10 +168,11 @@ test('caso percorre rascunho, distribuição, complemento e aceite com isolament
   await lawyerPage.getByRole('button', { name: 'Iniciar triagem' }).click();
   await lawyerPage.getByLabel('Informações a complementar').fill('Informe quando ocorreu o fato fictício.');
   await lawyerPage.getByRole('button', { name: 'Solicitar complemento' }).click();
-  await expect(lawyerPage.locator('.case-detail .case-badge')).toHaveText('Aguardando complemento');
+  await expect(lawyerPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Aguardando complemento');
   await clientPage.reload();
   await clientPage.getByRole('button', { name: /Cobrança contratual fictícia/ }).click();
   await clientPage.getByLabel('Sua resposta').fill('O fato fictício ocorreu em quinze de setembro.');
+  await clientPage.getByLabel('Anexar contrato-ficticio.pdf (v1)', { exact: true }).check();
   await clientPage.getByRole('button', { name: 'Enviar complemento', exact: true }).click();
   await expect(clientPage.getByText('Aguardando conferência pelo responsável.')).toBeVisible();
   await expect(clientPage.getByText('Distribuição privada que não deve aparecer ao cliente.')).toHaveCount(0);
@@ -159,6 +180,10 @@ test('caso percorre rascunho, distribuição, complemento e aceite com isolament
   if (process.env.IUSTUS_CASE_SCREENSHOT) await clientPage.screenshot({ path: process.env.IUSTUS_CASE_SCREENSHOT, fullPage: true });
   await lawyerPage.reload();
   await lawyerPage.getByRole('button', { name: /Cobrança contratual fictícia/ }).click();
+  await expect(lawyerPage.getByRole('button', { name: 'Anexo: contrato-ficticio.pdf (v1)', exact: true })).toBeVisible();
+  const lawyerDownload = lawyerPage.waitForEvent('download');
+  await lawyerPage.getByRole('button', { name: 'Anexo: contrato-ficticio.pdf (v1)', exact: true }).click();
+  expect((await lawyerDownload).suggestedFilename()).toBe('contrato-ficticio.pdf');
   await lawyerPage.getByLabel('Resultado da conferência').fill('Data recebida e conferida para o teste.');
   await lawyerPage.getByRole('button', { name: 'Conferir e retomar triagem' }).click();
   await lawyerPage.getByLabel('Escopo compatível:', { exact: false }).check();
@@ -166,10 +191,10 @@ test('caso percorre rascunho, distribuição, complemento e aceite com isolament
   await lawyerPage.getByLabel('Informações suficientes para decidir o atendimento').check();
   await lawyerPage.getByLabel('Justificativa visível ao cliente').fill('Aceite fictício após análise das informações e do escopo.');
   await lawyerPage.getByRole('button', { name: 'Aceitar caso', exact: true }).click();
-  await expect(lawyerPage.locator('.case-detail .case-badge')).toHaveText('Aceito na triagem');
+  await expect(lawyerPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Aceito na triagem');
   await clientPage.reload();
   await clientPage.getByRole('button', { name: /Cobrança contratual fictícia/ }).click();
-  await expect(clientPage.locator('.case-detail .case-badge')).toHaveText('Aceito na triagem');
+  await expect(clientPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Aceito na triagem');
   await expect(clientPage.getByText('Aceite fictício após análise das informações e do escopo.')).toBeVisible();
   await clientContext.close(); await adminContext.close(); await lawyerContext.close();
 });

@@ -46,6 +46,17 @@ else:
         user = User.objects.get(email=email, role="CLIENT")
         LocalCaseAccess.objects.update_or_create(user=user, defaults={"expires_at": timezone.now() + timedelta(days=1), "reason": "Jornada sintética de navegador"})
         print(json.dumps({"granted": True}))
+    elif action == "document-scan-fixture":
+        # Apenas o runner isolado substitui o scanner. Não existe bypass na aplicação.
+        from unittest.mock import patch
+        from apps.documents.models import DocumentVersion
+        from jobs.documents import scan_one
+        user = User.objects.get(email=email, role="CLIENT")
+        with patch("jobs.documents.scan", return_value=True):
+            # O banco e diretório são exclusivos de E2E; nenhuma fila local é tocada.
+            for _ in range(DocumentVersion.objects.filter(status="QUARANTINED").count()):
+                scan_one()
+        print(json.dumps({"available": DocumentVersion.objects.filter(uploaded_by=user, status="AVAILABLE").count()}))
     elif action == "mail":
         item = IdentityEmail.objects.filter(recipient=email).latest("created_at")
         print(json.dumps({"body": decrypt(item.encrypted_body)}))
