@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from apps.identity.models import User
 from apps.identity.security import IdentityError, digest, throttle
 from apps.identity.views import IdentityView
+from apps.documents.models import DocumentVersion, RequestAttachment
+from apps.documents.services import version_data
 from . import serializers as inputs
 from .models import Case, InformationRequest
 from .services import (accessible, case_data, changed, edit_draft, expect_state, expect_version,
@@ -169,9 +171,10 @@ class TransitionView(CaseView):
 class RequestsView(CaseView):
     def get(self, request, case_id):
         item = get_case(request.user, case_id)
-        return self.listed(request, item.information_requests.all(), lambda row: {
+        return self.listed(request, item.information_requests.prefetch_related("attachments__version"), lambda row: {
             "id": str(row.pk), "description": row.description, "response": row.response, "resolution": row.resolution,
-            "resolved": row.resolved_at is not None, "responded": row.responded_at is not None})
+            "resolved": row.resolved_at is not None, "responded": row.responded_at is not None,
+            "attachments": [version_data(link.version) for link in row.attachments.all()]})
 
     def post(self, request, case_id):
         self.role(request, "LAWYER")
@@ -202,6 +205,12 @@ class RequestActionView(CaseView):
             if action == "response":
                 if pending.responded_at:
                     raise IdentityError("ALREADY_RESPONDED", "Esta pendência já recebeu resposta.", 409)
+                ids = data["documentVersionIds"]
+                versions = list(DocumentVersion.objects.filter(pk__in=ids, document__case=item,
+                    uploaded_by=request.user, status=DocumentVersion.Status.AVAILABLE))
+                if len(versions) != len(ids):
+                    raise IdentityError("INVALID_ATTACHMENT", "Selecione versões próprias, verificadas e pertencentes a este caso.", 422)
+                RequestAttachment.objects.bulk_create([RequestAttachment(request=pending, version=version) for version in versions])
                 pending.response, pending.responded_at = data["text"], timezone.now()
                 event, reason = "INFORMATION_RESPONDED", "Cliente enviou complemento."
             else:

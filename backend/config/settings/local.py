@@ -21,3 +21,7 @@ PORTAL_ORIGINS = {"client": "http://localhost:3000", "team": "http://127.0.0.1:3
 SESSION_COOKIE_NAME = "iustus_local_session"
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
+DOCUMENT_LOCAL_STORAGE_ENABLED = True
+DOCUMENT_STORAGE_ROOT = BASE_DIR.parent / ".local" / "documents"
+DOCUMENT_SCANNER_HOST = env("DOCUMENT_SCANNER_HOST", default="127.0.0.1")
+DOCUMENT_SCANNER_PORT = env.int("DOCUMENT_SCANNER_PORT", default=3310)

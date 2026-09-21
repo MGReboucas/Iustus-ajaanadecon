@@ -38,6 +38,7 @@ class RequestInput(VersionInput):
 
 class ResponseInput(VersionInput):
     text = serializers.CharField(min_length=5, max_length=10000)
+    documentVersionIds = serializers.ListField(child=serializers.UUIDField(), max_length=20, required=False, default=list)
 
 
 class ResolutionInput(VersionInput):

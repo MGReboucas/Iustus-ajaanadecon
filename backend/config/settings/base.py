@@ -77,3 +77,8 @@ DEFAULT_FROM_EMAIL = "Iustus <no-reply@localhost>"
 # Sem settings produtivos: políticas locais são explicitamente de teste.
 REGISTRATION_POLICY_VERSION = "development-v1"
 CASE_LOCAL_TEST_ACCESS = False
+DOCUMENT_LOCAL_STORAGE_ENABLED = False
+DOCUMENT_STORAGE_ROOT = None
+DOCUMENT_SCANNER_HOST = "127.0.0.1"
+DOCUMENT_SCANNER_PORT = 3310
+DOCUMENT_SCANNER_TIMEOUT = 30
