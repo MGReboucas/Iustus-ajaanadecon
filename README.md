@@ -1,5 +1,7 @@
 # IUSTUS — Defesa Jurídica Online
 
+**Preparação de produção:** consulte o [roteiro técnico atualizado](infra/deploy/README.md), com checagem de API/banco, worker de documentos e pendências de infraestrutura. A implantação externa ainda precisa ser validada.
+
 Plataforma por assinatura para solicitar, acompanhar e receber defesas jurídicas online. A jornada pretendida reúne contratação, envio de casos e documentos, procuração, acompanhamento pelo cliente e preparação da defesa por advogado designado.
 
 **Operação local (29/09/2026):** [Perfil, usuários, privacidade, lembretes e manutenção](docs/OPERACAO_LOCAL.md) implementados sem serviços externos. S3 preparado e testado com simulador, desativado por padrão em produção.

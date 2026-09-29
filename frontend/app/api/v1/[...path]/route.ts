@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const routes = new Set([
+  "ready",
   "auth/csrf", "auth/register", "auth/verify", "auth/resend", "auth/login",
   "auth/logout", "auth/recovery", "auth/reset", "auth/mfa/enroll", "auth/mfa/verify",
   "auth/invitations/accept", "admin/invitations", "me", "dashboard/client", "dashboard/team",

@@ -1,5 +1,7 @@
 # Implantação e operação
 
+> Configuração técnica atual: [roteiro de implantação](../infra/deploy/README.md). Já existem settings de produção, Dockerfile e Blueprint; sua existência não comprova homologação externa.
+
 > Runbook de preparação. Endereços, fornecedores, responsáveis e credenciais serão definidos em EXT-03/06; nenhum deploy foi feito nesta etapa.
 
 ## Ambientes
