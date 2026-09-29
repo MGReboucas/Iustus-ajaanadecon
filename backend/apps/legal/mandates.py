@@ -20,7 +20,7 @@ from apps.identity.models import User
 from apps.identity.security import IdentityError
 from apps.identity.serializers import StrictSerializer
 from apps.identity.services import audit
-from integrations.storage.private import object_path, write_stream
+from integrations.storage.private import delete_object, write_stream, storage_configured
 from .models import MandateTemplate, GeneratedMandate
 from .pdf import mandate_pdf, supported
 
@@ -97,7 +97,7 @@ class GenerateMandateView(CaseView):
         data = self.data(request, GenerateInput)
         if not data["confirmed"]:
             raise IdentityError("APPROVAL_REQUIRED", "Confira os dados e o modelo antes de gerar a procuração.", 422)
-        if not settings.DOCUMENT_LOCAL_STORAGE_ENABLED or not settings.DOCUMENT_STORAGE_ROOT:
+        if not storage_configured():
             raise IdentityError("DOCUMENT_STORAGE_UNAVAILABLE", "Armazenamento privado não configurado.", 503)
         key = uuid.uuid4().hex
         written = False
@@ -133,5 +133,5 @@ class GenerateMandateView(CaseView):
                                  "templateVersion": template.number, "sha256": version.sha256}, status=201)
         except Exception:
             if written:
-                object_path(key).unlink(missing_ok=True)
+                delete_object(key)
             raise

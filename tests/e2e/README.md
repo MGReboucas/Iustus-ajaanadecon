@@ -5,3 +5,5 @@ Quatro jornadas Playwright: cadastro/verificação/login/recuperação do client
 Preparar o banco, compilar o frontend e executar npm run test:e2e pela raiz. O runner inicia e encerra seus servidores; portas 3000/8000 precisam estar livres. No Windows local, PLAYWRIGHT_CHANNEL=msedge usa o Edge instalado; CI instala Chromium. [Comandos completos](../../docs/ACESSO.md) · [Plano dos demais testes](../../docs/TESTES.md).
 
 A jornada jurídica também cadastra modelo revisado, gera/baixa procuração PDF e verifica o ZIP exportado, inclusive ausência da nota interna. Capturas sintéticas de conferência ficam em `.local/`.
+
+A jornada de atendimento também valida alteração persistente de perfil, preferência de e-mail, solicitação e resposta de privacidade e suspensão administrativa com revogação da sessão.

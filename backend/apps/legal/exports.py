@@ -16,7 +16,7 @@ from apps.cases.views import CaseView
 from apps.documents.models import DocumentVersion
 from apps.identity.security import IdentityError, digest, throttle
 from apps.identity.services import audit
-from integrations.storage.private import object_path, write_stream
+from integrations.storage.private import open_object, delete_object, write_stream, storage_configured
 from .models import CaseExport, LegalWork
 
 MAX_BYTES = 100 * 1024 * 1024
@@ -83,7 +83,7 @@ def build_export(item, output):
             name = f"documentos/{row.document_id}/v{row.number}{suffix}"
             checksum, size = hashlib.sha256(), 0
             try:
-                with object_path(row.object_key).open("rb") as source, archive.open(name, "w") as target:
+                with open_object(row.object_key) as source, archive.open(name, "w") as target:
                     while chunk := source.read(65536):
                         size += len(chunk)
                         if size > row.size_bytes:
@@ -107,9 +107,9 @@ def export_token(request, row):
 class ExportsView(CaseView):
     def post(self, request, case_id):
         self.limited(request)
-        throttle("case-export", str(request.user.pk), 3)
+        throttle("case-export", str(request.user.pk), 3, seconds=60)
         data = self.data(request, VersionInput)
-        if not settings.DOCUMENT_LOCAL_STORAGE_ENABLED or not settings.DOCUMENT_STORAGE_ROOT:
+        if not storage_configured():
             raise IdentityError("DOCUMENT_STORAGE_UNAVAILABLE", "Armazenamento privado não configurado.", 503)
         key, written = uuid.uuid4().hex, False
         try:
@@ -131,7 +131,7 @@ class ExportsView(CaseView):
                     "sha256": checksum, "sizeBytes": size}, status=201)
         except Exception:
             if written:
-                object_path(key).unlink(missing_ok=True)
+                delete_object(key)
             raise
 
 
@@ -151,7 +151,7 @@ class ExportContentView(CaseView):
         if row.expires_at <= timezone.now() or row.purged_at:
             raise IdentityError("EXPORT_EXPIRED", "O dossiê expirou. Gere uma nova exportação.", 410)
         try:
-            source = object_path(row.object_key).open("rb")
+            source = open_object(row.object_key)
         except FileNotFoundError:
             raise Http404
         audit(request.user, "case.export_downloaded", request.portal, caseId=str(row.case_id), exportId=str(row.pk))

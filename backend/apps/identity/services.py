@@ -63,7 +63,7 @@ def consume(token):
 
 
 def profile(user):
-    return {"id": str(user.pk), "name": user.first_name, "email": user.email, "role": user.role}
+    return {"id": str(user.pk), "name": user.first_name, "email": user.email, "role": user.role, "caseEmailEnabled": user.case_email_enabled}
 
 
 def establish_session(request, user, mfa=False):

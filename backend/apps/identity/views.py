@@ -207,6 +207,17 @@ class AcceptInviteView(PublicView):
 
 
 class MeView(IdentityView):
+    def patch(self, request):
+        data = self.data(request, inputs.ProfileSerializer)
+        throttle("profile", str(request.user.pk), 20)
+        with transaction.atomic():
+            user = User.objects.select_for_update().get(pk=request.user.pk)
+            user.first_name = data["name"]
+            user.case_email_enabled = data["caseEmailEnabled"]
+            user.save(update_fields=["first_name", "case_email_enabled"])
+            audit(user, "PROFILE_UPDATED", request.portal)
+        return Response({"user": profile(user)})
+
     def get(self, request):
         return Response({"user": profile(request.user), "portal": request.portal})
 

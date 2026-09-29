@@ -38,6 +38,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     email_verified_at = models.DateTimeField(null=True, blank=True)
     auth_version = models.PositiveIntegerField(default=1)
+    case_email_enabled = models.BooleanField(default=True)
     role = models.CharField(max_length=12, choices=Role.choices, default=Role.CLIENT)
     accepted_policy_version = models.CharField(max_length=80, blank=True)
 

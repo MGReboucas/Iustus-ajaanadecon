@@ -22,6 +22,7 @@ Esta documentação descreve o código encontrado e propõe o MVP da plataforma 
 | [Dashboard e comunicação](DASHBOARD_COMUNICACAO.md) | Indicadores, próximos passos, mensagens, notas internas e avisos |
 | [Fluxo de atendimento](FLUXO_ATENDIMENTO.md) | Liberação administrativa, trabalho jurídico, compromissos e encerramento |
 | [Procurações e exportação](PROCURACOES_EXPORTACAO.md) | Modelos versionados, emissão PDF e dossiê privado |
+| [Operação local](OPERACAO_LOCAL.md) | Perfil, usuários, privacidade, lembretes e manutenção sem serviços externos |
 | [Acesso local](ACESSO.md) | Instalação, cliente, equipe, MFA, worker e testes do incremento implementado |
 | [Estado atual](ESTADO_ATUAL.md) | Inventário verificável e lacunas |
 | [MVP](MVP.md) | Escopo incluído, excluído e critérios de lançamento |

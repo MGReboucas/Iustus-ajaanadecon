@@ -11,6 +11,7 @@ from apps.cases.models import Case
 from apps.cases.services import changed, expect_state, get_case
 from apps.identity.security import IdentityError
 from .models import Document, DocumentVersion
+from integrations.storage.private import storage_configured
 
 
 def version_data(item):
@@ -40,7 +41,7 @@ def check_upload(case, item, user):
 
 def create_upload(case, user, data, document=None):
     expect_state(case, *[value for value in Case.State.values if value not in (Case.State.REJECTED, Case.State.CLOSED)])
-    if not settings.DOCUMENT_LOCAL_STORAGE_ENABLED or not settings.DOCUMENT_STORAGE_ROOT:
+    if not storage_configured():
         raise IdentityError("DOCUMENT_STORAGE_UNAVAILABLE", "O envio de documentos ainda não está disponível neste ambiente.", 503)
     filename = re.sub(r'[\x00-\x1f\x7f<>:"/\\|?*]', "_", data["filename"]).strip(" .")
     suffixes = {"application/pdf": (".pdf",), "image/jpeg": (".jpg", ".jpeg"), "image/png": (".png",)}

@@ -1,4 +1,6 @@
-from .models import Notification
+from django.db import transaction
+from django.utils import timezone
+from .models import Notification, CaseEmail
 
 
 EVENT_TITLES = {
@@ -28,8 +30,7 @@ def notify_event(event, item):
         return
     recipient_id = item.lawyer_id if event.action in ("ASSIGNED", "INFORMATION_RESPONDED", "LEGAL_SIGN") else item.owner_id
     if recipient_id and recipient_id != event.actor_id:
-        Notification.objects.get_or_create(recipient_id=recipient_id, source_key=f"event:{event.pk}",
-            defaults={"case": item, "kind": event.action, "title": title})
+        create_notice(recipient_id=recipient_id, source_key=f"event:{event.pk}", case=item, kind=event.action, title=title)
 
 
 def visible_notifications(user):
@@ -48,3 +49,13 @@ def message_data(item):
     return {"id": str(item.pk), "text": item.text, "visibility": item.visibility,
             "authorId": str(item.author_id), "authorName": item.author.first_name,
             "createdAt": item.created_at.isoformat()}
+
+
+@transaction.atomic
+def create_notice(*, recipient_id, source_key, case, kind, title, task=None):
+    notice, created = Notification.objects.get_or_create(recipient_id=recipient_id, source_key=source_key,
+                                                       defaults={"case": case, "kind": kind, "title": title})
+    if created:
+        CaseEmail.objects.create(notification=notice, available_at=timezone.now(),
+                                 reminder_task=task, reminder_due_at=task.due_at if task else None)
+    return notice

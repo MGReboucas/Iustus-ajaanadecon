@@ -2,6 +2,8 @@
 
 Plataforma por assinatura para solicitar, acompanhar e receber defesas jurídicas online. A jornada pretendida reúne contratação, envio de casos e documentos, procuração, acompanhamento pelo cliente e preparação da defesa por advogado designado.
 
+**Operação local (29/09/2026):** [Perfil, usuários, privacidade, lembretes e manutenção](docs/OPERACAO_LOCAL.md) implementados sem serviços externos. S3 preparado e testado com simulador, desativado por padrão em produção.
+
 **Procurações e dossiê (29/09/2026):** [Geração PDF e exportação privada](docs/PROCURACOES_EXPORTACAO.md) integradas ao dashboard e validadas localmente.
 
 **Incremento de 29/09/2026:** [Fluxo de atendimento no dashboard](docs/FLUXO_ATENDIMENTO.md): liberação administrativa, procuração, peça revisada, protocolo, compromissos e encerramento implementados localmente.

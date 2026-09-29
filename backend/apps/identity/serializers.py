@@ -42,3 +42,8 @@ class AcceptInviteSerializer(ResetSerializer):
 
 class CodeSerializer(StrictSerializer):
     code = serializers.CharField(min_length=6, max_length=64, write_only=True)
+
+
+class ProfileSerializer(StrictSerializer):
+    name = serializers.CharField(min_length=2, max_length=150)
+    caseEmailEnabled = serializers.BooleanField()

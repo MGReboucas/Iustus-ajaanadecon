@@ -1,7 +1,7 @@
 "use client";
 
 export type Portal = "client" | "team";
-export type Profile = { id: string; name: string; email: string; role: "CLIENT" | "LAWYER" | "ADMIN" };
+export type Profile = { id: string; name: string; email: string; caseEmailEnabled: boolean; role: "CLIENT" | "LAWYER" | "ADMIN" };
 export type Context = { csrfToken: string; portal: Portal; policyVersion: string };
 
 export class ApiError extends Error {

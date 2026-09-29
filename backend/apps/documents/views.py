@@ -8,7 +8,7 @@ from apps.cases.services import changed, get_case
 from apps.cases.views import CaseView
 from apps.identity.security import IdentityError, digest
 from apps.identity.services import audit
-from integrations.storage.private import InvalidFile, inspect_file, object_path, write_stream
+from integrations.storage.private import InvalidFile, inspect_file, open_object, write_stream
 from . import serializers as inputs
 from .models import Document, DocumentVersion
 from .services import check_upload, create_upload, get_version, version_data
@@ -124,7 +124,7 @@ class DownloadContentView(CaseView):
             raise IdentityError("INVALID_DOWNLOAD", "Link expirado ou inválido. Solicite o download novamente.", 403)
         item = downloadable(request, document_id, version_id)
         try:
-            source = object_path(item.object_key).open("rb")
+            source = open_object(item.object_key)
         except FileNotFoundError:
             raise Http404
         audit(request.user, "DOCUMENT_DOWNLOADED", request.portal, versionId=str(item.pk))

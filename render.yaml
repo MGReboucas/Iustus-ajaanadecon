@@ -49,7 +49,7 @@ services:
     region: virginia
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    dockerCommand: python manage.py deliver_identity_mail
+    dockerCommand: python manage.py run_operations
     autoDeployTrigger: checksPass
     buildFilter:
       paths: [backend/**, render.yaml]

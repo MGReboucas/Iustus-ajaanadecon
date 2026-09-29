@@ -12,7 +12,7 @@ from apps.identity.security import IdentityError
 from apps.identity.services import audit
 from .models import Message, Notification
 from .serializers import MessageInput, ReadInput
-from .services import message_data, notification_data, visible_notifications
+from .services import message_data, notification_data, visible_notifications, create_notice
 
 
 class MessagesView(CaseView):
@@ -43,7 +43,7 @@ class MessagesView(CaseView):
             audit(request.user, "case.message_created", request.portal, caseId=str(item.pk), messageId=str(message.pk), visibility=message.visibility)
             if message.visibility == Message.Visibility.PUBLIC:
                 recipient_id = item.lawyer_id if request.user.role == "CLIENT" else item.owner_id
-                Notification.objects.create(recipient_id=recipient_id, case=item, source_key=f"message:{message.pk}",
+                create_notice(recipient_id=recipient_id, case=item, source_key=f"message:{message.pk}",
                     kind="MESSAGE", title="Você recebeu uma mensagem no caso")
         return Response(message_data(message), status=201)
 

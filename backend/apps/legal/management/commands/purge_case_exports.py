@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 from apps.legal.models import CaseExport
-from integrations.storage.private import object_path
+from integrations.storage.private import delete_object
 
 class Command(BaseCommand):
     help = "Remove pacotes expirados; mantém metadados para auditoria. Executar periodicamente."
@@ -14,7 +14,7 @@ class Command(BaseCommand):
                 row = CaseExport.objects.select_for_update().filter(expires_at__lte=timezone.now(), purged_at__isnull=True).first()
                 if not row:
                     break
-                object_path(row.object_key).unlink(missing_ok=True)
+                delete_object(row.object_key)
                 row.purged_at = timezone.now()
                 row.save(update_fields=["purged_at"])
                 count += 1

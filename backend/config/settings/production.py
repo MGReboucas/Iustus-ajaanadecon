@@ -80,3 +80,28 @@ REGISTRATION_POLICY_VERSION = env("REGISTRATION_POLICY_VERSION", default="web-ev
 # Sem permissões locais de submissão, arquivos temporários ou cobrança automática.
 CASE_LOCAL_TEST_ACCESS = False
 DOCUMENT_LOCAL_STORAGE_ENABLED = False
+
+# Ativação explícita; nenhuma credencial ou URL pública é enviada ao navegador.
+DOCUMENT_STORAGE_BACKEND = env("DOCUMENT_STORAGE_BACKEND", default="disabled")
+if DOCUMENT_STORAGE_BACKEND not in ("disabled", "s3"):
+    raise ImproperlyConfigured("Produção aceita armazenamento S3 privado ou desabilitado.")
+if DOCUMENT_STORAGE_BACKEND == "s3":
+    DOCUMENT_S3_BUCKET = env("DOCUMENT_S3_BUCKET")
+    DOCUMENT_S3_ENDPOINT = env("DOCUMENT_S3_ENDPOINT", default="")
+    DOCUMENT_S3_REGION = env("DOCUMENT_S3_REGION", default="us-east-1")
+    DOCUMENT_S3_PREFIX = env("DOCUMENT_S3_PREFIX", default="iustus/objects")
+    DOCUMENT_S3_ACCESS_KEY = env("DOCUMENT_S3_ACCESS_KEY", default="")
+    DOCUMENT_S3_SECRET_KEY = env("DOCUMENT_S3_SECRET_KEY", default="")
+    DOCUMENT_S3_ADDRESSING_STYLE = env("DOCUMENT_S3_ADDRESSING_STYLE", default="auto")
+    if DOCUMENT_S3_ENDPOINT and (urlsplit(DOCUMENT_S3_ENDPOINT).scheme != "https" or not urlsplit(DOCUMENT_S3_ENDPOINT).hostname
+                               or urlsplit(DOCUMENT_S3_ENDPOINT).username or urlsplit(DOCUMENT_S3_ENDPOINT).query or urlsplit(DOCUMENT_S3_ENDPOINT).fragment):
+        raise ImproperlyConfigured("O endpoint S3 exige HTTPS sem credenciais na URL.")
+    if not DOCUMENT_S3_BUCKET or bool(DOCUMENT_S3_ACCESS_KEY) != bool(DOCUMENT_S3_SECRET_KEY):
+        raise ImproperlyConfigured("Configure bucket privado e o par de chaves ou uma identidade IAM.")
+    DOCUMENT_SCANNER_HOST = env("DOCUMENT_SCANNER_HOST")
+    DOCUMENT_SCANNER_PORT = env.int("DOCUMENT_SCANNER_PORT", default=3310)
+    if not DOCUMENT_SCANNER_HOST:
+        raise ImproperlyConfigured("Configure o scanner na rede privada antes de habilitar arquivos.")
+
+    if DOCUMENT_S3_ADDRESSING_STYLE not in ("auto", "path", "virtual") or not 1 <= DOCUMENT_SCANNER_PORT <= 65535:
+        raise ImproperlyConfigured("Estilo S3 ou porta de scanner inválidos.")

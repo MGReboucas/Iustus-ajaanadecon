@@ -35,3 +35,17 @@ class Notification(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["recipient", "source_key"], name="notification_source_unique")]
         indexes = [models.Index(fields=["recipient", "read_at", "-created_at"])]
+
+
+class CaseEmail(models.Model):
+    reminder_task = models.ForeignKey("legal.LegalTask", null=True, on_delete=models.PROTECT)
+    reminder_due_at = models.DateTimeField(null=True)
+    notification = models.OneToOneField(Notification, on_delete=models.PROTECT, related_name="email_delivery")
+    created_at = models.DateTimeField(auto_now_add=True)
+    available_at = models.DateTimeField()
+    sent_at = models.DateTimeField(null=True)
+    cancelled_at = models.DateTimeField(null=True)
+    attempts = models.PositiveIntegerField(default=0)
+    lease_id = models.UUIDField(null=True)
+    lease_until = models.DateTimeField(null=True)
+    last_error = models.CharField(max_length=40, blank=True)

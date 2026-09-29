@@ -9,7 +9,7 @@ from apps.cases.models import Case
 from apps.cases.services import changed
 from apps.documents.models import DocumentVersion
 from integrations.scanner.clamav import scan
-from integrations.storage.private import InvalidFile, inspect_file, object_path
+from integrations.storage.private import InvalidFile, inspect_file, open_object
 
 
 def scan_one():
@@ -35,7 +35,7 @@ def scan_one():
         checksum, mime = inspect_file(item.object_key, item.size_bytes)
         if checksum != item.sha256 or mime != item.detected_mime:
             raise InvalidFile("integrity")
-        with object_path(item.object_key).open("rb") as source:
+        with open_object(item.object_key) as source:
             status = "AVAILABLE" if scan(source) else "REJECTED"
     except (InvalidFile, FileNotFoundError):
         status, error = "REJECTED", "INTEGRITY_FAILED"

@@ -7,6 +7,8 @@ import CasesWorkspace from "./CasesWorkspace";
 import Brand from "./Brand";
 import DashboardOverview from "./DashboardOverview";
 import ServiceAccess from "./ServiceAccess";
+import AccountSettings from "./AccountSettings";
+import AccountManagement from "./AccountManagement";
 
 export default function Dashboard({ portal }: { portal: Portal }) {
   const [user, setUser] = useState<Profile>();
@@ -44,9 +46,10 @@ export default function Dashboard({ portal }: { portal: Portal }) {
       <CasesWorkspace user={user} openCase={openCase} onChange={() => setRevision(value => value + 1)} />
       <div id="minha-conta" className="dashboard-account">
       <div className="dashboard-grid">
-        <section className="dashboard-card"><h2>Seu perfil</h2><dl><dt>Nome</dt><dd>{user.name}</dd><dt>E-mail</dt><dd>{user.email}</dd><dt>Perfil</dt><dd>{{ CLIENT: "Cliente", LAWYER: "Advogado", ADMIN: "Administrador" }[user.role]}</dd></dl></section>
+        <AccountSettings user={user} onChange={setUser} />
         {portal === "team" && user.role === "ADMIN" && <section className="dashboard-card"><h2>Convidar advogado</h2><p>O profissional deverá aceitar o convite e configurar o autenticador antes de acessar o painel.</p><form onSubmit={invite}><label>E-mail do profissional<input required type="email" maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label><button disabled={busy}>Enviar convite</button></form>{message && <p role="status">{message}</p>}</section>}
       </div>
+      <AccountManagement admin={user.role === "ADMIN"} />
       </div>
     </>}
   </main>;

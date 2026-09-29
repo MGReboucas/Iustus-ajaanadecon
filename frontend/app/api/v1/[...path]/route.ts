@@ -7,10 +7,11 @@ const routes = new Set([
   "auth/csrf", "auth/register", "auth/verify", "auth/resend", "auth/login",
   "auth/logout", "auth/recovery", "auth/reset", "auth/mfa/enroll", "auth/mfa/verify",
   "auth/invitations/accept", "admin/invitations", "me", "dashboard/client", "dashboard/team",
-  "cases", "cases/catalog", "cases/lawyers", "dashboard/overview", "notifications", "admin/service-access", "legal/mandate-templates",
+  "admin/users", "privacy/requests", "cases", "cases/catalog", "cases/lawyers", "dashboard/overview", "notifications", "admin/service-access", "legal/mandate-templates",
 ]);
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const caseRoute = new RegExp(`^cases/${uuid}(?:/(?:submit|assignment|transitions|requests|timeline|messages|summary|workflow|mandates|exports)|/requests/${uuid}/(?:response|resolve))?$`, "i");
+const managementRoute = new RegExp(`^(?:admin/users/${uuid}/access|privacy/requests/${uuid}/resolve)$`, "i");
 const notificationRoute = new RegExp(`^notifications/${uuid}/read$`, "i");
 const documentRoute = new RegExp(`^(?:cases/${uuid}/documents(?:/uploads)?|documents/${uuid}/versions(?:/${uuid}/(?:download|content))?|uploads/${uuid}/(?:content|complete))$`, "i");
 const uploadRoute = new RegExp(`^uploads/${uuid}/content$`, "i");
@@ -25,7 +26,7 @@ function failure(code: string, message: string, status: number) {
 
 async function forward(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const path = (await context.params).path.join("/");
-  if (!routes.has(path) && !caseRoute.test(path) && !documentRoute.test(path) && !notificationRoute.test(path) && !exportRoute.test(path)) return failure("NOT_FOUND", "Recurso não encontrado.", 404);
+  if (!managementRoute.test(path) && !routes.has(path) && !caseRoute.test(path) && !documentRoute.test(path) && !notificationRoute.test(path) && !exportRoute.test(path)) return failure("NOT_FOUND", "Recurso não encontrado.", 404);
   const origin = process.env.DJANGO_API_ORIGIN;
   const key = process.env.IUSTUS_PROXY_SECRET;
   const portals = [process.env.IUSTUS_CLIENT_ORIGIN, process.env.IUSTUS_TEAM_ORIGIN].filter(Boolean) as string[];
