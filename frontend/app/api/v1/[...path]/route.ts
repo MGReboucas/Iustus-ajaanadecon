@@ -7,14 +7,15 @@ const routes = new Set([
   "auth/csrf", "auth/register", "auth/verify", "auth/resend", "auth/login",
   "auth/logout", "auth/recovery", "auth/reset", "auth/mfa/enroll", "auth/mfa/verify",
   "auth/invitations/accept", "admin/invitations", "me", "dashboard/client", "dashboard/team",
-  "cases", "cases/catalog", "cases/lawyers", "dashboard/overview", "notifications", "admin/service-access",
+  "cases", "cases/catalog", "cases/lawyers", "dashboard/overview", "notifications", "admin/service-access", "legal/mandate-templates",
 ]);
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-const caseRoute = new RegExp(`^cases/${uuid}(?:/(?:submit|assignment|transitions|requests|timeline|messages|summary|workflow)|/requests/${uuid}/(?:response|resolve))?$`, "i");
+const caseRoute = new RegExp(`^cases/${uuid}(?:/(?:submit|assignment|transitions|requests|timeline|messages|summary|workflow|mandates|exports)|/requests/${uuid}/(?:response|resolve))?$`, "i");
 const notificationRoute = new RegExp(`^notifications/${uuid}/read$`, "i");
 const documentRoute = new RegExp(`^(?:cases/${uuid}/documents(?:/uploads)?|documents/${uuid}/versions(?:/${uuid}/(?:download|content))?|uploads/${uuid}/(?:content|complete))$`, "i");
 const uploadRoute = new RegExp(`^uploads/${uuid}/content$`, "i");
-const downloadRoute = new RegExp(`^documents/${uuid}/versions/${uuid}/content$`, "i");
+const downloadRoute = new RegExp(`^(?:documents/${uuid}/versions/${uuid}/content|exports/${uuid}/content)$`, "i");
+const exportRoute = new RegExp(`^(?:cases/${uuid}/exports|exports/${uuid}/content)$`, "i");
 
 function failure(code: string, message: string, status: number) {
   return Response.json({ error: { code, message, fields: {} } }, {
@@ -24,7 +25,7 @@ function failure(code: string, message: string, status: number) {
 
 async function forward(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const path = (await context.params).path.join("/");
-  if (!routes.has(path) && !caseRoute.test(path) && !documentRoute.test(path) && !notificationRoute.test(path)) return failure("NOT_FOUND", "Recurso não encontrado.", 404);
+  if (!routes.has(path) && !caseRoute.test(path) && !documentRoute.test(path) && !notificationRoute.test(path) && !exportRoute.test(path)) return failure("NOT_FOUND", "Recurso não encontrado.", 404);
   const origin = process.env.DJANGO_API_ORIGIN;
   const key = process.env.IUSTUS_PROXY_SECRET;
   const portals = [process.env.IUSTUS_CLIENT_ORIGIN, process.env.IUSTUS_TEAM_ORIGIN].filter(Boolean) as string[];
@@ -70,7 +71,7 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
     }
     const upstream = await fetch(url, {
       method: request.method, headers, body: body as BodyInit | undefined,
-      cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(documentRoute.test(path) ? 60000 : 15000),
+      cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(documentRoute.test(path) || exportRoute.test(path) ? 60000 : 15000),
     });
     if (upstream.status >= 300 && upstream.status < 400) return failure("UPSTREAM_ERROR", "Serviço indisponível.", 502);
     // Nunca retransmitir páginas DEBUG/HTML ou stack trace do backend.

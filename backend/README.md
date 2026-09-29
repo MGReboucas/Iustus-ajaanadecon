@@ -13,3 +13,5 @@ Em backend/, executar pelo Python da venv:
 ~~~
 
 Settings local usa HTTP/loopback, DEBUG e e-mails em arquivos. Testes usam bancos separados; SQLite em memória não verifica concorrência PostgreSQL. Settings produtivos, SMTP e subdomínios reais ainda não foram homologados. [Infraestrutura](../infra/README.md) · [Segurança](../docs/SEGURANCA.md) · [Operação](../docs/OPERACAO.md).
+
+Para executar a suíte com inspeção de PDF, instalar `pip install -r requirements-test.txt` dentro de backend. Produção utiliza somente requirements.lock (ou requirements-production.txt).

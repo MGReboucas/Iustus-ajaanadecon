@@ -25,3 +25,43 @@ class LegalTask(models.Model):
     completed_at = models.DateTimeField(null=True)
     outcome = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MandateTemplate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey("identity.User", on_delete=models.PROTECT)
+    family = models.UUIDField(default=uuid.uuid4)
+    number = models.PositiveIntegerField()
+    name = models.CharField(max_length=160)
+    body = models.TextField()
+    sha256 = models.CharField(max_length=64)
+    approved_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["family", "number"], name="mandate_template_version_unique")]
+
+
+class GeneratedMandate(models.Model):
+    case = models.ForeignKey("cases.Case", on_delete=models.PROTECT, related_name="generated_mandates")
+    template = models.ForeignKey(MandateTemplate, on_delete=models.PROTECT)
+    version = models.OneToOneField("documents.DocumentVersion", on_delete=models.PROTECT)
+    number = models.PositiveIntegerField()
+    fields = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["case", "number"], name="mandate_generation_number_unique")]
+
+
+class CaseExport(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    case = models.ForeignKey("cases.Case", on_delete=models.PROTECT)
+    requested_by = models.ForeignKey("identity.User", on_delete=models.PROTECT)
+    case_version = models.PositiveIntegerField()
+    object_key = models.CharField(max_length=32, unique=True)
+    sha256 = models.CharField(max_length=64)
+    size_bytes = models.PositiveIntegerField()
+    expires_at = models.DateTimeField()
+    purged_at = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)

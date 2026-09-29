@@ -1,5 +1,9 @@
 # Estado atual e evidências
 
+## Atualização de 29/09/2026 — procurações e dossiê
+
+Modelos aprovados pelo advogado e versionados, geração de PDF com hashes e exportação ZIP privada implementados. Dossiê expira em 15 minutos e exclui minutas/notas internas. 72 testes PostgreSQL, build e jornada Edge ampliada aprovados. PDF e telas conferidos visualmente. [Contrato, operação e limites](PROCURACOES_EXPORTACAO.md).
+
 ## Atualização de 29/09/2026 — fluxo de atendimento
 
 Liberação administrativa de novos envios e fluxo após aceite implementados: procuração, conferência/correção, minuta interna, publicação da peça, protocolo externo com comprovante, compromissos, remarcação, movimentações e encerramento sem pendências. [Contrato, testes e limites](FLUXO_ATENDIMENTO.md). 65 testes PostgreSQL, build, migrações e quatro jornadas Edge aprovados; tela final conferida em desktop/celular. Validação local não equivale a implantação ou homologação produtiva.

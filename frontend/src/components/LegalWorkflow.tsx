@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api, Profile } from "@/lib/api/client";
 import { DocumentVersion, downloadDocument } from "@/lib/api/documents";
+import MandateGenerator from "./MandateGenerator";
 type Task = {id: string; kind: string; title: string; dueAt: string; completedAt: string | null; outcome: string};
 type Workflow = {version: number; state: string; scope: string; position: string; processNumber: string; authority: string; draft?: string; publishedText: string; protocol: string; mandate: DocumentVersion | null; signedMandate: DocumentVersion | null; receipt: DocumentVersion | null; tasks: Task[]};
 type Props = {caseId: string; version: number; user: Profile; documents: DocumentVersion[]; onChange: () => Promise<void>};
@@ -50,6 +51,7 @@ export default function LegalWorkflow({caseId, version, user, documents, onChang
   return <section className="legal-workflow"><div className="cases-heading"><h4>Atendimento e andamento</h4><button disabled={busy} onClick={() => setRefresh(n => n + 1)}>Atualizar andamento</button></div>
     {error && <p role="alert" className="dashboard-error">{error}</p>}{message && <p role="status">{message}</p>}{busy && <p role="status">Atualizando atendimento…</p>}
     {work && <>
+      {lawyer && work.state === "ACEITO" && <MandateGenerator caseId={caseId} version={work.version} lawyerName={user.name} onGenerated={async file => {await onChange(); setDocument(file.id);}} />}
       {work.scope && <div><h5>Etapas contratadas</h5><p className="case-narrative">{work.scope}</p><p>Posição: {{AUTHOR: "Autor", DEFENDANT: "Réu", APPLICANT: "Requerente"}[work.position]}</p></div>}
       {work.authority && <p>Órgão: {work.authority} · Processo: {work.processNumber || "Ainda não informado"}</p>}
       <div className="case-actions">{work.mandate && <button disabled={busy} onClick={() => void download(work.mandate!)}>Baixar procuração</button>}{work.signedMandate && <button disabled={busy} onClick={() => void download(work.signedMandate!)}>Baixar procuração devolvida</button>}{work.receipt && <button disabled={busy} onClick={() => void download(work.receipt!)}>Baixar comprovante de protocolo</button>}</div>

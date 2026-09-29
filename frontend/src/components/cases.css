@@ -7,3 +7,7 @@
 .legal-workflow input, .legal-workflow select, .legal-workflow textarea {max-width: 100%; box-sizing: border-box;}
 .legal-tasks {padding-left: 1.25rem;}
 .legal-tasks li {margin-block: 1rem; overflow-wrap: anywhere;}
+
+.mandate-generator, .case-export {margin-block: 1.5rem; padding: 1rem; border: 1px solid #65738a; border-radius: .5rem; min-width: 0;}
+.mandate-generator code {overflow-wrap: anywhere;}
+.mandate-generator form, .mandate-generator details {margin-block: 1rem;}

@@ -151,3 +151,5 @@ Transformar estes contratos em serializers DRF e OpenAPI versionado em DEV-059/0
 ## Atendimento após triagem
 
 Liberação administrativa e fluxo jurídico: [contratos, estados e permissões](FLUXO_ATENDIMENTO.md).
+
+Modelos de procuração, emissão PDF e exportação privada: [contratos](PROCURACOES_EXPORTACAO.md).

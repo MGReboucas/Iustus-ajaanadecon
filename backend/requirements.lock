@@ -11,3 +11,6 @@ pycparser==3.0
 PyOTP==2.10.0
 sqlparse==0.6.0
 tzdata==2026.4
+reportlab==5.0.1
+pillow==12.3.0
+charset-normalizer==3.5.1

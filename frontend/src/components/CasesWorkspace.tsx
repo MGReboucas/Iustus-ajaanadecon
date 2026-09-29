@@ -6,6 +6,7 @@ import { DocumentVersion, downloadDocument } from "@/lib/api/documents";
 import CaseDocuments from "./CaseDocuments";
 import CaseMessages from "./CaseMessages";
 import LegalWorkflow from "./LegalWorkflow";
+import CaseExport from "./CaseExport";
 import "./cases.css";
 
 type CaseItem = { id: string; reference: string; title?: string; description?: string; category: string; categoryLabel: string; state: string; stateLabel: string; version: number; lawyerId: string | null; scopeAcknowledged?: boolean };
@@ -14,7 +15,7 @@ type Catalog = { categories: { id: string; label: string }[]; states: { id: stri
 type Pending = { id: string; description: string; response: string; resolution: string; resolved: boolean; responded: boolean; attachments: DocumentVersion[] };
 type Event = { id: string; action: string; state: string; reason: string; createdAt: string };
 type Lawyer = { id: string; name: string; email: string };
-const labels: Record<string, string> = { LEGAL_START: "Procuração solicitada", LEGAL_SIGN: "Procuração devolvida", LEGAL_VERIFY: "Procuração conferida", LEGAL_RETURN_MANDATE: "Correção da procuração solicitada", LEGAL_DRAFT: "Minuta interna atualizada", LEGAL_PUBLISH: "Peça publicada", LEGAL_FILE: "Protocolo registrado", LEGAL_UPDATE: "Movimentação publicada", LEGAL_TASK: "Compromisso agendado", LEGAL_RESCHEDULE: "Compromisso remarcado", LEGAL_COMPLETE: "Compromisso concluído", LEGAL_CLOSE: "Atendimento encerrado", DRAFT_CREATED: "Rascunho criado", DRAFT_UPDATED: "Rascunho atualizado", SUBMITTED: "Caso enviado", ASSIGNED: "Responsável atribuído", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Decisão de triagem", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido" };
+const labels: Record<string, string> = { MANDATE_GENERATED: "Procuração gerada", LEGAL_START: "Procuração solicitada", LEGAL_SIGN: "Procuração devolvida", LEGAL_VERIFY: "Procuração conferida", LEGAL_RETURN_MANDATE: "Correção da procuração solicitada", LEGAL_DRAFT: "Minuta interna atualizada", LEGAL_PUBLISH: "Peça publicada", LEGAL_FILE: "Protocolo registrado", LEGAL_UPDATE: "Movimentação publicada", LEGAL_TASK: "Compromisso agendado", LEGAL_RESCHEDULE: "Compromisso remarcado", LEGAL_COMPLETE: "Compromisso concluído", LEGAL_CLOSE: "Atendimento encerrado", DRAFT_CREATED: "Rascunho criado", DRAFT_UPDATED: "Rascunho atualizado", SUBMITTED: "Caso enviado", ASSIGNED: "Responsável atribuído", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Decisão de triagem", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido" };
 
 export default function CasesWorkspace({ user, openCase, onChange }: { user: Profile; openCase?: { id: string; sequence: number }; onChange: () => void }) {
   const [catalog, setCatalog] = useState<Catalog>();
@@ -164,6 +165,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
           {!row.resolved && row.responded && <p>Aguardando conferência pelo responsável.</p>}
           {!row.resolved && row.responded && user.role === "LAWYER" && <form onSubmit={e => { e.preventDefault(); void run(() => change(`cases/${selected.id}/requests/${row.id}/resolve`, { version: selected.version, reason })); }}><fieldset disabled={busy}><label>Resultado da conferência<textarea required minLength={5} maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} /></label><button>Conferir e retomar triagem</button></fieldset></form>}
         </div>)}{requests.nextCursor && <button disabled={busy} onClick={() => void run(async () => { const result = await api<Page<Pending>>(`cases/${selected.id}/requests?cursor=${encodeURIComponent(requests.nextCursor!)}`); setRequests({ results: [...requests.results, ...result.results], nextCursor: result.nextCursor }); })}>Mais complementos</button>}</section>}
+        <CaseExport key={`export-${selected.id}`} caseId={selected.id} version={selected.version} />
         <section><h4>Histórico</h4><ol className="case-history">{events.results.map(row => <li key={row.id}><strong>{labels[row.action] || "Atualização do caso"}</strong><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString("pt-BR")}</time>{row.reason && <p className="case-narrative">{row.reason}</p>}</li>)}</ol>
           {events.nextCursor && <button disabled={busy} onClick={() => void run(async () => { const result = await api<Page<Event>>(`cases/${selected.id}/timeline?cursor=${encodeURIComponent(events.nextCursor!)}`); setEvents({ results: [...events.results, ...result.results], nextCursor: result.nextCursor }); })}>Mais eventos</button>}
         </section>

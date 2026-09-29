@@ -26,7 +26,7 @@ Mutações bloqueiam o caso no PostgreSQL, conferem versão, papel e atribuiçã
 
 Aplicar as migrações Django antes de iniciar a nova versão. Usar armazenamento privado e worker de scanner configurados: documentos em quarentena não podem ser usados como procuração ou comprovante. Não existe aprovação fictícia de assinatura, scanner ou pagamento.
 
-A procuração é preparada e enviada pelo advogado; geração automática a partir de modelos, assinatura eletrônica integrada, exportação integral do dossiê, intimações automáticas e lembretes por e-mail ainda não fazem parte deste incremento. A peça é editada como texto no painel; documentos anexos usam o fluxo privado existente. Prazos são informados pelo responsável, sem cálculo automático de prazo jurídico.
+A procuração pode ser enviada pelo advogado ou gerada a partir de modelo revisado. Geração de PDF e dossiê privado estão documentados em [Procurações e exportação](PROCURACOES_EXPORTACAO.md). Assinatura eletrônica integrada, intimações automáticas e lembretes por e-mail continuam pendentes. A peça é editada como texto no painel; documentos anexos usam o fluxo privado existente. Prazos são informados pelo responsável, sem cálculo automático de prazo jurídico.
 
 ## Verificação
 

@@ -197,7 +197,7 @@ if(fs.existsSync(readmePath)) {
 }
 for(const [file,content] of output){
  const full=path.join(root,file);
- if(check) assert.equal(fs.readFileSync(full,'utf8'),content,`${file} desatualizado`);
+ if(check) assert.equal(fs.readFileSync(full,'utf8').replace(/\r\n/g,'\n'),content.replace(/\r\n/g,'\n'),`${file} desatualizado`);
  else fs.writeFileSync(full,content,'utf8');
 }
 console.log(check?'PLANEJAMENTO VERIFICADO':`DOCUMENTAÇÃO IUSTUS — revisão ${config.documentVersion}; validação operacional pendente`);
