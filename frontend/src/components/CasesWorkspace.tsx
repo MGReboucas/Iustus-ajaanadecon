@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { api, ApiError, Profile } from "@/lib/api/client";
 import { DocumentVersion, downloadDocument } from "@/lib/api/documents";
 import CaseDocuments from "./CaseDocuments";
+import CaseMessages from "./CaseMessages";
 import "./cases.css";
 
 type CaseItem = { id: string; reference: string; title?: string; description?: string; category: string; categoryLabel: string; state: string; stateLabel: string; version: number; lawyerId: string | null; scopeAcknowledged?: boolean };
@@ -14,7 +15,7 @@ type Event = { id: string; action: string; state: string; reason: string; create
 type Lawyer = { id: string; name: string; email: string };
 const labels: Record<string, string> = { DRAFT_CREATED: "Rascunho criado", DRAFT_UPDATED: "Rascunho atualizado", SUBMITTED: "Caso enviado", ASSIGNED: "Responsável atribuído", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Decisão de triagem", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido" };
 
-export default function CasesWorkspace({ user }: { user: Profile }) {
+export default function CasesWorkspace({ user, openCase, onChange }: { user: Profile; openCase?: { id: string; sequence: number }; onChange: () => void }) {
   const [catalog, setCatalog] = useState<Catalog>();
   const [rows, setRows] = useState<CaseItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -77,9 +78,19 @@ export default function CasesWorkspace({ user }: { user: Profile }) {
     setCatalog(await api<Catalog>("cases/catalog")); await list("");
     if (admin) setLawyers(await api<Page<Lawyer>>("cases/lawyers"));
   }); }, [user.id]); // A identidade define o escopo; filtros são carregados explicitamente.
+  useEffect(() => {
+    if (!openCase) return;
+    setSelected(undefined);
+    void run(async () => {
+      const item = await api<CaseItem>(`cases/${openCase.id}${admin ? "/summary" : ""}`);
+      await load(item);
+      document.getElementById("meus-casos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [openCase]);
 
   async function change(route: string, body: object, method?: "PATCH", idempotencyKey?: string) {
     const result = await api<CaseItem>(route, body, { method, idempotencyKey });
+    onChange();
     await list(); await load(result); setNotice("Alteração registrada.");
   }
   function save(event: FormEvent) {
@@ -94,9 +105,9 @@ export default function CasesWorkspace({ user }: { user: Profile }) {
   }
   const dirty = selected && (title !== (selected.title || "") || description !== (selected.description || "") || category !== selected.category || ack !== !!selected.scopeAcknowledged);
 
-  return <section className="cases-workspace" aria-labelledby="cases-title">
+  return <section id="meus-casos" className="cases-workspace" aria-labelledby="cases-title">
     <div className="cases-heading"><div><h2 id="cases-title">{admin ? "Distribuição de casos" : client ? "Meus casos" : "Casos atribuídos"}</h2><p>{admin ? "A fila mostra apenas referência, categoria, estado e responsável. Relatos ficam restritos ao cliente e ao advogado atribuído." : "Multas de trânsito e direito civil, exceto família e sucessões."}</p></div>
-      {client && <button disabled={busy} onClick={() => void run(async () => { const item = await api<CaseItem>("cases", {}); setFilter(""); await list(""); await load(item); })}>Novo caso</button>}
+      {client && <button disabled={busy} onClick={() => void run(async () => { const item = await api<CaseItem>("cases", {}); onChange(); setFilter(""); await list(""); await load(item); })}>Novo caso</button>}
     </div>
     <p className="dashboard-note">Ambiente de testes: use somente informações e arquivos fictícios. Acompanhamento processual ainda não está disponível.</p>
     {client && <p className="case-access">{catalog?.submission?.message}</p>}
@@ -138,6 +149,7 @@ export default function CasesWorkspace({ user }: { user: Profile }) {
           <button disabled={reason.trim().length < 5} onClick={() => void run(() => change(`cases/${selected.id}/transitions`, { version: selected.version, targetState: "RECUSADO", reason }))}>Recusar com justificativa</button></div>
           <label>Informações a complementar<textarea maxLength={4000} value={complement} onChange={e => setComplement(e.target.value)} /></label><button disabled={complement.trim().length < 5} onClick={() => void run(() => change(`cases/${selected.id}/requests`, { version: selected.version, description: complement }))}>Solicitar complemento</button>
         </fieldset>}
+        <CaseMessages key={`messages-${selected.id}`} caseId={selected.id} user={user} available={!!selected.lawyerId && !["RASCUNHO", "RECUSADO"].includes(selected.state)} onChange={onChange} />
         <CaseDocuments key={selected.id} caseId={selected.id} versions={documents.results} busy={busy} readOnly={selected.state === "RECUSADO"} run={run} refresh={refreshDocuments} hasMore={!!documents.nextCursor} more={async () => {
           const result = await api<Page<DocumentVersion>>(`cases/${selected.id}/documents?cursor=${encodeURIComponent(documents.nextCursor!)}`);
           setDocuments(old => ({ results: [...old.results, ...result.results], nextCursor: result.nextCursor }));

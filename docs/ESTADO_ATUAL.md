@@ -1,5 +1,9 @@
 # Estado atual e evidências
 
+## Atualização de 25/09/2026 — dashboard e comunicação
+
+Indicadores e próximos passos por perfil, mensagens por caso, notas internas restritas ao advogado atribuído e avisos internos com leitura persistida implementados localmente. Contagens usam todo o escopo autorizado; transferência também revoga consulta a avisos antigos. 55 testes passaram no PostgreSQL, incluindo envio simultâneo com deduplicação; quatro jornadas de navegador passaram no Edge, incluindo comunicação em tela de 390px. Build do frontend aprovado e migração aplicada ao banco de desenvolvimento. [Contrato, operação e limites](DASHBOARD_COMUNICACAO.md). E-mails de novidades do caso, assinatura, pagamentos e gestão processual continuam pendentes.
+
 ## Atualização de 21/09/2026 — documentos
 
 Documentos privados implementados localmente: upload em etapas, metadados, versões, quarentena, worker com integração ClamAV, download temporário e anexos em respostas de complemento. 47 testes no PostgreSQL, incluindo concorrência de versões. [Operação e evidências](DOCUMENTOS.md). Scanner real e armazenamento produtivo não foram homologados. Os achados financeiros abaixo permanecem abertos; o inventário de 16/09 é histórico.

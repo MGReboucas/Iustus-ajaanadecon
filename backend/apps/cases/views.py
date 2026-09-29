@@ -71,6 +71,12 @@ class CasesView(CaseView):
         return Response(case_data(item, detail=True), status=201)
 
 
+class SummaryView(CaseView):
+    def get(self, request, case_id):
+        self.role(request, "ADMIN")
+        return Response(case_data(get_case(request.user, case_id, administrative=True), administrative=True))
+
+
 class DetailView(CaseView):
     def get(self, request, case_id):
         return Response(case_data(get_case(request.user, case_id), detail=True))

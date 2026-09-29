@@ -28,6 +28,14 @@ class DocumentTests(TestCase):
     login = identity.IdentityTests.login
     team_login = identity.IdentityTests.team_login
 
+    @override_settings(DOCUMENT_LOCAL_STORAGE_ENABLED=False, DOCUMENT_STORAGE_ROOT=None)
+    def test_unconfigured_storage_rejects_before_creating_metadata(self):
+        response = self.post(self.customer, f"cases/{self.case.pk}/documents/uploads", {
+            "filename": "teste.pdf", "sizeBytes": len(PDF), "mime": "application/pdf"})
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error"]["code"], "DOCUMENT_STORAGE_UNAVAILABLE")
+        self.assertEqual(Document.objects.count(), 0)
+
     def setUp(self):
         folder = tempfile.TemporaryDirectory()
         self.addCleanup(folder.cleanup)

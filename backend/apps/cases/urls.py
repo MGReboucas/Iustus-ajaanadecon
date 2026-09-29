@@ -6,6 +6,7 @@ urlpatterns = [
     path("cases", views.CasesView.as_view()),
     path("cases/lawyers", views.LawyersView.as_view()),
     path("cases/<uuid:case_id>", views.DetailView.as_view()),
+    path("cases/<uuid:case_id>/summary", views.SummaryView.as_view()),
     path("cases/<uuid:case_id>/submit", views.SubmitView.as_view()),
     path("cases/<uuid:case_id>/assignment", views.AssignmentView.as_view()),
     path("cases/<uuid:case_id>/transitions", views.TransitionView.as_view()),

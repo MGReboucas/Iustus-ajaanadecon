@@ -2,7 +2,7 @@
 
 Plataforma por assinatura para solicitar, acompanhar e receber defesas jurídicas online. A jornada pretendida reúne contratação, envio de casos e documentos, procuração, acompanhamento pelo cliente e preparação da defesa por advogado designado.
 
-**Estado em 21/09/2026:** acesso de cliente/equipe com MFA publicado no GitHub (e38ea41, CI aprovado). Casos implementam rascunho, submissão de teste, atribuição, transferência, triagem, complemento e histórico. Documentos privados têm upload, versões, quarentena, download autorizado e anexos em complementos. Scanner real, armazenamento produtivo, assinatura e integração financeira permanecem pendentes.
+**Estado em 25/09/2026:** acesso com MFA, casos/triagem e documentos privados implementados. Novo incremento local de [dashboard e comunicação](docs/DASHBOARD_COMUNICACAO.md): indicadores reais por perfil, próximos passos, conversa por caso, notas internas e avisos com leitura persistida. Scanner real, armazenamento produtivo, assinatura, integração financeira e e-mails de novidades do caso permanecem pendentes.
 
 [Documentação completa](docs/README.md) · [Estado atual](docs/ESTADO_ATUAL.md) · [MVP](docs/MVP.md) · [Backlog](docs/BACKLOG.md) · [Cronograma](docs/CRONOGRAMA.md)
 
@@ -26,7 +26,7 @@ A landing apresenta proposta de valor, jornada em três etapas, benefícios, pla
 | Fundação técnica | Next.js/TypeScript, Django/DRF e PostgreSQL; MFA, isolamento de portais e worker de identidade |
 | Casos e triagem | Rascunho, atribuição, triagem e complemento persistidos; submissão restrita a liberação de teste |
 | Assinatura e documentos | Documentos implementados localmente; scanner/armazenamento produtivo e integração financeira pendentes |
-| Dashboards e gestão jurídica | Perfil, lista de casos e triagem; documentos e etapas processuais pendentes |
+| Dashboards e gestão jurídica | Indicadores, pendências, mensagens, notas internas e avisos; etapas processuais pendentes |
 | Documentação do MVP | Revisão 1.5; acesso e triagem implementados e validação operacional pendente |
 | Produção | Nenhuma evidência de homologação ou implantação verificada nesta etapa |
 
@@ -77,7 +77,7 @@ Calendário provisório de segunda a sexta-feira; feriados, férias e ausências
 
 ## Executar localmente
 
-O [guia de casos e triagem](docs/CASOS.md) explica a liberação local, distribuição de casos e revisão pelo advogado.
+O [guia de casos e triagem](docs/CASOS.md) explica a liberação local, distribuição de casos e revisão pelo advogado. Consulte também [documentos privados](docs/DOCUMENTOS.md) e [dashboard e comunicação](docs/DASHBOARD_COMUNICACAO.md).
 
 Siga o [guia de acesso local](docs/ACESSO.md) para preparar PostgreSQL, configurar os dois portais, iniciar o worker e criar o primeiro administrador. Os comandos abaixo iniciam somente o frontend.
 
@@ -167,6 +167,6 @@ A fonte única de requisitos e estimativas está em [dados.cjs](docs/planejament
 
 ## Próximo passo e limite desta etapa
 
-**Incremento entregue:** [documentos privados](docs/DOCUMENTOS.md) vinculados ao caso, com versões, autorização, quarentena e validação de arquivos. **Próximo passo recomendado:** pagamentos e assinatura (DEV-012 a DEV-016 e DEV-062), começando pela confirmação do produto PagBank e correção do checkout. Scanner real, armazenamento produtivo e infraestrutura/políticas ainda exigem homologação antes da operação comercial. A estimativa de 1696h continua sendo a baseline integral, sem desconto automático do trabalho realizado.
+**Incremento atual:** [dashboard e comunicação](docs/DASHBOARD_COMUNICACAO.md), com contadores autorizados, pendências, mensagens, notas internas e avisos persistidos. **Próxima etapa de comunicação:** e-mails de novidades do caso com outbox e retry. Pagamentos e assinatura (DEV-012 a DEV-016 e DEV-062), scanner real, armazenamento produtivo e infraestrutura/políticas continuam necessários antes da operação comercial. A estimativa de 1696h continua sendo a baseline integral, sem desconto automático do trabalho realizado.
 
 A comunicação jurídica, critérios de atendimento, modelos, condições comerciais, retenção de dados e fluxos de contratação devem ser revisados pelos responsáveis da operação antes da publicação.

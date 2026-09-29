@@ -99,7 +99,7 @@ O incremento implementado usa category (código do catálogo), scopeAcknowledged
 | GET/POST `/cases/{id}/requests` | Atribuído cria; proprietário consulta | description, tipo, resumeState validado → pendência |
 | POST `/cases/{id}/requests/{requestId}/response` | Proprietário | text, documentVersionIds próprios → resposta; não resolve automaticamente |
 | POST `/cases/{id}/requests/{requestId}/resolve` | Atribuído | reason, version → pendência resolvida e possível retomada |
-| GET/POST `/cases/{id}/messages` | Proprietário/atribuído | text até 10000, visibility; cliente só PUBLIC → mensagem |
+| GET/POST `/cases/{id}/messages` | Proprietário/atribuído | Implementado: text até 10000, visibility, clientMessageId UUID; cliente só PUBLIC → mensagem; detalhes em [Dashboard e comunicação](DASHBOARD_COMUNICACAO.md) |
 | GET `/cases/{id}/timeline` | Proprietário/atribuído | cursor → eventos filtrados por público |
 | POST `/cases/{id}/exports` | Proprietário/atribuído | scope permitido → 202 exportId; cliente só conteúdo publicável |
 | GET `/exports/{id}/download` | Solicitante autorizado | → URL temporária ou stream; conferir prazo e acesso ao caso |
@@ -144,6 +144,6 @@ Links de audiência não aparecem em e-mail ou log; acesso exige vínculo. Remar
 
 CRUD de categorias e modelos sob `/admin/categories` e `/admin/mandate-templates`, com inativação/versionamento; GET `/admin/cases` retorna somente metadados para atribuição. POST `/admin/access-grants` exige aprovador distinto do beneficiário, caseId, reason, scope e expiresAt. GET `/admin/audit` exige concessão administrativa e filtros limitados.
 
-GET `/notifications` e PATCH `/notifications/{id}` operam só avisos próprios; GET `/policies/{kind}/current` é público; POST `/me/policy-acceptances` registra versões. POST/GET `/me/privacy-requests` cria/consulta pedidos próprios; PATCH `/admin/privacy-requests/{id}` registra andamento e decisão por operador designado, sem contornar retenções. Catálogos administrativos usam validação, cursor, erros e `version` das convenções gerais.
+GET `/notifications` e POST `/notifications/{id}/read` estão implementados e operam só avisos próprios, com acesso atual ao caso. GET `/dashboard/overview` retorna indicadores autorizados; contratos em [Dashboard e comunicação](DASHBOARD_COMUNICACAO.md). Demais propostas: GET `/policies/{kind}/current` público; POST `/me/policy-acceptances` registra versões. POST/GET `/me/privacy-requests` cria/consulta pedidos próprios; PATCH `/admin/privacy-requests/{id}` registra andamento e decisão por operador designado, sem contornar retenções. Catálogos administrativos usam validação, cursor, erros e `version` das convenções gerais.
 
 Transformar estes contratos em serializers DRF e OpenAPI versionado em DEV-059/007; validar compatibilidade com o cliente HTTP TypeScript em CI. Filtrar querysets antes de listagem/contagem e verificar propriedade também na criação; permissão de objeto isolada não cobre essas operações. As rotas `/api/v1/admin` são APIs da aplicação, não o Django Admin. Se habilitado, o Django Admin será restrito à operação e não poderá contornar os serviços, MFA, auditoria e permissões do domínio. Esta versão descreve comportamento e invariantes; schemas externos de fornecedores ainda dependem de validação.

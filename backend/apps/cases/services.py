@@ -39,8 +39,10 @@ def expect_state(item, *states):
 
 
 def record(item, user, action, reason="", public=True, **metadata):
-    CaseEvent.objects.create(case=item, actor=user, action=action, state=item.state,
+    from apps.communication.services import notify_event
+    event = CaseEvent.objects.create(case=item, actor=user, action=action, state=item.state,
                              version=item.version, reason=reason, public=public, metadata=metadata)
+    notify_event(event, item)
 
 
 def changed(item, user, action, reason="", public=True, **metadata):

@@ -2,6 +2,7 @@ import re
 import uuid
 from datetime import timedelta
 
+from django.conf import settings
 from django.db.models import Max
 from django.http import Http404
 from django.utils import timezone
@@ -39,6 +40,8 @@ def check_upload(case, item, user):
 
 def create_upload(case, user, data, document=None):
     expect_state(case, *[value for value in Case.State.values if value != Case.State.REJECTED])
+    if not settings.DOCUMENT_LOCAL_STORAGE_ENABLED or not settings.DOCUMENT_STORAGE_ROOT:
+        raise IdentityError("DOCUMENT_STORAGE_UNAVAILABLE", "O envio de documentos ainda não está disponível neste ambiente.", 503)
     filename = re.sub(r'[\x00-\x1f\x7f<>:"/\\|?*]', "_", data["filename"]).strip(" .")
     suffixes = {"application/pdf": (".pdf",), "image/jpeg": (".jpg", ".jpeg"), "image/png": (".png",)}
     if not filename or not filename.lower().endswith(suffixes[data["mime"]]):

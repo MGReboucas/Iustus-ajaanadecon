@@ -11,14 +11,14 @@ As telas futuras serão Next.js + TypeScript, consumindo a API Django na mesma o
 | UI-03 | `/recuperar`, `/redefinir-senha` | Fluxos implementados em `/acessar`; rotas dedicadas futuras | Pedido genérico, token inválido/vencido e confirmação | RF-004 |
 | UI-04 | `/checkout` | Integração parcial | Cotação, total, parcelas permitidas, consentimentos aplicáveis e envio idempotente | RF-008 |
 | UI-05 | `/assinatura` | Planejada | Pedido pendente/pago/recusado, vigência, expiração e instrução de nova contratação | RF-009/010 |
-| UI-06 | `/cliente` | Perfil, lista e filtro de casos implementados | Resumo, últimos casos, pendências e assinatura; sem dados internos | RF-019/038 |
+| UI-06 | `/cliente` | Indicadores, próximos passos, atualizações e casos implementados; assinatura pendente | Resumo, últimos casos, pendências e assinatura; sem dados internos | RF-019/038 |
 | UI-07 | `/cliente/casos/novo` | Formulário integrado em `/cliente`; anexos pendentes | Rascunho, categoria, relato e documentos; validação antes de submeter | RF-011/016 |
-| UI-08 | `/cliente/casos/{id}` | Detalhe, complemento e histórico em `/cliente`; demais ações futuras | Status, documentos, procuração, mensagens, pendências, timeline e defesa publicada | RF-015/018/022/023/026/040 |
-| UI-09 | `/advogado` | Fila atribuída e filtro implementados | Fila atribuída, filtros e vencimentos informados | RF-020/038 |
-| UI-10 | `/advogado/casos/{id}` | Triagem e complemento integrados em `/advogado`; demais ações futuras | Triagem, documentos, procuração, notas, minutas, revisão, publicação, protocolo e prazos | RF-012/014/021/027–031/039 |
+| UI-08 | `/cliente/casos/{id}` | Detalhe, documentos, complemento, conversa e histórico em `/cliente`; demais ações futuras | Status, documentos, procuração, mensagens, pendências, timeline e defesa publicada | RF-015/018/022/023/026/040 |
+| UI-09 | `/advogado` | Indicadores, pendências, fila atribuída e filtro implementados; vencimentos pendentes | Fila atribuída, filtros e vencimentos informados | RF-020/038 |
+| UI-10 | `/advogado/casos/{id}` | Triagem, documentos, complemento, conversa e notas internas em `/advogado`; demais ações futuras | Triagem, documentos, procuração, notas, minutas, revisão, publicação, protocolo e prazos | RF-012/014/021/027–031/039 |
 | UI-11 | `/admin` e subtelas | Convites e atribuição em `/advogado` para ADMIN; demais ações futuras | Usuários, atribuição por metadados, categorias, modelos, financeiro, pedidos de privacidade e auditoria | RF-006/013/032–036 |
 | UI-12 | `/perfil` | Planejada | Dados próprios, segurança de sessão, revalidação de e-mail e pedido de privacidade | RF-004/007/036 |
-| UI-13 | `/notificacoes` | Planejada | Lista paginada e estado lido/não lido | RF-024 |
+| UI-13 | `/notificacoes` | Central integrada aos painéis, com filtro e leitura persistida; rota dedicada futura | Lista paginada e estado lido/não lido | RF-024 |
 | UI-14 | `/termos`, `/privacidade` | Âncoras atuais sem conteúdo correspondente | Texto aprovado, versão, data e canal responsável | RF-037 |
 
 ## Estados obrigatórios por tela

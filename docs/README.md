@@ -19,6 +19,7 @@ Esta documentação descreve o código encontrado e propõe o MVP da plataforma 
 | [Visão geral](VISAO_GERAL.md) | Objetivo, usuários, jornada e indicadores |
 | [Casos e triagem](CASOS.md) | Rascunho, distribuição, complemento, decisão e liberação local de testes |
 | [Documentos privados](DOCUMENTOS.md) | Upload, versões, quarentena, scanner e download autorizado |
+| [Dashboard e comunicação](DASHBOARD_COMUNICACAO.md) | Indicadores, próximos passos, mensagens, notas internas e avisos |
 | [Acesso local](ACESSO.md) | Instalação, cliente, equipe, MFA, worker e testes do incremento implementado |
 | [Estado atual](ESTADO_ATUAL.md) | Inventário verificável e lacunas |
 | [MVP](MVP.md) | Escopo incluído, excluído e critérios de lançamento |
