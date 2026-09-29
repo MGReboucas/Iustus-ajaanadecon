@@ -9,6 +9,7 @@
     "start": "npm --prefix frontend run start",
     "typecheck": "npm --prefix frontend run typecheck",
     "test:e2e": "npm --prefix frontend run test:e2e",
+    "test:documents": "node --test tests/frontend/documents.test.cjs",
     "frontend:install": "npm --prefix frontend ci",
     "docs:generate": "node docs/planejamento/gerar.cjs",
     "docs:check": "node docs/planejamento/verificar.cjs"

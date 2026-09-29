@@ -105,3 +105,7 @@ if DOCUMENT_STORAGE_BACKEND == "s3":
 
     if DOCUMENT_S3_ADDRESSING_STYLE not in ("auto", "path", "virtual") or not 1 <= DOCUMENT_SCANNER_PORT <= 65535:
         raise ImproperlyConfigured("Estilo S3 ou porta de scanner inválidos.")
+
+DOCUMENT_DIRECT_UPLOAD_ENABLED = env.bool("DOCUMENT_DIRECT_UPLOAD_ENABLED", default=False)
+if DOCUMENT_DIRECT_UPLOAD_ENABLED and DOCUMENT_STORAGE_BACKEND != "s3":
+    raise ImproperlyConfigured("Envio direto exige armazenamento S3 privado.")

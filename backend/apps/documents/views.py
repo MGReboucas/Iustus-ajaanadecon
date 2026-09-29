@@ -1,4 +1,5 @@
 from django.core import signing
+from django.conf import settings
 from django.db import transaction
 from django.http import FileResponse, Http404
 from django.utils import timezone
@@ -8,7 +9,7 @@ from apps.cases.services import changed, get_case
 from apps.cases.views import CaseView
 from apps.identity.security import IdentityError, digest
 from apps.identity.services import audit
-from integrations.storage.private import InvalidFile, inspect_file, open_object, write_stream
+from integrations.storage.private import InvalidFile, inspect_file, open_object, write_stream, presign_upload
 from . import serializers as inputs
 from .models import Document, DocumentVersion
 from .services import check_upload, create_upload, get_version, version_data
@@ -60,6 +61,21 @@ class ContentView(CaseView):
         return Response(status=204)
 
 
+class AuthorizeUploadView(CaseView):
+    def post(self, request, upload_id):
+        self.limited(request)
+        data = self.data(request, inputs.CompleteInput)
+        if not settings.DOCUMENT_DIRECT_UPLOAD_ENABLED:
+            raise IdentityError("DIRECT_UPLOAD_UNAVAILABLE", "O envio direto não está disponível.", 503)
+        with transaction.atomic():
+            case, item = get_version(request.user, upload_id, locked=True)
+            check_upload(case, item, request.user)
+            if item.uploaded_at:
+                raise IdentityError("UPLOAD_CLOSED", "O conteúdo desta versão já foi recebido.", 409)
+            result = presign_upload(item.object_key, item.size_bytes, data["checksum"])
+        return Response(result, headers={"Cache-Control": "no-store, private"})
+
+
 class CompleteView(CaseView):
     def post(self, request, upload_id):
         self.limited(request)
@@ -74,21 +90,25 @@ class CompleteView(CaseView):
                     return Response(version_data(item), status=202)
                 raise IdentityError("UPLOAD_CLOSED", "Este envio já foi concluído.", 409)
             check_upload(case, item, request.user)
-            if not item.uploaded_at:
+            direct = settings.DOCUMENT_DIRECT_UPLOAD_ENABLED and settings.DOCUMENT_STORAGE_BACKEND == "s3"
+            if not item.uploaded_at and not direct:
                 raise IdentityError("UPLOAD_INCOMPLETE", "Envie o arquivo antes de concluir.", 409)
             try:
                 checksum, mime = inspect_file(item.object_key, item.size_bytes)
                 if checksum != data["checksum"] or mime != item.declared_mime:
                     raise InvalidFile("integrity")
-            except (InvalidFile, FileNotFoundError):
+            except FileNotFoundError:
+                raise IdentityError("UPLOAD_INCOMPLETE", "Envie o arquivo antes de concluir.", 409)
+            except InvalidFile:
                 item.status = DocumentVersion.Status.REJECTED
                 item.last_error = "INVALID_FILE"
                 item.save(update_fields=["status", "last_error"])
                 changed(case, request.user, "DOCUMENT_REJECTED", "Documento recusado na validação do envio.", versionId=str(item.pk))
                 return Response({"error": {"code": "INVALID_FILE", "message": "Formato, tamanho ou integridade incompatível. Envie uma nova versão.", "fields": {}}}, status=422)
+            item.uploaded_at = item.uploaded_at or timezone.now()
             item.sha256, item.detected_mime = checksum, mime
             item.status = DocumentVersion.Status.QUARANTINED
-            item.save(update_fields=["sha256", "detected_mime", "status"])
+            item.save(update_fields=["sha256", "detected_mime", "status", "uploaded_at"])
             changed(case, request.user, "DOCUMENT_QUARANTINED", "Documento recebido e aguardando verificação.", versionId=str(item.pk))
         return Response(version_data(item), status=202)
 

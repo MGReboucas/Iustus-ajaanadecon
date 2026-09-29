@@ -7,7 +7,8 @@ export type DocumentVersion = {
   status: "UPLOADING" | "QUARANTINED" | "SCANNING" | "AVAILABLE" | "REJECTED" | "ERROR";
   statusLabel: string; createdAt: string;
 };
-type Upload = { uploadId: string; uploadUrl: string; version: DocumentVersion };
+type Upload = { uploadId: string; uploadUrl: string; directUpload?: boolean; version: DocumentVersion };
+type DirectUpload = { url: string; method: "PUT"; headers: Record<string, string>; expiresIn: number };
 
 export async function uploadDocument(caseId: string, file: File, previous?: DocumentVersion) {
   if (!file.size || file.size > 20 * 1024 * 1024) throw new Error("Escolha um arquivo de até 20 MiB, com conteúdo.");
@@ -20,9 +21,18 @@ export async function uploadDocument(caseId: string, file: File, previous?: Docu
   const checksum = Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, "0")).join("");
   const upload = await api<Upload>(previous ? `documents/${previous.documentId}/versions` : `cases/${caseId}/documents/uploads`,
     { filename: file.name, sizeBytes: file.size, mime, ...(previous ? { previousVersion: previous.number } : {}) });
-  const { csrfToken } = await api<Context>("auth/csrf");
-  const response = await fetch(upload.uploadUrl, { method: "POST", credentials: "same-origin", cache: "no-store",
-    headers: { "Content-Type": "application/octet-stream", "X-CSRFToken": csrfToken }, body: buffer });
+  let response: Response;
+  if (upload.directUpload) {
+    const authorization = await api<DirectUpload>(`uploads/${upload.uploadId}/authorize`, { checksum });
+    // Nenhum cookie de sessão, CSRF ou credencial permanente é enviado ao bucket.
+    response = await fetch(authorization.url, { method: authorization.method, credentials: "omit",
+      cache: "no-store", redirect: "error", referrerPolicy: "no-referrer",
+      headers: authorization.headers, body: buffer });
+  } else {
+    const { csrfToken } = await api<Context>("auth/csrf");
+    response = await fetch(upload.uploadUrl, { method: "POST", credentials: "same-origin", cache: "no-store",
+      headers: { "Content-Type": "application/octet-stream", "X-CSRFToken": csrfToken }, body: buffer });
+  }
   if (!response.ok) {
     const result = await response.json().catch(() => null);
     throw new ApiError(result?.error?.code || "UPLOAD_FAILED", result?.error?.message || "O envio falhou. Atualize a lista e tente uma nova versão.");

@@ -99,7 +99,7 @@ def s3_client():
         region_name=settings.DOCUMENT_S3_REGION,
         aws_access_key_id=settings.DOCUMENT_S3_ACCESS_KEY or None,
         aws_secret_access_key=settings.DOCUMENT_S3_SECRET_KEY or None,
-        config=Config(connect_timeout=5, read_timeout=30, retries={"mode": "standard", "max_attempts": 2},
+        config=Config(signature_version="s3v4", connect_timeout=5, read_timeout=30, retries={"mode": "standard", "max_attempts": 2},
                       s3={"addressing_style": settings.DOCUMENT_S3_ADDRESSING_STYLE}))
 
 
@@ -151,3 +151,25 @@ def write_stream(key, stream, expected_size):
             if exc.response["Error"]["Code"] in ("PreconditionFailed", "ConditionalRequestConflict", "412", "409"):
                 raise InvalidFile("already_uploaded") from exc
             raise
+
+
+def presign_upload(key, expected_size, checksum):
+    """Autorização curta, sem leitura, vinculada a tamanho/hash e sem sobrescrita."""
+    if not settings.DOCUMENT_DIRECT_UPLOAD_ENABLED or settings.DOCUMENT_STORAGE_BACKEND != "s3":
+        raise ImproperlyConfigured("Direct upload is not configured")
+    if not 1 <= expected_size <= 20 * 1024 * 1024 or not re.fullmatch(r"[0-9a-f]{64}", checksum):
+        raise InvalidFile("integrity")
+    encoded = base64.b64encode(bytes.fromhex(checksum)).decode()
+    headers = {
+        "Content-Type": "application/octet-stream",
+        "If-None-Match": "*",
+        "x-amz-checksum-sha256": encoded,
+        "x-amz-server-side-encryption": "AES256",
+    }
+    url = s3_client().generate_presigned_url("put_object", Params={
+        "Bucket": settings.DOCUMENT_S3_BUCKET, "Key": remote_key(key),
+        "ContentLength": expected_size, "ContentType": headers["Content-Type"],
+        "ChecksumSHA256": encoded, "ServerSideEncryption": "AES256", "IfNoneMatch": "*",
+    }, ExpiresIn=300, HttpMethod="PUT")
+    # Content-Length também é assinado; o navegador define esse header pelo corpo.
+    return {"url": url, "method": "PUT", "headers": headers, "expiresIn": 300}

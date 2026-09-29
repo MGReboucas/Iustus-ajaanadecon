@@ -23,6 +23,7 @@ Na raiz, execute:
 npm.cmd run typecheck
 npm.cmd run build
 npm.cmd run docs:check
+npm.cmd run test:documents
 backend/.venv/Scripts/python.exe backend/manage.py test tests --settings=config.settings.test --noinput
 ```
 
@@ -58,14 +59,22 @@ A checagem verifica API/banco, CSRF, cookies, cache e recusa de acesso anônimo 
 
 O proxy atual transporta arquivos de até 20 MiB pelo Next.js. A [documentação da Vercel](https://vercel.com/docs/functions/limitations) limita corpos de requisição de Functions a 4,5 MB. Portanto, habilitar S3 sozinho não torna esse fluxo pronto para produção na Vercel.
 
-Antes de abrir documentos a clientes, implementar transferência direta autorizada para armazenamento privado (preservando quarentena, integridade e autorização) ou hospedar o proxy em infraestrutura compatível. Validar também downloads e exportações grandes. Não reduzir silenciosamente o limite funcional de 20 MiB.
+O código já oferece transferência direta autorizada para S3 com `DOCUMENT_DIRECT_UPLOAD_ENABLED=true`. Ela permanece desligada até homologação. Configure CORS usando [s3-cors.example.json](s3-cors.example.json), substituindo as origens de exemplo pelos dois portais reais.
+
+A API autoriza PUT por 5 minutos para uma chave aleatória, com tamanho, checksum SHA-256, criptografia AES256 e `If-None-Match: *` assinados. O navegador envia os bytes diretamente ao bucket sem cookies. Depois, a API revalida acesso, prazo, tamanho, formato e hash; o documento entra em quarentena para o scanner. O bucket deve suportar SigV4, checksums e gravação condicional, além de bloquear acesso público. Não conceder GetObject/ListBucket ao navegador.
+
+Uma URL de upload é uma credencial temporária: não registrar ou compartilhar; ela pode continuar aceitando o PUT até expirar mesmo se a sessão for revogada. A revogação impede confirmar o envio ou baixar o arquivo pela aplicação. Gravação condicional impede sobrescrever o objeto; conservar essa restrição também na política do bucket. Nenhuma URL de download S3 é exposta.
+
+Downloads e exportações continuam autenticados e transmitidos em streaming pelo proxy. A [orientação da Vercel](https://vercel.com/kb/guide/how-to-bypass-vercel-body-size-limit-serverless-functions) recomenda streaming para respostas grandes. Validar esse comportamento no ambiente hospedado, inclusive arquivos de 20 MiB e exportações grandes, antes de liberar clientes.
+
+Testes locais usam S3 simulado: comprovam fluxo, quarentena, isolamento e integridade, mas não comprovam CORS nem validação de assinatura pelo provedor real. Homologar: upload de 20 MiB; assinatura expirada; mudança de checksum ou tamanho; tentativa de sobrescrita; revogação durante upload; scanner indisponível. A URL deve rejeitar adulterações no serviço S3 real.
 
 Quando o transporte estiver resolvido, configurar as mesmas variáveis de armazenamento na API e no worker, testar isolamento do bucket, ClamAV real, arquivo infectado de teste, indisponibilidade do scanner e recuperação de falhas. O worker processa um documento por ciclo para não drenar uma fila inteira antes de voltar aos e-mails; medir capacidade e separar workers se necessário.
 
 ## Pendências para operação comercial
 
 - Configurar e validar serviços, domínios, segredos e SMTP reais.
-- Resolver transporte de arquivos e provisionar S3 privado/ClamAV.
+- Homologar upload direto e streaming no ambiente hospedado; provisionar S3 privado/ClamAV.
 - Concluir integração financeira e ativação de assinatura.
 - Ensaiar restauração de banco e objetos; configurar alertas e responsáveis.
 - Validar conteúdo, políticas e condições comerciais com a operação.

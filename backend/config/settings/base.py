@@ -91,3 +91,6 @@ DOCUMENT_S3_PREFIX = "iustus/objects"
 DOCUMENT_S3_ACCESS_KEY = ""
 DOCUMENT_S3_SECRET_KEY = ""
 DOCUMENT_S3_ADDRESSING_STYLE = "auto"
+
+# Ativar somente após homologar o bucket, CORS e gravação condicional.
+DOCUMENT_DIRECT_UPLOAD_ENABLED = False

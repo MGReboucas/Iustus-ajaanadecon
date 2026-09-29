@@ -58,5 +58,5 @@ def create_upload(case, user, data, document=None):
         filename=filename, size_bytes=data["sizeBytes"], declared_mime=data["mime"], object_key=uuid.uuid4().hex,
         expires_at=timezone.now() + timedelta(minutes=30))
     changed(case, user, "DOCUMENT_UPLOAD_STARTED", "Envio de documento iniciado.", documentId=str(document.pk), versionId=str(item.pk))
-    return {"uploadId": str(item.pk), "uploadUrl": f"/api/v1/uploads/{item.pk}/content",
+    return {"directUpload": settings.DOCUMENT_DIRECT_UPLOAD_ENABLED, "uploadId": str(item.pk), "uploadUrl": f"/api/v1/uploads/{item.pk}/content",
             "expiresAt": item.expires_at.isoformat(), "version": version_data(item)}
