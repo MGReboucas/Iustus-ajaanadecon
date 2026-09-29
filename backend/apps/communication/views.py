@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from apps.cases.models import Case, CaseEvent, InformationRequest
 from apps.cases.services import accessible, case_data, get_case, submission_access
 from apps.cases.views import CaseView
+from apps.legal.models import LegalTask
 from apps.identity.security import IdentityError
 from apps.identity.services import audit
 from .models import Message, Notification
@@ -35,7 +36,7 @@ class MessagesView(CaseView):
                 if previous.text != data["text"] or previous.visibility != data["visibility"]:
                     raise IdentityError("IDEMPOTENCY_CONFLICT", "Esta chave já foi usada para outra mensagem.", 409)
                 return Response(message_data(previous))
-            if item.state in (Case.State.DRAFT, Case.State.REJECTED) or not item.lawyer_id:
+            if item.state in (Case.State.DRAFT, Case.State.REJECTED, Case.State.CLOSED) or not item.lawyer_id:
                 raise IdentityError("CONVERSATION_UNAVAILABLE", "A conversa fica disponível após a atribuição de um advogado, enquanto o caso está em atendimento.", 409)
             message = Message.objects.create(case=item, author=request.user, text=data["text"],
                 visibility=data["visibility"], client_id=data["clientMessageId"])
@@ -86,9 +87,9 @@ class OverviewView(CaseView):
         if admin:
             attention = cases.filter(lawyer__isnull=True).exclude(state=Case.State.REJECTED)
         elif user.role == "CLIENT":
-            attention = cases.filter(Q(state=Case.State.DRAFT) | Q(pk__in=pending.values("case_id")))
+            attention = cases.filter(Q(state=Case.State.DRAFT) | Q(state=Case.State.MANDATE, legal_work__signed_mandate__isnull=True) | Q(pk__in=pending.values("case_id")))
         else:
-            attention = cases.filter(Q(state__in=[Case.State.SUBMITTED, Case.State.TRIAGE]) | Q(pk__in=pending.values("case_id")))
+            attention = cases.filter(Q(state__in=[Case.State.SUBMITTED, Case.State.TRIAGE, Case.State.ACCEPTED, Case.State.PREPARING]) | Q(state=Case.State.MANDATE, legal_work__signed_mandate__isnull=False) | Q(pk__in=LegalTask.objects.filter(completed_at__isnull=True, due_at__lte=timezone.now()).values("case_id")) | Q(pk__in=pending.values("case_id")))
         events = CaseEvent.objects.filter(case__in=cases, public=True).exclude(action__in=["DRAFT_CREATED", "DRAFT_UPDATED"]).select_related("case").order_by("-created_at", "-id")
         return Response({
             "totalCases": sum(counts.values()), "attentionCount": attention.count(),

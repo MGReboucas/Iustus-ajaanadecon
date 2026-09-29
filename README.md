@@ -2,7 +2,9 @@
 
 Plataforma por assinatura para solicitar, acompanhar e receber defesas jurídicas online. A jornada pretendida reúne contratação, envio de casos e documentos, procuração, acompanhamento pelo cliente e preparação da defesa por advogado designado.
 
-**Estado em 25/09/2026:** acesso com MFA, casos/triagem e documentos privados implementados. Novo incremento local de [dashboard e comunicação](docs/DASHBOARD_COMUNICACAO.md): indicadores reais por perfil, próximos passos, conversa por caso, notas internas e avisos com leitura persistida. Scanner real, armazenamento produtivo, assinatura, integração financeira e e-mails de novidades do caso permanecem pendentes.
+**Incremento de 29/09/2026:** [Fluxo de atendimento no dashboard](docs/FLUXO_ATENDIMENTO.md): liberação administrativa, procuração, peça revisada, protocolo, compromissos e encerramento implementados localmente.
+
+**Estado anterior em 25/09/2026:** acesso com MFA, casos/triagem e documentos privados implementados. Novo incremento local de [dashboard e comunicação](docs/DASHBOARD_COMUNICACAO.md): indicadores reais por perfil, próximos passos, conversa por caso, notas internas e avisos com leitura persistida. Scanner real, armazenamento produtivo, assinatura, integração financeira e e-mails de novidades do caso permanecem pendentes.
 
 [Documentação completa](docs/README.md) · [Estado atual](docs/ESTADO_ATUAL.md) · [MVP](docs/MVP.md) · [Backlog](docs/BACKLOG.md) · [Cronograma](docs/CRONOGRAMA.md)
 

@@ -31,7 +31,7 @@ def get_version(user, version_id, *, locked=False):
 
 
 def check_upload(case, item, user):
-    expect_state(case, *[value for value in Case.State.values if value != Case.State.REJECTED])
+    expect_state(case, *[value for value in Case.State.values if value not in (Case.State.REJECTED, Case.State.CLOSED)])
     if item.uploaded_by_id != user.pk:
         raise Http404
     if item.status != DocumentVersion.Status.UPLOADING or item.expires_at <= timezone.now():
@@ -39,7 +39,7 @@ def check_upload(case, item, user):
 
 
 def create_upload(case, user, data, document=None):
-    expect_state(case, *[value for value in Case.State.values if value != Case.State.REJECTED])
+    expect_state(case, *[value for value in Case.State.values if value not in (Case.State.REJECTED, Case.State.CLOSED)])
     if not settings.DOCUMENT_LOCAL_STORAGE_ENABLED or not settings.DOCUMENT_STORAGE_ROOT:
         raise IdentityError("DOCUMENT_STORAGE_UNAVAILABLE", "O envio de documentos ainda não está disponível neste ambiente.", 503)
     filename = re.sub(r'[\x00-\x1f\x7f<>:"/\\|?*]', "_", data["filename"]).strip(" .")

@@ -118,8 +118,8 @@ test('rotas e headers de outro portal são recusados', async ({ request }) => {
   expect(tooLarge.status()).toBe(413);
 });
 
-test('caso percorre rascunho, distribuição, complemento e aceite com isolamento', async ({ browser }) => {
-  test.setTimeout(90000);
+test('caso percorre liberação, triagem, procuração, peça, protocolo e encerramento com isolamento', async ({ browser }) => {
+  test.setTimeout(180000);
   const clientEmail = email(), adminEmail = email(), lawyerEmail = email();
   fixture('client', clientEmail); fixture('admin', adminEmail); fixture('lawyer', lawyerEmail);
   const clientContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -135,7 +135,12 @@ test('caso percorre rascunho, distribuição, complemento e aceite com isolament
   await clientPage.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();
   await expect(clientPage.getByRole('status')).toHaveText('Alteração registrada.');
   await expect(clientPage.getByRole('button', { name: 'Enviar para triagem' })).toBeDisabled();
-  fixture('case-grant', clientEmail);
+  await signIn(adminPage, teamOrigin, adminEmail); await enroll(adminPage);
+  await adminPage.getByLabel('E-mail do cliente', {exact: true}).fill(clientEmail);
+  await adminPage.getByLabel('Validade da liberação').fill('2027-12-01T12:00');
+  await adminPage.getByLabel('Motivo da liberação').fill('Atendimento sintético autorizado pelo escritório.');
+  await adminPage.getByRole('button', {name: 'Salvar liberação', exact: true}).click();
+  await expect(adminPage.getByText('Liberação atualizada. Casos já enviados permanecem em acompanhamento.', {exact: true})).toBeVisible();
   await clientPage.reload();
   await clientPage.locator('.case-list').getByRole('button', { name: /Cobrança contratual fictícia/ }).click();
   const pdf = Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n');
@@ -156,7 +161,7 @@ test('caso percorre rascunho, distribuição, complemento e aceite com isolament
   const reference = (await clientPage.locator('#case-detail-title').innerText()).replace('Caso ', '');
   await signIn(lawyerPage, teamOrigin, lawyerEmail); await enroll(lawyerPage);
   await expect(lawyerPage.getByText('Nenhum caso encontrado neste filtro.')).toBeVisible();
-  await signIn(adminPage, teamOrigin, adminEmail); await enroll(adminPage);
+  await adminPage.reload();
   await adminPage.locator('.case-list').getByRole('button', { name: new RegExp(`Caso ${reference}`) }).click();
   await expect(adminPage.getByText('Informação privada de um contrato', { exact: false })).toHaveCount(0);
   await adminPage.getByLabel('Advogado responsável').selectOption({ label: `Advogado Teste — ${lawyerEmail}` });
@@ -231,5 +236,67 @@ test('caso percorre rascunho, distribuição, complemento e aceite com isolament
     await lawyerPage.evaluate(() => window.scrollTo(0, 0));
     await lawyerPage.screenshot({ path: process.env.IUSTUS_DASHBOARD_SCREENSHOT.replace('.png', '-team.png') });
   }
+  async function upload(page, filename) {
+    await page.getByLabel('Arquivo para anexar').setInputFiles({name: filename, mimeType: 'application/pdf', buffer: pdf});
+    await page.getByRole('button', {name: 'Enviar arquivo', exact: true}).click();
+    await expect(page.getByText('Arquivo recebido. Aguarde a verificação e atualize a lista.')).toBeVisible();
+    fixture('document-scan-fixture', clientEmail);
+    await page.getByRole('button', {name: 'Atualizar documentos', exact: true}).click();
+    await expect(page.getByRole('button', {name: `Baixar ${filename} (v1)`, exact: true})).toBeEnabled();
+  }
+  await upload(lawyerPage, 'procuracao-sintetica.pdf');
+  await lawyerPage.getByLabel('Etapas contratadas', {exact: true}).fill('Preparação da peça, protocolo e acompanhamento do caso sintético.');
+  await lawyerPage.getByLabel('Posição do cliente').selectOption('DEFENDANT');
+  await lawyerPage.getByLabel('Documento verificado', {exact: false}).selectOption({label: 'procuracao-sintetica.pdf · v1'});
+  await lawyerPage.getByRole('button', {name: 'Solicitar procuração', exact: true}).click();
+  await expect(lawyerPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Aguardando procuração');
+  await clientPage.reload();
+  await clientPage.locator('.case-list').getByRole('button', {name: /Cobrança contratual fictícia/}).click();
+  await upload(clientPage, 'procuracao-devolvida.pdf');
+  await clientPage.getByLabel('Documento verificado', {exact: false}).selectOption({label: 'procuracao-devolvida.pdf · v1'});
+  await clientPage.getByRole('button', {name: 'Entregar procuração assinada'}).click();
+  await expect(clientPage.locator('.legal-workflow').getByText('Etapa registrada.', {exact: true})).toBeVisible();
+  await lawyerPage.getByRole('button', {name: 'Atualizar andamento'}).click();
+  await lawyerPage.getByLabel('Conferi a procuração assinada').check();
+  await lawyerPage.getByRole('button', {name: 'Confirmar procuração', exact: true}).click();
+  await expect(lawyerPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Em preparação');
+  await lawyerPage.getByLabel('Minuta interna da peça').fill('Peça sintética revisada para testar a entrega ao cliente.');
+  await lawyerPage.getByRole('button', {name: 'Salvar minuta', exact: true}).click();
+  await expect(lawyerPage.locator('.legal-workflow').getByText('Etapa registrada.', {exact: true})).toBeVisible();
+  await clientPage.getByRole('button', {name: 'Atualizar andamento'}).click();
+  await expect(clientPage.getByText('Peça sintética revisada para testar a entrega ao cliente.', {exact: true})).toHaveCount(0);
+  await lawyerPage.getByLabel('Revisei os dados e confirmo a ação selecionada').check();
+  await lawyerPage.getByRole('button', {name: 'Publicar peça revisada'}).click();
+  await expect(lawyerPage.locator('.legal-workflow details')).toContainText('Peça sintética revisada');
+  await upload(lawyerPage, 'comprovante-sintetico.pdf');
+  await lawyerPage.getByLabel('Órgão do protocolo').fill('Órgão de teste');
+  await lawyerPage.getByLabel('Número do processo', {exact: true}).fill('PROCESSO-SINTETICO');
+  await lawyerPage.getByLabel('Número do protocolo', {exact: true}).fill('PROTOCOLO-SINTETICO');
+  await lawyerPage.getByLabel('Documento verificado', {exact: false}).selectOption({label: 'comprovante-sintetico.pdf · v1'});
+  await lawyerPage.getByLabel('Revisei os dados e confirmo a ação selecionada').check();
+  await lawyerPage.getByRole('button', {name: 'Registrar protocolo externo'}).click();
+  await expect(lawyerPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Em acompanhamento');
+  await lawyerPage.getByLabel('Movimentação, motivo ou resultado').fill('Audiência agendada para o teste.');
+  await lawyerPage.getByLabel('Tipo de compromisso').selectOption('HEARING');
+  await lawyerPage.getByLabel('Título do compromisso').fill('Audiência de teste');
+  await lawyerPage.getByLabel('Data do compromisso').fill('2027-01-15T14:30');
+  await lawyerPage.getByRole('button', {name: 'Adicionar compromisso'}).click();
+  await expect(lawyerPage.locator('.legal-tasks')).toContainText('Audiência de teste');
+  await lawyerPage.getByLabel('Movimentação, motivo ou resultado').fill('Atendimento concluído e resultado comunicado.');
+  await lawyerPage.getByLabel('Revisei os dados e confirmo a ação selecionada').check();
+  await expect(lawyerPage.getByRole('button', {name: 'Encerrar atendimento'})).toBeDisabled();
+  await lawyerPage.getByRole('button', {name: 'Concluir compromisso'}).click();
+  await expect(lawyerPage.locator('.legal-tasks')).toContainText('Concluído');
+  await lawyerPage.getByLabel('Movimentação, motivo ou resultado').fill('Atendimento concluído e resultado comunicado.');
+  await lawyerPage.getByLabel('Revisei os dados e confirmo a ação selecionada').check();
+  await lawyerPage.getByRole('button', {name: 'Encerrar atendimento'}).click();
+  await expect(lawyerPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Encerrado');
+  await clientPage.reload();
+  await clientPage.locator('.case-list').getByRole('button', {name: /Cobrança contratual fictícia/}).click();
+  await expect(clientPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Encerrado');
+  await expect(clientPage.locator('.legal-workflow details')).toContainText('Peça sintética revisada');
+  expect(await clientPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await clientPage.locator('.legal-workflow').screenshot({path: path.join(root, '.local/workflow-client.png')});
+  await lawyerPage.locator('.legal-workflow').screenshot({path: path.join(root, '.local/workflow-lawyer.png')});
   await clientContext.close(); await adminContext.close(); await lawyerContext.close();
 });

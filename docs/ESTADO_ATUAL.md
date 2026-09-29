@@ -1,5 +1,9 @@
 # Estado atual e evidências
 
+## Atualização de 29/09/2026 — fluxo de atendimento
+
+Liberação administrativa de novos envios e fluxo após aceite implementados: procuração, conferência/correção, minuta interna, publicação da peça, protocolo externo com comprovante, compromissos, remarcação, movimentações e encerramento sem pendências. [Contrato, testes e limites](FLUXO_ATENDIMENTO.md). 65 testes PostgreSQL, build, migrações e quatro jornadas Edge aprovados; tela final conferida em desktop/celular. Validação local não equivale a implantação ou homologação produtiva.
+
 ## Atualização de 25/09/2026 — dashboard e comunicação
 
 Indicadores e próximos passos por perfil, mensagens por caso, notas internas restritas ao advogado atribuído e avisos internos com leitura persistida implementados localmente. Contagens usam todo o escopo autorizado; transferência também revoga consulta a avisos antigos. 55 testes passaram no PostgreSQL, incluindo envio simultâneo com deduplicação; quatro jornadas de navegador passaram no Edge, incluindo comunicação em tela de 390px. Build do frontend aprovado e migração aplicada ao banco de desenvolvimento. [Contrato, operação e limites](DASHBOARD_COMUNICACAO.md). E-mails de novidades do caso, assinatura, pagamentos e gestão processual continuam pendentes.

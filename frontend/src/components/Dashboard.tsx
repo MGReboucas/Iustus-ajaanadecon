@@ -6,6 +6,7 @@ import "./dashboard.css";
 import CasesWorkspace from "./CasesWorkspace";
 import Brand from "./Brand";
 import DashboardOverview from "./DashboardOverview";
+import ServiceAccess from "./ServiceAccess";
 
 export default function Dashboard({ portal }: { portal: Portal }) {
   const [user, setUser] = useState<Profile>();
@@ -39,6 +40,7 @@ export default function Dashboard({ portal }: { portal: Portal }) {
     {user && <>
       <section className="dashboard-welcome"><p>{portal === "team" ? "SEU DIA NO ESCRITÓRIO" : "SEU ATENDIMENTO JURÍDICO"}</p><h1>Olá, {user.name || "bem-vindo"}.</h1><p>{portal === "team" ? "Acompanhe a fila, confira pendências e mantenha seus clientes informados." : "Acompanhe seus casos, envie o que falta e converse com seu advogado."}</p><nav className="dashboard-nav" aria-label="Atalhos do painel"><a href="#resumo">Visão geral</a><a href="#meus-casos">{user.role === "ADMIN" ? "Distribuição" : "Casos"}</a><a href="#minha-conta">Minha conta</a></nav></section>
       <div id="resumo"><DashboardOverview user={user} revision={revision} openCase={id => setOpenCase({ id, sequence: Date.now() })} /></div>
+      {user.role === "ADMIN" && <ServiceAccess />}
       <CasesWorkspace user={user} openCase={openCase} onChange={() => setRevision(value => value + 1)} />
       <div id="minha-conta" className="dashboard-account">
       <div className="dashboard-grid">

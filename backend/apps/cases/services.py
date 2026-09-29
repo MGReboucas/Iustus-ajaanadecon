@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from apps.identity.models import User
 from apps.identity.security import IdentityError
-from .models import Case, CaseEvent, LocalCaseAccess
+from .models import Case, CaseEvent, LocalCaseAccess, ServiceAccess
 
 
 def accessible(user, administrative=False):
@@ -60,12 +60,14 @@ def edit_draft(item, data):
 
 
 def submission_access(user):
+    if ServiceAccess.objects.filter(user=user, enabled=True, expires_at__gt=timezone.now()).exists():
+        return {"canSubmit": True, "mode": "ADMINISTRATIVE", "message": "Atendimento liberado pelo escritório. Você pode enviar seu caso para triagem."}
     # Fail closed. Futuro adaptador financeiro deve substituir esta capacidade explícita.
     allowed = bool(settings.CASE_LOCAL_TEST_ACCESS and LocalCaseAccess.objects.filter(
         user=user, expires_at__gt=timezone.now()).exists())
     return {"canSubmit": allowed, "mode": "LOCAL_TEST" if settings.CASE_LOCAL_TEST_ACCESS else "UNAVAILABLE",
             "message": "Liberação local de testes ativa; não representa assinatura." if allowed else
-            "Envio indisponível: a assinatura ainda não está integrada. Você pode salvar rascunhos."}
+            "Aguarde a liberação de atendimento pelo escritório. Você pode salvar rascunhos."}
 
 
 def case_data(item, *, administrative=False, detail=False):

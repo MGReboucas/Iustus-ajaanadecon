@@ -7,10 +7,10 @@ const routes = new Set([
   "auth/csrf", "auth/register", "auth/verify", "auth/resend", "auth/login",
   "auth/logout", "auth/recovery", "auth/reset", "auth/mfa/enroll", "auth/mfa/verify",
   "auth/invitations/accept", "admin/invitations", "me", "dashboard/client", "dashboard/team",
-  "cases", "cases/catalog", "cases/lawyers", "dashboard/overview", "notifications",
+  "cases", "cases/catalog", "cases/lawyers", "dashboard/overview", "notifications", "admin/service-access",
 ]);
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-const caseRoute = new RegExp(`^cases/${uuid}(?:/(?:submit|assignment|transitions|requests|timeline|messages|summary)|/requests/${uuid}/(?:response|resolve))?$`, "i");
+const caseRoute = new RegExp(`^cases/${uuid}(?:/(?:submit|assignment|transitions|requests|timeline|messages|summary|workflow)|/requests/${uuid}/(?:response|resolve))?$`, "i");
 const notificationRoute = new RegExp(`^notifications/${uuid}/read$`, "i");
 const documentRoute = new RegExp(`^(?:cases/${uuid}/documents(?:/uploads)?|documents/${uuid}/versions(?:/${uuid}/(?:download|content))?|uploads/${uuid}/(?:content|complete))$`, "i");
 const uploadRoute = new RegExp(`^uploads/${uuid}/content$`, "i");

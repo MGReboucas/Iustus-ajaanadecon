@@ -5,6 +5,7 @@ import { api, ApiError, Profile } from "@/lib/api/client";
 import { DocumentVersion, downloadDocument } from "@/lib/api/documents";
 import CaseDocuments from "./CaseDocuments";
 import CaseMessages from "./CaseMessages";
+import LegalWorkflow from "./LegalWorkflow";
 import "./cases.css";
 
 type CaseItem = { id: string; reference: string; title?: string; description?: string; category: string; categoryLabel: string; state: string; stateLabel: string; version: number; lawyerId: string | null; scopeAcknowledged?: boolean };
@@ -13,7 +14,7 @@ type Catalog = { categories: { id: string; label: string }[]; states: { id: stri
 type Pending = { id: string; description: string; response: string; resolution: string; resolved: boolean; responded: boolean; attachments: DocumentVersion[] };
 type Event = { id: string; action: string; state: string; reason: string; createdAt: string };
 type Lawyer = { id: string; name: string; email: string };
-const labels: Record<string, string> = { DRAFT_CREATED: "Rascunho criado", DRAFT_UPDATED: "Rascunho atualizado", SUBMITTED: "Caso enviado", ASSIGNED: "Responsável atribuído", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Decisão de triagem", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido" };
+const labels: Record<string, string> = { LEGAL_START: "Procuração solicitada", LEGAL_SIGN: "Procuração devolvida", LEGAL_VERIFY: "Procuração conferida", LEGAL_RETURN_MANDATE: "Correção da procuração solicitada", LEGAL_DRAFT: "Minuta interna atualizada", LEGAL_PUBLISH: "Peça publicada", LEGAL_FILE: "Protocolo registrado", LEGAL_UPDATE: "Movimentação publicada", LEGAL_TASK: "Compromisso agendado", LEGAL_RESCHEDULE: "Compromisso remarcado", LEGAL_COMPLETE: "Compromisso concluído", LEGAL_CLOSE: "Atendimento encerrado", DRAFT_CREATED: "Rascunho criado", DRAFT_UPDATED: "Rascunho atualizado", SUBMITTED: "Caso enviado", ASSIGNED: "Responsável atribuído", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Decisão de triagem", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido" };
 
 export default function CasesWorkspace({ user, openCase, onChange }: { user: Profile; openCase?: { id: string; sequence: number }; onChange: () => void }) {
   const [catalog, setCatalog] = useState<Catalog>();
@@ -109,7 +110,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
     <div className="cases-heading"><div><h2 id="cases-title">{admin ? "Distribuição de casos" : client ? "Meus casos" : "Casos atribuídos"}</h2><p>{admin ? "A fila mostra apenas referência, categoria, estado e responsável. Relatos ficam restritos ao cliente e ao advogado atribuído." : "Multas de trânsito e direito civil, exceto família e sucessões."}</p></div>
       {client && <button disabled={busy} onClick={() => void run(async () => { const item = await api<CaseItem>("cases", {}); onChange(); setFilter(""); await list(""); await load(item); })}>Novo caso</button>}
     </div>
-    <p className="dashboard-note">Ambiente de testes: use somente informações e arquivos fictícios. Acompanhamento processual ainda não está disponível.</p>
+    <p className="dashboard-note">Ambiente de testes: use somente informações e arquivos fictícios.</p>
     {client && <p className="case-access">{catalog?.submission?.message}</p>}
     {error && <p role="alert" className="dashboard-error">{error} <button disabled={busy} onClick={() => void run(async () => { await list(); if (selected) await load(selected); })}>Atualizar dados</button></p>}
     {notice && <p role="status">{notice}</p>}
@@ -124,7 +125,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
     {selected && <article className="case-detail" aria-labelledby="case-detail-title">
       <div className="cases-heading"><h3 id="case-detail-title">Caso {selected.reference}</h3><span className="case-badge">{selected.stateLabel}</span></div>
       {admin ? <form onSubmit={e => { e.preventDefault(); void run(() => change(`cases/${selected.id}/assignment`, { version: selected.version, lawyerId: lawyer, reason })); }}>
-        <fieldset disabled={busy || selected.state === "RECUSADO"}><legend>Atribuir ou transferir responsável</legend>
+        <fieldset disabled={busy || ["RECUSADO", "ENCERRADO"].includes(selected.state)}><legend>Atribuir ou transferir responsável</legend>
           <label htmlFor="case-lawyer">Advogado responsável</label><select id="case-lawyer" required value={lawyer} onChange={e => setLawyer(e.target.value)}><option value="">Selecione</option>{lawyers.results.map(row => <option key={row.id} value={row.id}>{row.name || row.email} — {row.email}</option>)}</select>
           {lawyers.nextCursor && <button type="button" onClick={() => void run(async () => { const result = await api<Page<Lawyer>>(`cases/lawyers?cursor=${encodeURIComponent(lawyers.nextCursor!)}`); setLawyers({ results: [...lawyers.results, ...result.results], nextCursor: result.nextCursor }); })}>Mais profissionais</button>}
           <label>Motivo administrativo<textarea required minLength={5} maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} /></label><p>O motivo é registrado em auditoria e não é exibido ao cliente.</p><button disabled={!lawyer || lawyer === selected.lawyerId}>Salvar responsável</button>
@@ -149,8 +150,9 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
           <button disabled={reason.trim().length < 5} onClick={() => void run(() => change(`cases/${selected.id}/transitions`, { version: selected.version, targetState: "RECUSADO", reason }))}>Recusar com justificativa</button></div>
           <label>Informações a complementar<textarea maxLength={4000} value={complement} onChange={e => setComplement(e.target.value)} /></label><button disabled={complement.trim().length < 5} onClick={() => void run(() => change(`cases/${selected.id}/requests`, { version: selected.version, description: complement }))}>Solicitar complemento</button>
         </fieldset>}
-        <CaseMessages key={`messages-${selected.id}`} caseId={selected.id} user={user} available={!!selected.lawyerId && !["RASCUNHO", "RECUSADO"].includes(selected.state)} onChange={onChange} />
-        <CaseDocuments key={selected.id} caseId={selected.id} versions={documents.results} busy={busy} readOnly={selected.state === "RECUSADO"} run={run} refresh={refreshDocuments} hasMore={!!documents.nextCursor} more={async () => {
+        {["ACEITO", "AGUARDANDO_PROCURACAO", "EM_PREPARACAO", "EM_ACOMPANHAMENTO", "ENCERRADO"].includes(selected.state) && <LegalWorkflow key={`workflow-${selected.id}`} caseId={selected.id} version={selected.version} user={user} documents={documents.results} onChange={async () => {onChange(); await list(); await load(selected);}} />}
+        <CaseMessages key={`messages-${selected.id}`} caseId={selected.id} user={user} available={!!selected.lawyerId && !["RASCUNHO", "RECUSADO", "ENCERRADO"].includes(selected.state)} onChange={onChange} />
+        <CaseDocuments key={selected.id} caseId={selected.id} versions={documents.results} busy={busy} readOnly={["RECUSADO", "ENCERRADO"].includes(selected.state)} run={run} refresh={refreshDocuments} hasMore={!!documents.nextCursor} more={async () => {
           const result = await api<Page<DocumentVersion>>(`cases/${selected.id}/documents?cursor=${encodeURIComponent(documents.nextCursor!)}`);
           setDocuments(old => ({ results: [...old.results, ...result.results], nextCursor: result.nextCursor }));
         }} />

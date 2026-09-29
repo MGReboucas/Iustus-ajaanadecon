@@ -1,5 +1,5 @@
 # legal
 
-Processos, partes, peças, procurações, protocolos, audiências e prazos.
+Fluxo pós-triagem: procuração enviada pelo responsável, devolução/conferência, minuta privada, publicação, registro de protocolo externo, prazos, audiências, etapas e encerramento.
 
-Estrutura inicial; regras e endpoints ainda serão implementados. Modelos, serviços, serializers, endpoints e testes devem ficar neste módulo à medida que cada tarefa for executada. Migrações pertencem ao Django; não criar tabelas pelo frontend.
+[Contrato e limites](../../../docs/FLUXO_ATENDIMENTO.md). Mutações exigem atribuição atual e versão do caso, com bloqueio transacional e histórico.

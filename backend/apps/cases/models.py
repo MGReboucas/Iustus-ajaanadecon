@@ -21,6 +21,10 @@ class Case(models.Model):
         WAITING = "AGUARDANDO_CLIENTE", "Aguardando complemento"
         ACCEPTED = "ACEITO", "Aceito na triagem"
         REJECTED = "RECUSADO", "Recusado"
+        MANDATE = "AGUARDANDO_PROCURACAO", "Aguardando procuração"
+        PREPARING = "EM_PREPARACAO", "Em preparação"
+        TRACKING = "EM_ACOMPANHAMENTO", "Em acompanhamento"
+        CLOSED = "ENCERRADO", "Encerrado"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="owned_cases")
@@ -74,6 +78,16 @@ class InformationRequest(models.Model):
 class LocalCaseAccess(models.Model):
     """Liberação de testes; nunca representa assinatura ou pagamento confirmado."""
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    expires_at = models.DateTimeField()
+    reason = models.CharField(max_length=240)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class ServiceAccess(models.Model):
+    """Autorização administrativa de atendimento, independente de pagamento."""
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    granted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="service_grants")
+    enabled = models.BooleanField(default=True)
     expires_at = models.DateTimeField()
     reason = models.CharField(max_length=240)
     updated_at = models.DateTimeField(auto_now=True)

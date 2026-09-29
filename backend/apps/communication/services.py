@@ -2,6 +2,17 @@ from .models import Notification
 
 
 EVENT_TITLES = {
+    "LEGAL_START": "Procuração disponível para assinatura",
+    "LEGAL_SIGN": "Procuração devolvida para conferência",
+    "LEGAL_RETURN_MANDATE": "A procuração precisa de um ajuste",
+    "LEGAL_VERIFY": "Preparação do atendimento iniciada",
+    "LEGAL_PUBLISH": "Uma peça está disponível no seu caso",
+    "LEGAL_FILE": "Protocolo registrado no seu caso",
+    "LEGAL_TASK": "Novo compromisso no seu caso",
+    "LEGAL_RESCHEDULE": "Um compromisso foi remarcado",
+    "LEGAL_COMPLETE": "Uma etapa do seu caso foi concluída",
+    "LEGAL_UPDATE": "Nova movimentação no seu caso",
+    "LEGAL_CLOSE": "Atendimento encerrado: consulte o resultado",
     "ASSIGNED": "Um caso foi atribuído a você",
     "TRIAGE_STARTED": "A triagem do seu caso começou",
     "TRIAGE_DECISION": "A triagem do seu caso foi concluída",
@@ -15,7 +26,7 @@ def notify_event(event, item):
     title = EVENT_TITLES.get(event.action)
     if not title:
         return
-    recipient_id = item.lawyer_id if event.action in ("ASSIGNED", "INFORMATION_RESPONDED") else item.owner_id
+    recipient_id = item.lawyer_id if event.action in ("ASSIGNED", "INFORMATION_RESPONDED", "LEGAL_SIGN") else item.owner_id
     if recipient_id and recipient_id != event.actor_id:
         Notification.objects.get_or_create(recipient_id=recipient_id, source_key=f"event:{event.pk}",
             defaults={"case": item, "kind": event.action, "title": title})

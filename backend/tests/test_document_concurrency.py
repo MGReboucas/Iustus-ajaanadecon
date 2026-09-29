@@ -3,7 +3,8 @@ from threading import Barrier
 from unittest import skipUnless
 
 from django.db import connection, connections
-from django.test import TransactionTestCase
+from django.test import TransactionTestCase, override_settings
+import tempfile
 
 from apps.cases.models import Case
 from apps.documents.models import DocumentVersion
@@ -17,6 +18,13 @@ class DocumentConcurrencyTests(TransactionTestCase):
     user = identity.IdentityTests.user
     login = identity.IdentityTests.login
 
+    def setUp(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        config = override_settings(DOCUMENT_LOCAL_STORAGE_ENABLED=True, DOCUMENT_STORAGE_ROOT=folder.name)
+        config.enable()
+        self.addCleanup(config.disable)
+
     def test_competing_versions_have_one_winner(self):
         user = self.user()
         case = Case.objects.create(owner=user)
@@ -24,7 +32,9 @@ class DocumentConcurrencyTests(TransactionTestCase):
         for browser in browsers:
             self.login(browser, user)
         data = {"filename": "ficticio.pdf", "mime": "application/pdf", "sizeBytes": 20}
-        first = self.post(browsers[0], f"cases/{case.pk}/documents/uploads", data).json()
+        response = self.post(browsers[0], f"cases/{case.pk}/documents/uploads", data)
+        self.assertEqual(response.status_code, 201, response.content)
+        first = response.json()
         document_id = first["version"]["documentId"]
         tokens = [browser.get("/api/v1/auth/csrf").json()["csrfToken"] for browser in browsers]
         barrier = Barrier(2)

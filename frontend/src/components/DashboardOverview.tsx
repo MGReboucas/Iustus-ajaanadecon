@@ -7,7 +7,7 @@ type CaseLink = { id: string; reference: string; title?: string; stateLabel: str
 type Overview = { totalCases: number; attentionCount: number; unreadCount: number; states: { id: string; label: string; count: number }[]; attentionCases: CaseLink[]; recentActivity: { id: string; caseId: string; reference: string; title: string; action: string; stateLabel: string; createdAt: string }[]; submission: { message: string } | null };
 type Notice = { id: string; caseId: string; reference: string; title: string; createdAt: string; readAt: string | null };
 type Notices = { results: Notice[]; nextCursor: string | null };
-const actions: Record<string, string> = { SUBMITTED: "Caso enviado", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Triagem concluída", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido", DOCUMENT_UPLOADED: "Documento enviado" };
+const actions: Record<string, string> = { LEGAL_START: "Procuração solicitada", LEGAL_SIGN: "Procuração devolvida", LEGAL_VERIFY: "Procuração conferida", LEGAL_RETURN_MANDATE: "Correção da procuração solicitada", LEGAL_DRAFT: "Minuta interna atualizada", LEGAL_PUBLISH: "Peça publicada", LEGAL_FILE: "Protocolo registrado", LEGAL_UPDATE: "Movimentação publicada", LEGAL_TASK: "Compromisso agendado", LEGAL_RESCHEDULE: "Compromisso remarcado", LEGAL_COMPLETE: "Compromisso concluído", LEGAL_CLOSE: "Atendimento encerrado", SUBMITTED: "Caso enviado", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Triagem concluída", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido", DOCUMENT_UPLOADED: "Documento enviado" };
 
 export default function DashboardOverview({ user, revision, openCase }: { user: Profile; revision: number; openCase: (id: string) => void }) {
   const [overview, setOverview] = useState<Overview>();
@@ -47,7 +47,7 @@ export default function DashboardOverview({ user, revision, openCase }: { user: 
     {overview && <>
       <div className="dashboard-metrics">
         <article><span>{admin ? "Casos recebidos" : "Seus casos"}</span><strong>{overview.totalCases}</strong><small>{admin ? "Fila do escritório" : "No seu acompanhamento"}</small></article>
-        <article><span>{admin ? "Sem responsável" : "Precisam de você"}</span><strong>{overview.attentionCount}</strong><small>{admin ? "Aguardando distribuição" : user.role === "CLIENT" ? "Rascunhos e complementos a enviar" : "Triagens e complementos a conferir"}</small></article>
+        <article><span>{admin ? "Sem responsável" : "Precisam de você"}</span><strong>{overview.attentionCount}</strong><small>{admin ? "Aguardando distribuição" : user.role === "CLIENT" ? "Rascunhos, documentos e complementos" : "Triagens, preparação e compromissos vencidos"}</small></article>
         {!admin && <article><span>Avisos não lidos</span><strong>{overview.unreadCount}</strong><small>Novidades dos seus casos</small></article>}
       </div>
       <div className="overview-states" aria-label="Casos por estado">{overview.states.filter(state => state.count > 0).map(state => <span key={state.id}>{state.label} <strong>{state.count}</strong></span>)}</div>

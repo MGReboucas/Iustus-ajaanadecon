@@ -112,8 +112,9 @@ class SubmitView(CaseView):
             expect_state(item, Case.State.DRAFT)
             if not item.title.strip() or len(item.description.strip()) < 20 or not item.category or not item.scope_acknowledged:
                 raise IdentityError("INCOMPLETE_CASE", "Preencha título, categoria, relato de pelo menos 20 caracteres e ciência do escopo.", 422)
+            User.objects.select_for_update().get(pk=request.user.pk)
             if not submission_access(request.user)["canSubmit"]:
-                raise IdentityError("SUBMISSION_UNAVAILABLE", "Envio indisponível. A assinatura ainda não está integrada; mantenha o rascunho.", 422)
+                raise IdentityError("SUBMISSION_UNAVAILABLE", "Aguarde a liberação de atendimento pelo escritório; mantenha o rascunho.", 422)
             item.state = Case.State.SUBMITTED
             item.submitted_at = timezone.now()
             item.submission_key, item.submission_version = digest(key), item.version
@@ -138,7 +139,7 @@ class AssignmentView(CaseView):
         with transaction.atomic():
             item = get_case(request.user, case_id, locked=True, administrative=True)
             expect_version(item, data["version"])
-            expect_state(item, Case.State.SUBMITTED, Case.State.TRIAGE, Case.State.WAITING, Case.State.ACCEPTED)
+            expect_state(item, *[state for state in Case.State.values if state not in (Case.State.DRAFT, Case.State.REJECTED, Case.State.CLOSED)])
             lawyer = User.objects.select_for_update().filter(pk=data["lawyerId"], role="LAWYER", is_active=True,
                 email_verified_at__isnull=False, mfadevice__confirmed_at__isnull=False).first()
             if not lawyer:
