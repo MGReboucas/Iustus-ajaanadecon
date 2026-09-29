@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadBucketConfiguration",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetBucketPublicAccessBlock",
+        "s3:GetBucketOwnershipControls",
+        "s3:GetBucketPolicyStatus",
+        "s3:GetBucketCORS"
+      ],
+      "Resource": "arn:aws:s3:::SUBSTITUA_BUCKET"
+    }
+  ]
+}

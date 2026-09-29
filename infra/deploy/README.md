@@ -2,6 +2,8 @@
 
 O repositório contém Dockerfile, settings de produção e Blueprint Render para API e worker. O frontend é Next.js, com implantação prevista na Vercel; o PostgreSQL previsto é externo (Neon). Estes arquivos não comprovam que os serviços externos foram criados ou homologados.
 
+Guia passo a passo de S3 e ClamAV: [Configurar documentos](CONFIGURAR_DOCUMENTOS.md).
+
 ## Configuração
 
 Use [production.env.example](production.env.example) como inventário. Cadastre os valores privados no gerenciador de ambiente de cada serviço; não os versione. API e worker precisam compartilhar banco, chave Fernet, chave Django, segredo do proxy, origens e SMTP. O frontend recebe somente as duas origens, DJANGO_API_ORIGIN e IUSTUS_PROXY_SECRET, além dos flags de checkout.
