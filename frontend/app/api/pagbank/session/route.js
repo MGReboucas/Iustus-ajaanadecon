@@ -1,4 +1,7 @@
+import { sandboxCheckoutEnabled } from '@/lib/payments';
+
 export async function GET() {
+  if (!sandboxCheckoutEnabled()) return Response.json({ message: 'A contratação online ainda não está disponível.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
   const email = process.env.PAGBANK_EMAIL;
   const token = process.env.PAGBANK_TOKEN;
   const sandbox = process.env.NEXT_PUBLIC_PAGBANK_SANDBOX !== 'false';

@@ -1,0 +1,84 @@
+# Dois serviços pagos (API + worker). Aplicar somente após confirmação do custo.
+# PostgreSQL é externo (Neon); nunca conectar ao banco local.
+services:
+  - type: web
+    name: iustus-api
+    runtime: docker
+    plan: 0.5c-512mb
+    region: virginia
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/v1/health/
+    preDeployCommand: python manage.py migrate --noinput
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths: [backend/**, render.yaml]
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: IUSTUS_PROXY_SECRET
+        generateValue: true
+      - key: IDENTITY_ENCRYPTION_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+      - key: IUSTUS_CLIENT_ORIGIN
+        value: https://iustus-defesa-juridica.vercel.app
+      - key: IUSTUS_TEAM_ORIGIN
+        sync: false
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+      - key: REGISTRATION_POLICY_VERSION
+        value: web-evaluation-v1
+  - type: worker
+    name: iustus-mail
+    runtime: docker
+    plan: 0.5c-512mb
+    region: virginia
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: python manage.py deliver_identity_mail
+    autoDeployTrigger: checksPass
+    buildFilter:
+      paths: [backend/**, render.yaml]
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: DJANGO_SECRET_KEY
+        fromService: {type: web, name: iustus-api, envVarKey: DJANGO_SECRET_KEY}
+      - key: IUSTUS_PROXY_SECRET
+        fromService: {type: web, name: iustus-api, envVarKey: IUSTUS_PROXY_SECRET}
+      - key: IDENTITY_ENCRYPTION_KEY
+        fromService: {type: web, name: iustus-api, envVarKey: IDENTITY_ENCRYPTION_KEY}
+      - key: DATABASE_URL
+        fromService: {type: web, name: iustus-api, envVarKey: DATABASE_URL}
+      - key: DJANGO_ALLOWED_HOSTS
+        fromService: {type: web, name: iustus-api, envVarKey: DJANGO_ALLOWED_HOSTS}
+      - key: IUSTUS_CLIENT_ORIGIN
+        fromService: {type: web, name: iustus-api, envVarKey: IUSTUS_CLIENT_ORIGIN}
+      - key: IUSTUS_TEAM_ORIGIN
+        fromService: {type: web, name: iustus-api, envVarKey: IUSTUS_TEAM_ORIGIN}
+      - key: EMAIL_HOST
+        fromService: {type: web, name: iustus-api, envVarKey: EMAIL_HOST}
+      - key: EMAIL_PORT
+        fromService: {type: web, name: iustus-api, envVarKey: EMAIL_PORT}
+      - key: EMAIL_HOST_USER
+        fromService: {type: web, name: iustus-api, envVarKey: EMAIL_HOST_USER}
+      - key: EMAIL_HOST_PASSWORD
+        fromService: {type: web, name: iustus-api, envVarKey: EMAIL_HOST_PASSWORD}
+      - key: DEFAULT_FROM_EMAIL
+        fromService: {type: web, name: iustus-api, envVarKey: DEFAULT_FROM_EMAIL}
+      - key: REGISTRATION_POLICY_VERSION
+        fromService: {type: web, name: iustus-api, envVarKey: REGISTRATION_POLICY_VERSION}

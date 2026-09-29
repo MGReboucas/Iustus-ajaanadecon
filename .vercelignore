@@ -1,0 +1,15 @@
+.git
+.github
+.local
+backend
+docs
+infra
+tests
+.env*
+**/.env*
+node_modules
+**/node_modules
+**/.next
+**/*.tsbuildinfo
+**/test-results
+**/playwright-report

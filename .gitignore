@@ -51,5 +51,6 @@ htmlcov/
 backend/media/
 backend/staticfiles/
 .local/
+.vercel/
 test-results/
 playwright-report/
