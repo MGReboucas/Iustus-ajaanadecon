@@ -55,3 +55,7 @@ O backend verifica identidade, estado ativo, confirmação de e-mail, versão de
 Não há migração de esquema nesta alteração. Execute a suíte do backend a partir de `backend`: ` .venv/Scripts/python.exe manage.py test tests --settings=config.settings.test --noinput`. Os testes de concorrência exigem `config.settings.test_postgres`.
 
 Os testes de navegador atuais cobrem o endereço único, bloqueio de clientes, convite, MFA e revogação. A jornada antiga dos dois portais foi preservada em `tests/e2e/access-dual-portal.legacy.cjs` como referência histórica e não é executada.
+
+## Acesso simplificado para testes
+
+`IDENTITY_MFA_REQUIRED=false` no backend permite acesso da equipe com e-mail verificado e senha, sem autenticador. A mesma regra vale para a seleção de profissionais. Permissões, CSRF, expiração e revogação de sessões continuam ativas. O padrão é `true`; reativar essa exigência invalida sessões que entraram apenas com senha.

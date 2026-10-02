@@ -47,7 +47,7 @@ class PublicView(IdentityView):
 class CSRFView(PublicView):
     def get(self, request):
         return Response({"csrfToken": get_token(request), "portal": request.portal,
-                         "policyVersion": settings.REGISTRATION_POLICY_VERSION})
+                         "policyVersion": settings.REGISTRATION_POLICY_VERSION, "mfaRequired": settings.IDENTITY_MFA_REQUIRED})
 
 
 class RegisterView(PublicView):
@@ -115,7 +115,7 @@ class LoginView(PublicView):
             # Revalidar senha sob lock: reset concorrente não pode conceder sessão antiga.
             if not user.is_active or not user.email_verified_at or expected != request.portal or not user.check_password(data["password"]):
                 raise IdentityError("INVALID_CREDENTIALS", "Não foi possível entrar com os dados informados.", 403)
-            if expected == "team":
+            if expected == "team" and settings.IDENTITY_MFA_REQUIRED:
                 return Response(begin_challenge(request, user), status=202)
             establish_session(request, user)
             return Response({"user": profile(user)})

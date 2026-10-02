@@ -1,5 +1,6 @@
 import re
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import F
 from django.http import Http404
@@ -125,8 +126,9 @@ class SubmitView(CaseView):
 class LawyersView(CaseView):
     def get(self, request):
         self.role(request, "ADMIN")
-        query = User.objects.filter(role="LAWYER", is_active=True, email_verified_at__isnull=False,
-                                    mfadevice__confirmed_at__isnull=False)
+        query = User.objects.filter(role="LAWYER", is_active=True, email_verified_at__isnull=False)
+        if settings.IDENTITY_MFA_REQUIRED:
+            query = query.filter(mfadevice__confirmed_at__isnull=False)
         return self.listed(request, query.annotate(created_at=F("date_joined")),
                            lambda user: {"id": str(user.pk), "name": user.first_name, "email": user.email})
 
@@ -141,9 +143,12 @@ class AssignmentView(CaseView):
             expect_version(item, data["version"])
             expect_state(item, *[state for state in Case.State.values if state not in (Case.State.DRAFT, Case.State.REJECTED, Case.State.CLOSED)])
             lawyer = User.objects.select_for_update().filter(pk=data["lawyerId"], role="LAWYER", is_active=True,
-                email_verified_at__isnull=False, mfadevice__confirmed_at__isnull=False).first()
+                email_verified_at__isnull=False)
+            if settings.IDENTITY_MFA_REQUIRED:
+                lawyer = lawyer.filter(mfadevice__confirmed_at__isnull=False)
+            lawyer = lawyer.first()
             if not lawyer:
-                raise IdentityError("INVALID_LAWYER", "Selecione um advogado ativo com MFA confirmado.")
+                raise IdentityError("INVALID_LAWYER", "Selecione um advogado ativo com acesso confirmado.")
             if item.lawyer_id == lawyer.pk:
                 raise IdentityError("ALREADY_ASSIGNED", "Este advogado já é o responsável.", 409)
             previous = str(item.lawyer_id) if item.lawyer_id else None

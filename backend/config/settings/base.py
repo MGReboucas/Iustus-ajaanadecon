@@ -94,3 +94,6 @@ DOCUMENT_S3_ADDRESSING_STYLE = "auto"
 
 # Ativar somente após homologar o bucket, CORS e gravação condicional.
 DOCUMENT_DIRECT_UPLOAD_ENABLED = False
+
+# Pode ser desativado explicitamente em ambientes de teste assistido.
+IDENTITY_MFA_REQUIRED = env.bool("IDENTITY_MFA_REQUIRED", default=True)

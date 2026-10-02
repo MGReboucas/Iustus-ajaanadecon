@@ -100,3 +100,45 @@ class TeamAccessTests(TestCase):
         self.assertEqual(self.post(pending, "auth/mfa/verify", {"code": pyotp.TOTP(secret).now()}).status_code, 403)
         self.post(admin, path, {"active": True, "version": 2, "reason": "Acesso novamente aprovado"})
         self.assertEqual(browser.get("/api/v1/me").status_code, 403)
+
+@override_settings(IDENTITY_MFA_REQUIRED=False, PORTAL_ORIGINS={"team": "http://localhost:3000"})
+class PasswordOnlyTeamTests(TestCase):
+    browser = IdentityTests.browser
+    post = IdentityTests.post
+    user = IdentityTests.user
+    login = IdentityTests.login
+
+    def test_password_login_opens_panel_without_claiming_mfa(self):
+        admin = self.user(role="ADMIN")
+        browser = self.browser()
+        self.assertFalse(browser.get('/api/v1/auth/csrf').json()['mfaRequired'])
+        response = self.login(browser, admin)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('mfaRequired', response.json())
+        self.assertFalse(browser.session['mfa_verified'])
+        self.assertEqual(browser.get('/api/v1/dashboard/team').status_code, 200)
+        self.assertEqual(browser.get('/api/v1/admin/users').status_code, 200)
+        with override_settings(IDENTITY_MFA_REQUIRED=True):
+            self.assertEqual(browser.get('/api/v1/dashboard/team').status_code, 403)
+
+    def test_roles_verification_revocation_and_password_remain_enforced(self):
+        for role, verified in [('CLIENT', True), ('ADMIN', False)]:
+            user = self.user(role=role, email=role+'@example.test', verified=verified)
+            self.assertEqual(self.login(self.browser(), user).status_code, 403)
+        lawyer = self.user(role='LAWYER', email='lawyer@example.test')
+        browser = self.browser()
+        self.assertEqual(self.post(browser, 'auth/login', {'email':lawyer.email, 'password':'wrong'}).status_code, 403)
+        self.assertEqual(self.login(browser, lawyer).status_code, 200)
+        self.assertEqual(browser.get('/api/v1/admin/users').status_code, 403)
+        lawyer.is_active = False
+        lawyer.save(update_fields=['is_active'])
+        self.assertEqual(browser.get('/api/v1/dashboard/team').status_code, 403)
+
+    def test_active_verified_lawyer_can_be_listed_without_mfa(self):
+        admin = self.user(role='ADMIN')
+        lawyer = self.user(role='LAWYER', email='lawyer@example.test')
+        browser = self.browser()
+        self.login(browser, admin)
+        result = browser.get('/api/v1/cases/lawyers')
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual([row['id'] for row in result.json()['results']], [str(lawyer.pk)])

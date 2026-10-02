@@ -62,7 +62,7 @@ class SessionBoundaryMiddleware:
                 and user.is_active
                 and now < session.get("absolute_expiry", 0)
                 and now - session.get("last_active", 0) < settings.IDENTITY_IDLE_SECONDS[expected]
-                and (expected == "client" or session.get("mfa_verified") is True)
+                and (expected == "client" or not settings.IDENTITY_MFA_REQUIRED or session.get("mfa_verified") is True)
             )
             if not valid:
                 # Não apagar a sessão válida do outro portal em uma tentativa de replay.

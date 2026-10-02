@@ -47,7 +47,7 @@ export default function Dashboard({ portal }: { portal: Portal }) {
       <div id="minha-conta" className="dashboard-account">
       <div className="dashboard-grid">
         <AccountSettings user={user} onChange={setUser} />
-        {portal === "team" && user.role === "ADMIN" && <section className="dashboard-card"><h2>Aprovar profissional</h2><p>A aprovação registra o profissional e envia um link para confirmar o e-mail e definir a senha. O autenticador será obrigatório. Use o mesmo e-mail para reenviar uma ativação pendente.</p><form onSubmit={invite}><label>E-mail do profissional<input required type="email" maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label><button disabled={busy}>Aprovar e enviar ativação</button></form>{message && <p role="status">{message}</p>}</section>}
+        {portal === "team" && user.role === "ADMIN" && <section className="dashboard-card"><h2>Aprovar profissional</h2><p>A aprovação registra o profissional e envia um link para confirmar o e-mail e definir a senha. Use o mesmo e-mail para reenviar uma ativação pendente.</p><form onSubmit={invite}><label>E-mail do profissional<input required type="email" maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label><button disabled={busy}>Aprovar e enviar ativação</button></form>{message && <p role="status">{message}</p>}</section>}
       </div>
       <AccountManagement admin={user.role === "ADMIN"} />
       </div>

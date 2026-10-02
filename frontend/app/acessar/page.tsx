@@ -60,9 +60,9 @@ export default function Access() {
         setCode(""); setSecret("");
         if (result.recoveryCodes) setCodes(result.recoveryCodes); else dashboard();
       } else if (mode === "reset") {
-        await api("auth/reset", { token, password }); setToken(""); change("login"); setMessage("Senha atualizada. Entre novamente. O segundo fator da equipe continua obrigatório.");
+        await api("auth/reset", { token, password }); setToken(""); change("login"); setMessage("Senha atualizada. Entre novamente.");
       } else if (mode === "invite") {
-        await api("auth/invitations/accept", { token, name, password }); setToken(""); change("login"); setMessage("Convite aceito. Entre com seu e-mail e senha para configurar o segundo fator.");
+        await api("auth/invitations/accept", { token, name, password }); setToken(""); change("login"); setMessage("Conta ativada. Entre com seu e-mail e senha.");
       } else {
         const result = await api<{ message: string }>(`auth/${mode}`, { email }); setMessage(result.message);
       }
@@ -101,7 +101,7 @@ export default function Access() {
       </>}
       {error && <p className="auth-error" role="alert">{error}</p>}
       {message && <p className="auth-message" role="status">{message}</p>}
-      <p className="auth-footer">Ativação por e-mail, senha e segundo fator obrigatórios.</p>
+      <p className="auth-footer">{context?.mfaRequired ? "Acesso com senha e autenticador." : "Acesso com e-mail e senha."}</p>
     </section>
   </main>;
 }
