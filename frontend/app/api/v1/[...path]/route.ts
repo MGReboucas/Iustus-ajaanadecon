@@ -78,6 +78,11 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
     if (upstream.status >= 300 && upstream.status < 400) return failure("UPSTREAM_ERROR", "Serviço indisponível.", 502);
     // Nunca retransmitir páginas DEBUG/HTML ou stack trace do backend.
     if (upstream.status >= 500) return failure("UPSTREAM_ERROR", "Não foi possível concluir. Tente novamente.", 502);
+    const contentType = upstream.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+    const binaryDownload = downloadRoute.test(path) && upstream.ok;
+    if (upstream.status !== 204 && !binaryDownload && contentType !== "application/json") {
+      return failure("UPSTREAM_ERROR", "O serviço de acesso está indisponível. Tente novamente em instantes.", 502);
+    }
     const outgoing = new Headers({ "Cache-Control": "no-store, private", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff" });
     for (const name of ["content-type", "retry-after", ...(downloadRoute.test(path) ? ["content-disposition", "content-security-policy"] : [])]) {
       const value = upstream.headers.get(name);
