@@ -21,15 +21,20 @@ from apps.identity.models import IdentityEmail, User
 from apps.identity.security import decrypt
 
 action = sys.argv[1]
-if settings.DATABASES["default"]["NAME"] != "iustus_e2e" or not settings.DEBUG:
+db = settings.DATABASES["default"]
+sqlite = db["ENGINE"] == "django.db.backends.sqlite3"
+expected_name = ROOT / ".local" / "iustus_e2e.sqlite3" if sqlite else "iustus_e2e"
+if db["NAME"] != expected_name or not settings.DEBUG:
     raise SystemExit("Fixtures só são permitidas no banco isolado iustus_e2e.")
+if not sqlite and db["HOST"] not in ("localhost", "127.0.0.1", "::1"):
+    raise SystemExit("Fixtures exigem PostgreSQL local. Não use a URL do banco de produção.")
 
 if action == "prepare":
-    import psycopg
-    db = settings.DATABASES["default"]
-    with psycopg.connect(dbname="postgres", user=db["USER"], password=db["PASSWORD"], host=db["HOST"], port=db["PORT"], autocommit=True) as connection:
-        if not connection.execute("SELECT 1 FROM pg_database WHERE datname = %s", ("iustus_e2e",)).fetchone():
-            connection.execute("CREATE DATABASE iustus_e2e")
+    if not sqlite:
+        import psycopg
+        with psycopg.connect(dbname="postgres", user=db["USER"], password=db["PASSWORD"], host=db["HOST"], port=db["PORT"], autocommit=True) as connection:
+            if not connection.execute("SELECT 1 FROM pg_database WHERE datname = %s", ("iustus_e2e",)).fetchone():
+                connection.execute("CREATE DATABASE iustus_e2e")
     call_command("migrate", interactive=False, verbosity=0)
     print("Banco E2E preparado.")
 else:

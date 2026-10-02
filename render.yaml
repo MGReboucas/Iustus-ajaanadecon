@@ -26,9 +26,9 @@ services:
         sync: false
       - key: DJANGO_ALLOWED_HOSTS
         sync: false
-      - key: IUSTUS_CLIENT_ORIGIN
+      - key: IUSTUS_PUBLIC_ORIGIN
         value: https://iustus-defesa-juridica.vercel.app
-      - key: IUSTUS_TEAM_ORIGIN
+      - key: IUSTUS_INITIAL_ADMIN_EMAIL
         sync: false
       - key: EMAIL_HOST
         value: smtp.gmail.com
@@ -66,10 +66,10 @@ services:
         fromService: {type: web, name: iustus-api, envVarKey: DATABASE_URL}
       - key: DJANGO_ALLOWED_HOSTS
         fromService: {type: web, name: iustus-api, envVarKey: DJANGO_ALLOWED_HOSTS}
-      - key: IUSTUS_CLIENT_ORIGIN
-        fromService: {type: web, name: iustus-api, envVarKey: IUSTUS_CLIENT_ORIGIN}
-      - key: IUSTUS_TEAM_ORIGIN
-        fromService: {type: web, name: iustus-api, envVarKey: IUSTUS_TEAM_ORIGIN}
+      - key: IUSTUS_PUBLIC_ORIGIN
+        fromService: {type: web, name: iustus-api, envVarKey: IUSTUS_PUBLIC_ORIGIN}
+      - key: IUSTUS_INITIAL_ADMIN_EMAIL
+        fromService: {type: web, name: iustus-api, envVarKey: IUSTUS_INITIAL_ADMIN_EMAIL}
       - key: EMAIL_HOST
         fromService: {type: web, name: iustus-api, envVarKey: EMAIL_HOST}
       - key: EMAIL_PORT

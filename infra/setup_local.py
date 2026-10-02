@@ -32,12 +32,13 @@ def main():
             f"DJANGO_SECRET_KEY={secrets.token_urlsafe(64)}\n"
             f"IDENTITY_ENCRYPTION_KEY={base64.urlsafe_b64encode(os.urandom(32)).decode()}\n"
             f"IUSTUS_PROXY_SECRET={proxy}\n"
-            f"DATABASE_URL=postgresql://iustus:{password}@127.0.0.1:55432/iustus\n",
+            f"DATABASE_URL=postgresql://iustus:{password}@127.0.0.1:55432/iustus\n"
+            "IUSTUS_PUBLIC_ORIGIN=http://localhost:3000\nIUSTUS_INITIAL_ADMIN_EMAIL=\n",
             encoding="utf8",
         )
         frontend_env.write_text(
             f"IUSTUS_PROXY_SECRET={proxy}\nDJANGO_API_ORIGIN=http://127.0.0.1:8000\n"
-            "IUSTUS_CLIENT_ORIGIN=http://localhost:3000\nIUSTUS_TEAM_ORIGIN=http://127.0.0.1:3000\n"
+            "IUSTUS_PUBLIC_ORIGIN=http://localhost:3000\n"
             "NEXT_PUBLIC_PAGBANK_SANDBOX=true\n", encoding="utf8",
         )
         print("Configuração local criada; segredos não foram exibidos.")

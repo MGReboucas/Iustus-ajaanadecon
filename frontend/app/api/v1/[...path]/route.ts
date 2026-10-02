@@ -30,10 +30,10 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
   if (!managementRoute.test(path) && !routes.has(path) && !caseRoute.test(path) && !documentRoute.test(path) && !notificationRoute.test(path) && !exportRoute.test(path)) return failure("NOT_FOUND", "Recurso não encontrado.", 404);
   const origin = process.env.DJANGO_API_ORIGIN;
   const key = process.env.IUSTUS_PROXY_SECRET;
-  const portals = [process.env.IUSTUS_CLIENT_ORIGIN, process.env.IUSTUS_TEAM_ORIGIN].filter(Boolean) as string[];
-  if (!origin || !key || portals.length !== 2) return failure("NOT_CONFIGURED", "O acesso ainda não foi configurado.", 503);
+  const publicOrigin = process.env.IUSTUS_PUBLIC_ORIGIN || (process.env.NODE_ENV === "development" ? "http://localhost:3000" : "");
+  if (!origin || !key || !publicOrigin) return failure("NOT_CONFIGURED", "O acesso ainda não foi configurado.", 503);
   const host = request.headers.get("host")?.toLowerCase();
-  const portal = portals.find(value => new URL(value).host.toLowerCase() === host);
+  const portal = new URL(publicOrigin).host.toLowerCase() === host;
   if (!portal) return failure("INVALID_PORTAL", "Portal não permitido.", 403);
   const headers = new Headers({ "Accept": "application/json", "X-Iustus-Portal-Host": host!, "X-Iustus-Proxy-Key": key });
   // Somente os headers abaixo atravessam a fronteira. Forwarded, X-Forwarded-* e

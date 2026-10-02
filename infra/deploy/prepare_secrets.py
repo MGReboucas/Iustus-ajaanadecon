@@ -30,8 +30,8 @@ def main():
         "EMAIL_HOST": "smtp.gmail.com", "EMAIL_PORT": "587",
         "EMAIL_HOST_USER": gmail, "EMAIL_HOST_PASSWORD": password,
         "DEFAULT_FROM_EMAIL": f"Iustus <{gmail}>",
-        "IUSTUS_CLIENT_ORIGIN": "https://iustus-defesa-juridica.vercel.app",
-        "IUSTUS_TEAM_ORIGIN": "", "DJANGO_ALLOWED_HOSTS": "",
+        "IUSTUS_PUBLIC_ORIGIN": "https://iustus-defesa-juridica.vercel.app",
+        "IUSTUS_INITIAL_ADMIN_EMAIL": "", "DJANGO_ALLOWED_HOSTS": "",
         "REGISTRATION_POLICY_VERSION": "web-evaluation-v1",
     }
     with target.open("x", encoding="utf8") as output:

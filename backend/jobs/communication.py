@@ -27,7 +27,8 @@ def deliver_case_email():
     notice = item.notification
     user = notice.recipient
     # Nenhuma mensagem é enviada após revogação conhecida ou opt-out.
-    allowed = user.is_active and user.email_verified_at and user.case_email_enabled and accessible(user).filter(pk=notice.case_id).exists()
+    portal = "client" if user.role == "CLIENT" else "team"
+    allowed = portal in settings.PORTAL_ORIGINS and user.is_active and user.email_verified_at and user.case_email_enabled and accessible(user).filter(pk=notice.case_id).exists()
     if notice.kind == "TASK_REMINDER":
         allowed = allowed and LegalTask.objects.filter(pk=item.reminder_task_id, case_id=notice.case_id, due_at=item.reminder_due_at, completed_at__isnull=True,
             due_at__lte=timezone.now()+timedelta(hours=24)).exclude(case__state__in=[Case.State.CLOSED, Case.State.REJECTED]).exists()

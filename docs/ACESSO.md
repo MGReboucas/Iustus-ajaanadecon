@@ -1,100 +1,57 @@
-# Acesso local: cliente e equipe
+# Acesso exclusivo da equipe
 
-> Marco de 16/09/2026: autenticação integrada e testada localmente. Não é liberação de produção; use somente dados fictícios.
+Atualizado em 02/10/2026. O sistema usa uma única origem para login e painel. Cadastro público e acesso de clientes não estão disponíveis na configuração local ou produtiva.
 
-## Entregue
+## Configuração
 
-Cadastro com senha validada pelo Django, confirmação de e-mail e reenvio; login/logout e recuperação de senha; revogação de sessões após reset; convite de advogado pelo administrador com MFA; TOTP e oito códigos de recuperação de uso único; painéis iniciais com perfil real e permissões por portal. Há fila durável de e-mails de identidade com conteúdo criptografado, lease e retry. Localmente, mensagens viram arquivos, sem envio externo.
+- `IUSTUS_PUBLIC_ORIGIN`: endereço do frontend, igual no backend e frontend. Local: `http://localhost:3000`. Produção: origem HTTPS sem caminho.
+- `IUSTUS_INITIAL_ADMIN_EMAIL`: e-mail do administrador inicial, somente no backend.
+- `DJANGO_API_ORIGIN` e `IUSTUS_PROXY_SECRET`: conexão privada do proxy com a API.
+- Banco, chave Django, chave Fernet e SMTP continuam necessários. Consulte [implantação](../infra/deploy/README.md).
 
-Casos e triagem possuem um incremento local descrito em [Casos](CASOS.md). Documentos, assinatura, migração financeira, edição de perfil, troca de dispositivo MFA e reemissão de códigos ainda não estão implementados. Login Google foi removido da tela por não ter integração.
+Remova as antigas variáveis `IUSTUS_CLIENT_ORIGIN` e `IUSTUS_TEAM_ORIGIN`. O endereço da API é infraestrutura; não é um segundo portal.
 
-## Preparar
+## Ativação inicial
 
-Na raiz, com Node 24 e Python 3.12–3.14 instalados:
-
-```powershell
-npm.cmd run frontend:install
-python -m venv backend/.venv
-.\backend\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock
-.\backend\.venv\Scripts\python.exe infra/setup_local.py --postgres-bin 'C:\Program Files\PostgreSQL\18\bin' --start-db
-.\backend\.venv\Scripts\python.exe backend/manage.py migrate
-```
-
-O caminho PostgreSQL é um exemplo da instalação encontrada. O script usa apenas `.local/postgres`, porta **55432**, banco `iustus`, preservando o serviço preexistente. Sem `--start-db`, gera somente os arquivos de configuração; é possível configurar outro PostgreSQL em DATABASE_URL. O Compose opcional tem porta/senha próprias e requer ajustar a conexão.
-
-As chaves persistentes ficam em `backend/.env` e `frontend/.env.local`, fora do Git; arquivos existentes não são sobrescritos. A chave Fernet deve ser preservada junto com backups, pois protege MFA e corpos da fila. Se o alias `python` não funcionar, use o caminho da instalação Python apenas para criar a venv.
-
-## Iniciar
-
-Executar cada comando em um terminal separado, na raiz:
+Na raiz do projeto, depois de configurar o backend e aplicar as migrações:
 
 ```powershell
-.\backend\.venv\Scripts\python.exe backend/manage.py runserver 127.0.0.1:8000 --noreload
-npm.cmd --prefix frontend run dev -- --hostname 127.0.0.1 --port 3000
-.\backend\.venv\Scripts\python.exe backend/manage.py deliver_identity_mail
+backend/.venv/Scripts/python.exe backend/manage.py bootstrap_admin --name "Administrador"
+backend/.venv/Scripts/python.exe backend/manage.py deliver_identity_mail
 ```
 
-| Área | Endereço local |
-| --- | --- |
-| Cliente | http://localhost:3000/acessar |
-| Equipe | http://127.0.0.1:3000/acessar |
-| Liveness Django | http://127.0.0.1:8000/api/v1/health/ |
+O comando registra uma conta sem senha utilizável e enfileira um link de ativação válido por 24 horas. O destinatário confirma a posse do e-mail ao usar o link e definir a senha. Depois entra e configura o autenticador TOTP. Guarde os códigos de recuperação exibidos uma única vez.
 
-Cookies diferenciam `localhost` e `127.0.0.1`. Mantenha o endereço correto; subdomínios reais e HTTPS ainda serão configurados. Para encerrar o PostgreSQL exclusivo do projeto, use pg_ctl com `-D .local/postgres stop`; não pare o serviço preexistente do computador.
+O comando pode reenviar a ativação enquanto a conta inicial estiver pendente, invalidando o link anterior. Não promove contas existentes nem modifica um administrador já ativado. Alterar ou digitar o e-mail da variável nunca concede privilégios por si só.
 
-## Cliente
+Em desenvolvimento, as mensagens ficam em `.local/mail/`. Em produção, o worker `run_operations` entrega por SMTP. Não publique tokens, senhas ou arquivos de configuração.
 
-Criar conta pelo portal do cliente. O worker grava a mensagem em `.local/mail/`; abrir o arquivo de texto e usar o link. A confirmação exige clique explícito. Tokens usam fragmento de URL, removido do histórico pela tela, e não aparecem no request HTTP/Referer. Depois de confirmar o e-mail, entrar e acessar `/cliente`. Recuperação e reenvio seguem o mesmo fluxo de mensagens locais.
+## Iniciar localmente
 
-O cadastro registra o aviso de testes `development-v1` no usuário e na auditoria. Esse aviso não substitui política de privacidade, termos comerciais aprovados ou contrato jurídico. Cadastro não ativa assinatura nem cobrança.
-
-## Administrador e advogados
-
-Na raiz, escolher um e-mail fictício e executar:
+Execute em terminais separados:
 
 ```powershell
-.\backend\.venv\Scripts\python.exe backend/manage.py bootstrap_admin admin@example.test --name 'Administrador de teste'
+backend/.venv/Scripts/python.exe backend/manage.py runserver 127.0.0.1:8000 --noreload
+npm.cmd run dev
+backend/.venv/Scripts/python.exe backend/manage.py run_operations
 ```
 
-A senha é solicitada sem aparecer na linha de comando. O operador do servidor declara o endereço verificado; bootstrap não é endpoint público, só cria o primeiro administrador e não promove contas existentes. MFA continua obrigatório. Não usar `createsuperuser` para conceder papéis do produto.
+Abra `http://localhost:3000`. A raiz encaminha para `/acessar`; o painel da equipe fica em `/advogado`. As antigas páginas do cliente e checkout encaminham para o login.
 
-Entrar no portal da equipe, adicionar a chave exibida ao autenticador TOTP por tempo e confirmar o código de seis dígitos. Guardar os oito códigos de recuperação, exibidos uma única vez. O administrador acessa `/advogado` e convida os dois advogados; cada convidado define senha e configura o próprio fator. Convites públicos nunca concedem ADMIN.
+## Aprovação e revogação
 
-Perder todos os fatores/códigos não habilita recuperação de MFA só por e-mail. Recuperação excepcional e troca de dispositivo ainda precisam de procedimento operacional e implementação própria antes de produção.
+No painel do administrador, **Aprovar profissional** registra um advogado autorizado no banco e envia o convite. A conta fica sem senha e sem e-mail confirmado até a ativação. Repetir o e-mail no formulário reenvia a ativação pendente e invalida o link anterior.
 
-## Controles implementados e limites
+**Gestão de usuários** exibe contas ativas, pendentes de ativação e revogadas. A revogação invalida as sessões em todas as próximas requisições, desafios MFA e tokens pendentes. Casos ativos não impedem o bloqueio: os dados permanecem disponíveis para redistribuição pelo administrador. Reaprovar exige novo login; contas ainda não ativadas precisam de um novo convite.
 
-O navegador usa `/api/v1` na mesma origem. O proxy Next.js aceita somente hosts/rotas configurados e corpo de até 256 KiB. Descarta headers de encaminhamento enviados pelo navegador e define X-Iustus-Portal-Host a partir do host validado, junto com uma chave privada. Django verifica a chave, aplica allowlist e vincula sessão ao portal. X-Forwarded-Host não escolhe o portal.
+A conta administrativa é protegida contra revogação pelo próprio painel. Recuperação excepcional de MFA e gestão adicional de administradores continuam sendo operações do servidor.
 
-CSRF é obrigatório também em login e mutações anônimas. Respostas privadas são no-store; cookies são HttpOnly, sem armazenamento de sessão em localStorage. HTTP local usa cookies sem Secure; HTTPS e prefixo __Host- produtivos permanecem pendentes. Segredos de MFA são criptografados com Fernet e códigos são verificados por PyOTP; contador impede reuso do mesmo OTP. Recuperações e tokens de ação ficam como hashes; reset invalida sessões e desafios anteriores.
+Profissionais ativos já existentes são preservados como autorizados. Revise a lista antes de liberar a equipe. Contas de clientes permanecem no banco para preservar vínculos com casos, mas não conseguem entrar.
 
-Limites iniciais: cliente com 24h absolutas/2h ocioso; equipe com 12h/30 min; desafio MFA de 5 min; recuperação de senha de 1h; verificação/convite de 24h. Rate limit usa PostgreSQL, por ação/conta e limite agregado por portal. Não presume IP confiável do navegador. Limites de produção, proteção de borda, rotação de chaves e limpeza programada de tokens/contadores ainda requerem revisão.
+## Segurança e validação
 
-O worker tenta cada e-mail até cinco vezes com backoff e lease de cinco minutos. Após entrega, apaga o corpo criptografado da fila. Falha entre envio e confirmação pode repetir a mensagem, mas o token continua de uso único. SMTP não foi configurado; não houve envio a destinatários reais.
+O backend verifica identidade, estado ativo, confirmação de e-mail, versão de autorização, MFA e validade da sessão a cada operação autenticada. Permissões por papel continuam aplicadas às ações administrativas e aos casos. CSRF também é exigido no login; cookies privados e limites de tentativas permanecem ativos.
 
-## Testar
+Não há migração de esquema nesta alteração. Execute a suíte do backend a partir de `backend`: ` .venv/Scripts/python.exe manage.py test tests --settings=config.settings.test --noinput`. Os testes de concorrência exigem `config.settings.test_postgres`.
 
-Dentro de backend:
-
-```powershell
-.\.venv\Scripts\python.exe manage.py check
-.\.venv\Scripts\python.exe manage.py test tests --settings=config.settings.test_postgres --noinput
-.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run --settings=config.settings.test
-```
-
-35 testes usam banco separado, incluindo consumo concorrente do mesmo TOTP e edição simultânea de caso. A alternativa `config.settings.test` usa SQLite em memória e pula os dois testes de locks reais. O usuário PostgreSQL de testes precisa poder criar banco; isso não é recomendação de privilégio para produção.
-
-Para navegador, parar os servidores das portas 3000/8000 e executar na raiz:
-
-```powershell
-.\backend\.venv\Scripts\python.exe tests/e2e/fixture.py prepare
-npm.cmd run build
-$env:PLAYWRIGHT_CHANNEL = 'msedge'
-npm.cmd run test:e2e
-```
-
-O runner inicia/encerra seus servidores e usa somente `iustus_e2e`. As quatro jornadas cobrem cliente, equipe, isolamento e o fluxo de casos/triagem. Fixtures só aceitam endereços sintéticos `e2e-*@example.test`. No Linux/CI, instalar Chromium pelo Playwright e omitir PLAYWRIGHT_CHANNEL. O workflow inclui PostgreSQL e navegador; execução local não comprova aprovação remota no GitHub.
-
-## Antes de publicar
-
-Homologar domínios/TLS, infraestrutura de proxy, settings produtivos, gestão e backup das chaves, provedor de e-mail, políticas jurídicas, recuperação MFA excepcional, retenção/auditoria, monitoramento e aceite operacional. Corrigir/migrar o checkout legado antes de cobrança real. As dependências do frontend foram atualizadas dentro das linhas Next.js 15 e React 19.1; isso não constitui auditoria completa de segurança.
+Os testes de navegador atuais cobrem o endereço único, bloqueio de clientes, convite, MFA e revogação. A jornada antiga dos dois portais foi preservada em `tests/e2e/access-dual-portal.legacy.cjs` como referência histórica e não é executada.

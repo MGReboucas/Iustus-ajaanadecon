@@ -1,7 +1,7 @@
 // Verifica o serviço de acesso e a sessão CSRF sem cadastrar nem enviar e-mail.
-// node infra/deploy/check_web.cjs https://cliente.example https://equipe.example
+// node infra/deploy/check_web.cjs https://sistema.example
 const origins = process.argv.slice(2);
-if (origins.length !== 2) throw new Error('Informe as origens HTTPS de cliente e equipe.');
+if (origins.length !== 1) throw new Error('Informe a origem HTTPS pública do sistema.');
 async function check(origin, portal) {
   const url = new URL(origin);
   if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error('Use origens HTTPS, sem credenciais, caminho ou parâmetros.');
@@ -19,7 +19,5 @@ async function check(origin, portal) {
   console.log(`${portal}: API/banco, configuração, CSRF seguro, cache privado e bloqueio de anônimo OK.`);
 }
 (async () => {
-  if (new URL(origins[0]).host === new URL(origins[1]).host) throw new Error('Os portais devem ter hosts distintos.');
-  await check(origins[0], 'client');
-  await check(origins[1], 'team');
+  await check(origins[0], 'team');
 })().catch(error => { console.error(error.message); process.exit(1); });

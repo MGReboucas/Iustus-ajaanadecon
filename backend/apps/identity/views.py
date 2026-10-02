@@ -176,11 +176,18 @@ class InviteView(IdentityView):
         self.public_limit(request, "invite", str(request.user.pk), limit=10)
         with transaction.atomic():
             # Serializar convites do mesmo administrador; aceitação também verifica unicidade.
-            User.objects.select_for_update().get(pk=request.user.pk)
-            if not User.objects.filter(email__iexact=data["email"]).exists():
+            admin = User.objects.select_for_update().get(pk=request.user.pk)
+            if not admin.is_active or admin.role != User.Role.ADMIN or admin.auth_version != request.session.get("auth_version"):
+                raise IdentityError("FORBIDDEN", "Acesso administrativo revogado.", 403)
+            user = User.objects.select_for_update().filter(email__iexact=data["email"]).first()
+            if not user:
+                user = User(email=data["email"], role=User.Role.LAWYER)
+                user.set_unusable_password()
+                user.save()
+            if user.role == User.Role.LAWYER and user.is_active and not user.email_verified_at:
                 ActionToken.objects.filter(email=data["email"], purpose="INVITE", consumed_at__isnull=True).update(consumed_at=timezone.now())
-                issue_token("INVITE", data["email"], "team", created_by=request.user)
-                audit(request.user, "INVITATION_CREATED", "team")
+                issue_token("INVITE", user.email, "team", user=user, created_by=admin)
+                audit(request.user, "INVITATION_CREATED", "team", targetId=str(user.pk))
         return Response({"message": "Se o endereço for elegível, o convite será enviado."}, status=202)
 
 
@@ -193,9 +200,15 @@ class AcceptInviteView(PublicView):
             with transaction.atomic():
                 token = locked_token(data["token"], "INVITE", "team")
                 inviter = User.objects.filter(pk=token.created_by_id, is_active=True, role=User.Role.ADMIN).first()
-                if not inviter or User.objects.filter(email__iexact=token.email).exists():
+                user = User.objects.select_for_update().filter(pk=token.user_id).first()
+                bootstrap = token.created_by_id is None and user and user.role == User.Role.ADMIN
+                if (not user or not user.is_active or user.email_verified_at or user.has_usable_password()
+                        or user.auth_version != token.auth_version or user.email != token.email
+                        or user.role not in (User.Role.LAWYER, User.Role.ADMIN)
+                        or (not bootstrap and not inviter)):
                     raise IdentityError("INVALID_TOKEN", "Convite inválido ou indisponível.")
-                user = User(email=token.email, first_name=data["name"], role=User.Role.LAWYER, email_verified_at=timezone.now())
+                user.first_name = data["name"]
+                user.email_verified_at = timezone.now()
                 validate_new_password(data["password"], user)
                 user.set_password(data["password"])
                 user.save()

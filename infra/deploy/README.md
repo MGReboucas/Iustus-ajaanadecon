@@ -6,9 +6,9 @@ Guia passo a passo de S3 e ClamAV: [Configurar documentos](CONFIGURAR_DOCUMENTOS
 
 ## Configuração
 
-Use [production.env.example](production.env.example) como inventário. Cadastre os valores privados no gerenciador de ambiente de cada serviço; não os versione. API e worker precisam compartilhar banco, chave Fernet, chave Django, segredo do proxy, origens e SMTP. O frontend recebe somente as duas origens, DJANGO_API_ORIGIN e IUSTUS_PROXY_SECRET, além dos flags de checkout.
+Use [production.env.example](production.env.example) como inventário. Cadastre os valores privados no gerenciador de ambiente de cada serviço; não os versione. API e worker precisam compartilhar banco, chave Fernet, chave Django, segredo do proxy, origens e SMTP. O frontend recebe somente IUSTUS_PUBLIC_ORIGIN, DJANGO_API_ORIGIN e IUSTUS_PROXY_SECRET, além dos flags de checkout.
 
-- Cliente e equipe exigem hosts HTTPS distintos.
+- IUSTUS_PUBLIC_ORIGIN define o único endereço HTTPS do sistema, compartilhado pela API, worker e frontend. IUSTUS_INITIAL_ADMIN_EMAIL é configurado somente no backend para a ativação inicial.
 - DJANGO_API_ORIGIN aponta para a origem HTTPS da API, sem caminho.
 - DJANGO_ALLOWED_HOSTS contém hosts exatos da API.
 - IDENTITY_ENCRYPTION_KEY deve permanecer estável entre releases; perdê-la impede decifrar dados já persistidos.
@@ -49,19 +49,19 @@ As advertências HSTS de subdomínios e preload são deliberadas durante a impla
 - `/api/v1/health/`: liveness pública mínima, sem verificar dependências.
 - `/api/v1/ready`: verifica uma consulta no banco, exige proxy confiável na API; o frontend expõe apenas estado genérico. Não comprova migrações, SMTP, S3 ou scanner.
 
-Após publicar ambos os portais:
+Após publicar o sistema:
 
 ```sh
-node infra/deploy/check_web.cjs https://cliente.example https://equipe.example
+node infra/deploy/check_web.cjs https://sistema.example
 ```
 
-A checagem verifica API/banco, CSRF, cookies, cache e recusa de acesso anônimo aos painéis. Depois valide cadastro, confirmação de e-mail, recuperação, login e MFA com contas de homologação. Não use dados reais nesta validação.
+A checagem verifica API/banco, CSRF, cookies, cache e recusa de acesso anônimo aos painéis. Depois valide ativação por convite, confirmação de e-mail, recuperação, login, MFA e revogação com contas de homologação. Não use dados reais nesta validação.
 
 ## Documentos: bloqueio de infraestrutura conhecido
 
 O proxy atual transporta arquivos de até 20 MiB pelo Next.js. A [documentação da Vercel](https://vercel.com/docs/functions/limitations) limita corpos de requisição de Functions a 4,5 MB. Portanto, habilitar S3 sozinho não torna esse fluxo pronto para produção na Vercel.
 
-O código já oferece transferência direta autorizada para S3 com `DOCUMENT_DIRECT_UPLOAD_ENABLED=true`. Ela permanece desligada até homologação. Configure CORS usando [s3-cors.example.json](s3-cors.example.json), substituindo as origens de exemplo pelos dois portais reais.
+O código já oferece transferência direta autorizada para S3 com `DOCUMENT_DIRECT_UPLOAD_ENABLED=true`. Ela permanece desligada até homologação. Configure CORS usando [s3-cors.example.json](s3-cors.example.json), substituindo as origens de exemplo pela origem pública real.
 
 A API autoriza PUT por 5 minutos para uma chave aleatória, com tamanho, checksum SHA-256, criptografia AES256 e `If-None-Match: *` assinados. O navegador envia os bytes diretamente ao bucket sem cookies. Depois, a API revalida acesso, prazo, tamanho, formato e hash; o documento entra em quarentena para o scanner. O bucket deve suportar SigV4, checksums e gravação condicional, além de bloquear acesso público. Não conceder GetObject/ListBucket ao navegador.
 
@@ -82,3 +82,11 @@ Quando o transporte estiver resolvido, configurar as mesmas variáveis de armaze
 - Validar conteúdo, políticas e condições comerciais com a operação.
 
 Procedimentos de backup, incidente e reversão: [Operação](../../docs/OPERACAO.md). Reverter artefatos compatíveis; não restaurar banco automaticamente durante rollback.
+
+## Administrador inicial
+
+Configure `IUSTUS_INITIAL_ADMIN_EMAIL` e execute `python manage.py bootstrap_admin --name "Administrador"` no servidor. O worker enviará um link de uso único, válido por 24 horas, para confirmar o e-mail e definir a senha. MFA é exigido no primeiro login. Repetir o comando antes da ativação substitui o link; depois da ativação, o comando recusa alterações. Contas existentes nunca são promovidas pelo e-mail da variável.
+
+No painel, **Aprovar profissional** registra a autorização no banco e envia a ativação. **Gestão de usuários** permite revogar e aprovar novamente o acesso. Revogar invalida sessões, desafios MFA e tokens pendentes, mesmo com casos ativos. Após reaprovar uma conta ainda não ativada, envie uma nova ativação pelo mesmo formulário.
+
+Na atualização de uma instalação existente, remova IUSTUS_CLIENT_ORIGIN e IUSTUS_TEAM_ORIGIN e configure IUSTUS_PUBLIC_ORIGIN. Administradores e profissionais ativos existentes são preservados; clientes deixam de acessar o sistema. Revise a lista de profissionais antes de liberar a equipe. Não é necessária migração de esquema.

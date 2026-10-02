@@ -15,8 +15,7 @@ class ProductionSettingsTests(SimpleTestCase):
             "DJANGO_SECRET_KEY": secrets.token_urlsafe(64),
             "IUSTUS_PROXY_SECRET": secrets.token_urlsafe(48),
             "IDENTITY_ENCRYPTION_KEY": Fernet.generate_key().decode(),
-            "IUSTUS_CLIENT_ORIGIN": "https://client.example.test",
-            "IUSTUS_TEAM_ORIGIN": "https://team.example.test",
+            "IUSTUS_PUBLIC_ORIGIN": "https://app.example.test",
             "DJANGO_ALLOWED_HOSTS": "backend.example.test",
             "DATABASE_URL": "postgresql://synthetic:synthetic@db.example.test/iustus",
             "EMAIL_HOST": "smtp.example.test", "EMAIL_HOST_USER": "synthetic",
@@ -32,10 +31,10 @@ class ProductionSettingsTests(SimpleTestCase):
         import re
         self.assertEqual(set(re.findall(r"security\.W\d+", result.stderr)), {"security.W005", "security.W021"})
 
-    def test_same_host_or_insecure_portals_are_rejected(self):
-        for value in ("https://team.example.test", "http://client.example.test", "https://client.example.test/path", "https://*.example.test", "https://localhost"):
+    def test_insecure_or_invalid_public_origins_are_rejected(self):
+        for value in ("http://client.example.test", "https://client.example.test/path", "https://*.example.test", "https://localhost"):
             with self.subTest(value=value):
-                self.assertNotEqual(self.run_settings(IUSTUS_CLIENT_ORIGIN=value).returncode, 0)
+                self.assertNotEqual(self.run_settings(IUSTUS_PUBLIC_ORIGIN=value).returncode, 0)
 
     def test_wildcard_hosts_ephemeral_database_and_missing_mail_are_rejected(self):
         for overrides in ({"DJANGO_ALLOWED_HOSTS": "*"}, {"DATABASE_URL": "sqlite:///:memory:"},

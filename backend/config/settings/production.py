@@ -34,9 +34,8 @@ try:
 except (ValueError, TypeError) as exc:
     raise ImproperlyConfigured("IDENTITY_ENCRYPTION_KEY deve ser uma chave Fernet persistente.") from exc
 
-PORTAL_ORIGINS = {"client": https_origin("IUSTUS_CLIENT_ORIGIN"), "team": https_origin("IUSTUS_TEAM_ORIGIN")}
-if urlsplit(PORTAL_ORIGINS["client"]).hostname == urlsplit(PORTAL_ORIGINS["team"]).hostname:
-    raise ImproperlyConfigured("Cliente e equipe precisam de hosts distintos.")
+PORTAL_ORIGINS = {"team": https_origin("IUSTUS_PUBLIC_ORIGIN")}
+IUSTUS_INITIAL_ADMIN_EMAIL = env("IUSTUS_INITIAL_ADMIN_EMAIL", default="")
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS")
 if not ALLOWED_HOSTS or any(not host or "*" in host or host.startswith(".") or "/" in host for host in ALLOWED_HOSTS):
     raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS exige uma lista de hosts exatos.")

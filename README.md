@@ -31,7 +31,7 @@ A landing apresenta proposta de valor, jornada em três etapas, benefícios, pla
 | Landing page e identidade visual | Código existente; revisão final de conteúdo/acessibilidade pendente |
 | Checkout PagBank | SDK e rotas existentes; correções de segurança, conciliação e homologação pendentes |
 | Login e cadastro | Cadastro, confirmação, login, recuperação e sessões persistentes testados localmente |
-| Fundação técnica | Next.js/TypeScript, Django/DRF e PostgreSQL; MFA, isolamento de portais e worker de identidade |
+| Fundação técnica | Next.js/TypeScript, Django/DRF e PostgreSQL; MFA, acesso aprovado da equipe e worker de identidade |
 | Casos e triagem | Rascunho, atribuição, triagem e complemento persistidos; submissão restrita a liberação de teste |
 | Assinatura e documentos | Documentos implementados localmente; scanner/armazenamento produtivo e integração financeira pendentes |
 | Dashboards e gestão jurídica | Indicadores, pendências, mensagens, notas internas e avisos; etapas processuais pendentes |
@@ -46,7 +46,7 @@ O levantamento identificou envio desnecessário de campos de cartão ao backend 
 
 **Arquitetura aprovada:** Next.js + TypeScript no frontend; Python + Django + Django REST Framework no backend; PostgreSQL com Django ORM; armazenamento privado de objetos e worker Python separado com outbox transacional. Um repositório, com backend modular responsável por identidade, autorização, regras jurídicas e pagamentos. Fornecedores, versões, região e custos ainda serão validados. [Arquitetura e diagramas](docs/ARCHITECTURE.md) · [Modelo de dados](docs/DATABASE.md) · [API](docs/API.md).
 
-**Portais aprovados:** cliente e equipe em origens separadas, sessões vinculadas ao portal e MFA obrigatório para profissionais. Localmente, cliente usa `localhost:3000` e equipe `127.0.0.1:3000`; o proxy Next.js encaminha `/api/v1` ao Django. Subdomínios reais, HTTPS e infraestrutura produtiva permanecem pendentes.
+**Acesso da equipe (02/10/2026):** um único endereço em `IUSTUS_PUBLIC_ORIGIN`, aprovação administrativa no banco, ativação por e-mail, senha e MFA. O administrador inicial usa `IUSTUS_INITIAL_ADMIN_EMAIL` e o comando `bootstrap_admin`. Cadastro público e acesso de clientes estão desabilitados na configuração atual. Veja [Acesso](docs/ACESSO.md).
 
 ## Roadmap resumido
 
@@ -87,7 +87,7 @@ Calendário provisório de segunda a sexta-feira; feriados, férias e ausências
 
 O [guia de casos e triagem](docs/CASOS.md) explica a liberação local, distribuição de casos e revisão pelo advogado. Consulte também [documentos privados](docs/DOCUMENTOS.md) e [dashboard e comunicação](docs/DASHBOARD_COMUNICACAO.md).
 
-Siga o [guia de acesso local](docs/ACESSO.md) para preparar PostgreSQL, configurar os dois portais, iniciar o worker e criar o primeiro administrador. Os comandos abaixo iniciam somente o frontend.
+Siga o [guia de acesso local](docs/ACESSO.md) para preparar PostgreSQL, configurar o endereço único, iniciar o worker e criar o primeiro administrador. Os comandos abaixo iniciam somente o frontend.
 
 Frontend verificado com Node.js 24.14.1; dependências travadas em `frontend/package-lock.json`. Na raiz:
 
