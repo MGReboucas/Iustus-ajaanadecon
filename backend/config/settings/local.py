@@ -17,6 +17,8 @@ DATABASES = {
 EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
 EMAIL_FILE_PATH = BASE_DIR.parent / ".local" / "mail"
 PORTAL_ORIGINS = {"team": env("IUSTUS_PUBLIC_ORIGIN", default="http://localhost:3000").rstrip("/")}
+IDENTITY_SHARED_PORTAL = True
+PORTAL_ORIGINS["client"] = PORTAL_ORIGINS["team"]
 IUSTUS_INITIAL_ADMIN_EMAIL = env("IUSTUS_INITIAL_ADMIN_EMAIL", default="")
 # HTTP de desenvolvimento: não usar prefixo __Host- sem HTTPS.
 SESSION_COOKIE_NAME = "iustus_local_session"

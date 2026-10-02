@@ -1,0 +1,66 @@
+const { test, expect } = require('../../frontend/node_modules/@playwright/test');
+const { execFileSync } = require('node:child_process');
+const { randomUUID } = require('node:crypto');
+const path = require('node:path');
+const root = path.resolve(__dirname, '../..');
+const python = path.join(root, 'backend/.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
+const origin = 'http://localhost:3000';
+const password = 'Synthetic-Browser-Passphrase-938!';
+function fixture(action, email) { return JSON.parse(execFileSync(python, [path.join(__dirname,'fixture.py'), action, email], {encoding:'utf8',windowsHide:true})); }
+function address() { return `e2e-${randomUUID()}@example.test`; }
+async function login(page,email) {
+  await page.goto(origin+'/acessar');
+  await page.getByLabel('E-mail',{exact:true}).fill(email);
+  await page.getByLabel('Senha',{exact:true}).fill(password);
+  await page.getByRole('button',{name:'Acessar plataforma',exact:true}).click();
+}
+test('shared origin: customer registration, approval, case assignment and lawyer triage', async ({browser}) => {
+  test.skip(process.env.IDENTITY_MFA_REQUIRED !== 'false', 'Password-only end-to-end run');
+  test.setTimeout(120000);
+  const customer=address(), admin=address(), lawyer=address();
+  fixture('admin',admin); const lawyerId=fixture('lawyer',lawyer).id;
+  const c=await browser.newContext(), a=await browser.newContext(), l=await browser.newContext();
+  const cp=await c.newPage(),ap=await a.newPage(),lp=await l.newPage();
+  await cp.goto(origin+'/acessar');
+  await cp.getByRole('button',{name:'Criar conta de cliente'}).click();
+  await cp.getByLabel('Nome completo').fill('Cliente Jornada');
+  await cp.getByLabel('E-mail',{exact:true}).fill(customer);
+  await cp.getByLabel('Senha',{exact:true}).fill(password);
+  await cp.getByRole('button',{name:'Criar conta',exact:true}).click();
+  await expect(cp.locator('.auth-message')).toContainText('e-mail');
+  await cp.goto(fixture('mail',customer).body.match(/http[^\s]+/)[0]);
+  await cp.getByRole('button',{name:'Confirmar meu e-mail'}).click();
+  await expect(cp.locator('.auth-message')).toContainText('confirmado');
+  await login(cp,customer); await expect(cp).toHaveURL(/\/cliente$/);
+  await cp.getByRole('button',{name:'Novo caso',exact:true}).click();
+  await cp.getByLabel('Título do caso').fill('Caso sintético da jornada');
+  await cp.getByLabel('Categoria',{exact:true}).selectOption('CONSUMER');
+  await cp.getByLabel('Relato',{exact:true}).fill('Relato fictício completo para validar o atendimento entre cliente e advogado.');
+  await cp.getByLabel(/Estou ciente/).check();
+  await cp.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
+  await expect(cp.getByRole('button',{name:'Enviar para triagem'})).toBeDisabled();
+  await login(ap,admin); await expect(ap).toHaveURL(/\/advogado$/);
+  await ap.getByLabel('E-mail do cliente',{exact:true}).fill(customer);
+  await ap.getByLabel('Validade da liberação').fill('2030-10-02T15:00');
+  await ap.getByLabel('Motivo da liberação').fill('Liberação sintética para teste de atendimento.');
+  await ap.getByRole('button',{name:'Salvar liberação'}).click();
+  await expect(ap.getByText('Liberação atualizada.',{exact:false})).toBeVisible();
+  await cp.reload();
+  await cp.locator('.case-list').getByRole('button',{name:/Caso sintético da jornada/}).click();
+  await cp.getByRole('button',{name:'Enviar para triagem'}).click();
+  await expect(cp.locator('.case-detail > .cases-heading')).toContainText('Enviado para distribuição');
+  const ref=(await cp.locator('#case-detail-title').textContent()).replace('Caso ','');
+  await ap.reload();
+  await ap.locator('.case-list').getByRole('button',{name:new RegExp('Caso '+ref)}).click();
+  await ap.getByLabel('Advogado responsável').selectOption(lawyerId);
+  await ap.getByLabel('Motivo administrativo').fill('Distribuição sintética de atendimento.');
+  await ap.getByRole('button',{name:'Salvar responsável'}).click();
+  await expect(ap.getByRole('button',{name:'Salvar responsável'})).toBeDisabled();
+  await login(lp,lawyer); await expect(lp).toHaveURL(/\/advogado$/);
+  await lp.locator('.case-list').getByRole('button',{name:/Caso sintético da jornada/}).click();
+  await lp.getByRole('button',{name:'Iniciar triagem'}).click();
+  await expect(lp.locator('.case-detail > .cases-heading')).toContainText('Em triagem');
+  const response=await c.request.get(origin+'/api/v1/admin/users');
+  expect(response.status()).toBe(403);
+  await c.close(); await a.close(); await l.close();
+});

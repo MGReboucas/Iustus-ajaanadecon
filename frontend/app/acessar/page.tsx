@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { api, Context, Profile } from "@/lib/api/client";
 import "./acessar.css";
 
-type Mode = "login" | "recovery" | "reset" | "invite" | "mfa";
+type Mode = "login" | "recovery" | "reset" | "invite" | "mfa" | "register" | "verify" | "resend";
 type LoginResult = { user?: Profile; mfaRequired?: boolean; enrollmentRequired?: boolean; recoveryCodes?: string[] };
 
 export default function Access() {
@@ -25,7 +25,7 @@ export default function Access() {
   useEffect(() => {
     function readAction() {
       const fragment = new URLSearchParams(window.location.hash.slice(1));
-      for (const action of ["reset", "invite"] as const) {
+      for (const action of ["reset", "invite", "verify"] as const) {
         const value = fragment.get(action);
         if (value) { setToken(value); setMode(action); setError(""); setMessage(""); setPassword(""); break; }
       }
@@ -39,7 +39,7 @@ export default function Access() {
   }, []);
 
   function change(next: Mode) { setMode(next); setError(""); setMessage(""); setPassword(""); setCode(""); }
-  function dashboard() { window.location.assign("/advogado"); }
+  function dashboard(user?: Profile) { window.location.assign(user?.role === "CLIENT" ? "/cliente" : "/advogado"); }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -54,11 +54,16 @@ export default function Access() {
             const enrollment = await api<{ secret: string }>("auth/mfa/enroll", {});
             setSecret(enrollment.secret);
           }
-        } else dashboard();
+        } else dashboard(result.user);
       } else if (mode === "mfa") {
         const result = await api<LoginResult>("auth/mfa/verify", { code });
         setCode(""); setSecret("");
-        if (result.recoveryCodes) setCodes(result.recoveryCodes); else dashboard();
+        if (result.recoveryCodes) setCodes(result.recoveryCodes); else dashboard(result.user);
+      } else if (mode === "register") {
+        const result = await api<{ message: string }>("auth/register", { email, name, password, policyVersion: context!.policyVersion });
+        change("login"); setMessage(result.message);
+      } else if (mode === "verify") {
+        await api("auth/verify", { token }); setToken(""); change("login"); setMessage("E-mail confirmado. Entre com seu e-mail e senha.");
       } else if (mode === "reset") {
         await api("auth/reset", { token, password }); setToken(""); change("login"); setMessage("Senha atualizada. Entre novamente.");
       } else if (mode === "invite") {
@@ -70,23 +75,25 @@ export default function Access() {
     finally { setBusy(false); }
   }
 
-  const labels: Record<Mode, string> = { login: "Acessar plataforma", recovery: "Enviar recuperação", reset: "Salvar nova senha", invite: "Aceitar convite", mfa: "Confirmar segundo fator" };
+  const labels: Record<Mode, string> = { login: "Acessar plataforma", recovery: "Enviar recuperação", reset: "Salvar nova senha", invite: "Aceitar convite", mfa: "Confirmar segundo fator", register: "Criar conta", verify: "Confirmar meu e-mail", resend: "Reenviar confirmação" };
   return <main className="auth-page">
     <section className="auth-card" aria-labelledby="access-title">
       <h1 id="access-title" className="auth-brand-title"><Brand size={136} /></h1>
-      <p className="auth-subtitle">ACESSO DA EQUIPE</p>
-      <p className="auth-notice">Acesso exclusivo para profissionais aprovados pela administração.</p>
+      <p className="auth-subtitle">ACESSO À PLATAFORMA</p>
+      <p className="auth-notice">Clientes podem criar sua conta. Profissionais entram após aprovação do escritório.</p>
       {codes.length > 0 ? <div className="recovery-codes">
         <h2>Guarde seus códigos de recuperação</h2>
         <p>Cada código funciona uma única vez se você perder o acesso ao autenticador. Eles não serão exibidos novamente.</p>
         <ul>{codes.map(value => <li key={value}><code>{value}</code></li>)}</ul>
-        <button className="auth-submit" onClick={dashboard}>Guardei os códigos. Continuar</button>
+        <button className="auth-submit" onClick={() => dashboard()}>Guardei os códigos. Continuar</button>
       </div> : <>
         <form onSubmit={submit}>
           <fieldset disabled={!context || busy} style={{ border: 0, padding: 0, margin: 0 }}>
-          {mode === "invite" && <label>Nome completo<input required minLength={2} maxLength={150} autoComplete="name" value={name} onChange={e => setName(e.target.value)} /></label>}
-          {["login", "recovery"].includes(mode) && <label>E-mail<input required type="email" autoComplete="email" maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label>}
-          {["login", "reset", "invite"].includes(mode) && <label>{mode === "reset" ? "Nova senha" : "Senha"}<input required type="password" minLength={mode === "login" ? 1 : 8} maxLength={128} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} /></label>}
+          {["invite", "register"].includes(mode) && <label>Nome completo<input required minLength={2} maxLength={150} autoComplete="name" value={name} onChange={e => setName(e.target.value)} /></label>}
+          {["login", "recovery", "register", "resend"].includes(mode) && <label>E-mail<input required type="email" autoComplete="email" maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label>}
+          {["login", "reset", "invite", "register"].includes(mode) && <label>{mode === "reset" ? "Nova senha" : "Senha"}<input required type="password" minLength={mode === "login" ? 1 : 8} maxLength={128} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} /></label>}
+          {mode === "register" && <p className="auth-notice">Criar uma conta não gera cobrança nem libera atendimento automaticamente. Confirme seu e-mail e aguarde a liberação do escritório para enviar seu caso.</p>}
+          {mode === "verify" && <p>Confirme seu e-mail para ativar a conta.</p>}
           {mode === "mfa" && <>
             {secret && <div className="mfa-setup"><p>No seu aplicativo autenticador, adicione uma chave de configuração por tempo (TOTP):</p><code data-testid="mfa-secret">{secret}</code><p>Depois, digite o código de seis dígitos gerado pelo aplicativo.</p></div>}
             <label>{secret ? "Código do autenticador" : "Código do autenticador ou de recuperação"}<input required autoComplete="one-time-code" value={code} maxLength={64} onChange={e => setCode(e.target.value)} /></label>
@@ -96,6 +103,10 @@ export default function Access() {
         </form>
         <div className="auth-links">
           {mode === "login" && <button disabled={!context || busy} onClick={() => change("recovery")}>Esqueci minha senha</button>}
+          {mode === "login" && context?.registrationAvailable && <>
+            <button disabled={busy} onClick={() => change("register")}>Criar conta de cliente</button>
+            <button disabled={busy} onClick={() => change("resend")}>Reenviar confirmação de e-mail</button>
+          </>}
           {mode !== "login" && <button disabled={!context || busy} onClick={() => change("login")}>Voltar para entrar</button>}
         </div>
       </>}

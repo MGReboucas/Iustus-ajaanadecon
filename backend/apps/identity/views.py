@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 
 from . import serializers as inputs
 from .models import ActionToken, User
-from .security import IdentityError, throttle
+from .security import IdentityError, throttle, digest
 from .services import (audit, begin_challenge, complete_challenge, consume, enrollment,
                        establish_session, issue_token, locked_token, profile, validate_new_password)
 
@@ -47,11 +47,14 @@ class PublicView(IdentityView):
 class CSRFView(PublicView):
     def get(self, request):
         return Response({"csrfToken": get_token(request), "portal": request.portal,
-                         "policyVersion": settings.REGISTRATION_POLICY_VERSION, "mfaRequired": settings.IDENTITY_MFA_REQUIRED})
+                         "policyVersion": settings.REGISTRATION_POLICY_VERSION, "mfaRequired": settings.IDENTITY_MFA_REQUIRED,
+                         "registrationAvailable": request.shared_portal or request.portal == "client"})
 
 
 class RegisterView(PublicView):
     def post(self, request):
+        if request.shared_portal:
+            request.portal = "client"
         self.require_portal(request, "client")
         data = self.data(request, inputs.RegisterSerializer)
         self.public_limit(request, "register", data["email"])
@@ -74,6 +77,8 @@ class RegisterView(PublicView):
 
 class VerifyView(PublicView):
     def post(self, request):
+        if request.shared_portal:
+            request.portal = "client"
         self.require_portal(request, "client")
         data = self.data(request, inputs.TokenSerializer)
         self.public_limit(request, "verify", limit=30)
@@ -91,6 +96,8 @@ class VerifyView(PublicView):
 
 class ResendView(PublicView):
     def post(self, request):
+        if request.shared_portal:
+            request.portal = "client"
         self.require_portal(request, "client")
         data = self.data(request, inputs.EmailSerializer)
         self.public_limit(request, "resend", data["email"], limit=3)
@@ -112,6 +119,8 @@ class LoginView(PublicView):
         with transaction.atomic():
             user = User.objects.select_for_update().get(pk=user.pk)
             expected = "client" if user.role == User.Role.CLIENT else "team"
+            if request.shared_portal:
+                request.portal = expected
             # Revalidar senha sob lock: reset concorrente não pode conceder sessão antiga.
             if not user.is_active or not user.email_verified_at or expected != request.portal or not user.check_password(data["password"]):
                 raise IdentityError("INVALID_CREDENTIALS", "Não foi possível entrar com os dados informados.", 403)
@@ -140,7 +149,8 @@ class RecoveryView(PublicView):
         self.public_limit(request, "recovery", data["email"], limit=3)
         with transaction.atomic():
             user = User.objects.select_for_update().filter(email=data["email"], is_active=True, email_verified_at__isnull=False).first()
-            if user and ("client" if user.role == User.Role.CLIENT else "team") == request.portal:
+            if user and (request.shared_portal or ("client" if user.role == User.Role.CLIENT else "team") == request.portal):
+                request.portal = "client" if user.role == User.Role.CLIENT else "team"
                 ActionToken.objects.filter(user=user, purpose="RESET", consumed_at__isnull=True).update(consumed_at=timezone.now())
                 issue_token("RESET", user.email, request.portal, user)
         return Response({"message": "Se houver uma conta elegível, enviaremos as instruções por e-mail."}, status=202)
@@ -151,6 +161,10 @@ class ResetView(PublicView):
         data = self.data(request, inputs.ResetSerializer)
         self.public_limit(request, "reset", limit=30)
         with transaction.atomic():
+            if request.shared_portal:
+                candidate = ActionToken.objects.filter(digest=digest(data["token"]), purpose="RESET").first()
+                if candidate:
+                    request.portal = candidate.portal
             token = locked_token(data["token"], "RESET", request.portal)
             user = User.objects.select_for_update().get(pk=token.user_id)
             if not user.is_active or user.auth_version != token.auth_version:
@@ -216,7 +230,7 @@ class AcceptInviteView(PublicView):
                 audit(user, "INVITATION_ACCEPTED", "team")
         except IntegrityError as exc:
             raise IdentityError("INVALID_TOKEN", "Convite inválido ou indisponível.") from exc
-        return Response({"message": "Conta profissional criada. Entre para configurar o segundo fator."}, status=201)
+        return Response({"message": "Conta profissional ativada. Entre com seu e-mail e senha."}, status=201)
 
 
 class MeView(IdentityView):

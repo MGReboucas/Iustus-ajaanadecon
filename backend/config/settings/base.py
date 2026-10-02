@@ -97,3 +97,5 @@ DOCUMENT_DIRECT_UPLOAD_ENABLED = False
 
 # Pode ser desativado explicitamente em ambientes de teste assistido.
 IDENTITY_MFA_REQUIRED = env.bool("IDENTITY_MFA_REQUIRED", default=True)
+
+IDENTITY_SHARED_PORTAL = False

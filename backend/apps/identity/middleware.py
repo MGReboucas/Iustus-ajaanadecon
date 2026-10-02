@@ -22,6 +22,7 @@ class PortalMiddleware:
 
     def __call__(self, request):
         request.portal = None
+        request.shared_portal = settings.IDENTITY_SHARED_PORTAL
         if request.path.startswith("/api/v1/") and request.path != "/api/v1/health/":
             supplied = request.META.get("HTTP_X_IUSTUS_PROXY_KEY", "")
             if not supplied or not secrets.compare_digest(supplied, settings.IUSTUS_PROXY_SECRET):
@@ -31,6 +32,8 @@ class PortalMiddleware:
             host = request.META.get("HTTP_X_IUSTUS_PORTAL_HOST", original_host).lower()
             origins = {urlsplit(origin).netloc.lower(): role for role, origin in settings.PORTAL_ORIGINS.items()}
             request.portal = origins.get(host)
+            if request.portal and request.shared_portal:
+                request.portal = "team" if request.path.startswith(("/api/v1/auth/mfa/", "/api/v1/auth/invitations/")) else "client"
             if not request.portal:
                 return self.finish(error_response("INVALID_PORTAL", "Portal não permitido."))
             request.META["HTTP_HOST"] = host
@@ -55,6 +58,8 @@ class SessionBoundaryMiddleware:
             user, session = request.user, request.session
             now = time.time()
             expected = "client" if user.role == "CLIENT" else "team"
+            if request.shared_portal:
+                request.portal = expected
             valid = (
                 session.get("portal") == request.portal == expected
                 and session.get("auth_version") == user.auth_version

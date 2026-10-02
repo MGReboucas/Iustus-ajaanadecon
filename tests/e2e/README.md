@@ -1,9 +1,10 @@
-# Testes de navegador
+# Jornadas de acesso e atendimento
 
-A suíte atual valida o endereço único da equipe: aprovação pelo administrador, ativação por e-mail, senha, MFA, código de recuperação, revogação de sessão, bloqueio de clientes e proteção CSRF. A jornada antiga de dois portais está preservada em `access-dual-portal.legacy.cjs`, fora da execução atual; as regras de casos continuam cobertas no backend.
+Os testes usam banco isolado `iustus_e2e` e contas sintéticas `e2e-*@example.test`. Nunca executar fixtures contra o banco publicado.
 
-Use exclusivamente um PostgreSQL local de testes em `DATABASE_URL`. O fixture cria `iustus_e2e`; nunca execute com a URL do banco de produção. Configure `IUSTUS_PUBLIC_ORIGIN=http://localhost:3000` para o runner e frontend.
+- `access.spec.cjs`: convite profissional, MFA quando habilitado, recuperação e revogação.
+- `shared-portal.spec.cjs`: cadastro e confirmação do cliente, login por perfil, rascunho, liberação administrativa, distribuição e triagem no mesmo site. Executar com `IDENTITY_MFA_REQUIRED=false`.
 
-Execute `python tests/e2e/fixture.py prepare`, `npm run build` e `npm run test:e2e` pela raiz. O runner inicia e encerra seus servidores nas portas 3000/8000. No Windows, `PLAYWRIGHT_CHANNEL=msedge` usa o Edge instalado. Traces e screenshots automáticos são desativados para não persistir tokens e MFA.
+Preparar com `python tests/e2e/fixture.py prepare` e executar `npm run test:e2e`. Em Windows usar o Python de `backend/.venv/Scripts/python.exe`. `IUSTUS_E2E_SQLITE=true` permite o banco SQLite isolado em `.local`; concorrência deve ser testada separadamente no PostgreSQL. `PLAYWRIGHT_CHANNEL=chrome` usa Chrome instalado.
 
-Alternativa para validar a interface sem PostgreSQL: defina `IUSTUS_E2E_SQLITE=true` antes do preparo e da execução. Isso usa exclusivamente `.local/iustus_e2e.sqlite3`; não valida concorrência PostgreSQL. A CI continua usando PostgreSQL.
+A CI executa as duas modalidades de MFA. E-mails de teste ficam em memória/na fila isolada; nenhum destinatário real é usado. Traces e screenshots automáticos estão desativados para não persistir tokens ou senhas.

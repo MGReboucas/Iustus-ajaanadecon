@@ -44,7 +44,7 @@ class CaseView(IdentityView):
 
 class CatalogView(CaseView):
     def get(self, request):
-        return Response({"categories": [{"id": key, "label": label} for key, label in Case.Category.choices],
+        return Response({"documentsAvailable": settings.DOCUMENT_STORAGE_BACKEND != "disabled", "categories": [{"id": key, "label": label} for key, label in Case.Category.choices],
                          "states": [{"id": key, "label": label} for key, label in Case.State.choices],
                          "submission": submission_access(request.user) if request.user.role == "CLIENT" else None})
 

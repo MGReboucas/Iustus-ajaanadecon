@@ -4,11 +4,11 @@ import { useState } from "react";
 import { DocumentVersion, downloadDocument, uploadDocument } from "@/lib/api/documents";
 
 type Props = {
-  caseId: string; versions: DocumentVersion[]; busy: boolean; readOnly: boolean; hasMore: boolean;
+  available: boolean; caseId: string; versions: DocumentVersion[]; busy: boolean; readOnly: boolean; hasMore: boolean;
   run: (action: () => Promise<void>) => Promise<void>; refresh: () => Promise<void>; more: () => Promise<void>;
 };
 
-export default function CaseDocuments({ caseId, versions, busy, readOnly, hasMore, run, refresh, more }: Props) {
+export default function CaseDocuments({ available, caseId, versions, busy, readOnly, hasMore, run, refresh, more }: Props) {
   const [file, setFile] = useState<File>();
   const [target, setTarget] = useState("");
   const [inputKey, setInputKey] = useState(0);
@@ -19,7 +19,8 @@ export default function CaseDocuments({ caseId, versions, busy, readOnly, hasMor
   return <section className="case-documents" aria-labelledby="case-documents-title">
     <div className="cases-heading"><h4 id="case-documents-title">Documentos do caso</h4><button disabled={busy} onClick={() => void run(refresh)}>Atualizar documentos</button></div>
     <p>Arquivos compartilhados entre o cliente e o advogado responsável. PDF, JPEG ou PNG, até 20 MiB por arquivo. O download fica disponível após a verificação.</p>
-    {!readOnly && <form onSubmit={event => { event.preventDefault(); if (!file) return; setMessage(""); void run(async () => {
+    {!available && <p role="status">O envio de arquivos ainda não está habilitado neste ambiente. Você pode testar o cadastro do caso, a triagem e as mensagens.</p>}
+    {available && !readOnly && <form onSubmit={event => { event.preventDefault(); if (!file) return; setMessage(""); void run(async () => {
       try {
         await uploadDocument(caseId, file, versions.find(item => item.id === target));
         setFile(undefined); setTarget(""); setInputKey(old => old + 1);

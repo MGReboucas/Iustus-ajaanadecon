@@ -89,3 +89,7 @@ jobs:
         working-directory: frontend
       - run: npm run build
       - run: npm run test:e2e
+
+      - run: npm run test:e2e
+        env:
+          IDENTITY_MFA_REQUIRED: "false"

@@ -89,4 +89,6 @@ Configure `IUSTUS_INITIAL_ADMIN_EMAIL` e execute `python manage.py bootstrap_adm
 
 No painel, **Aprovar profissional** registra a autorização no banco e envia a ativação. **Gestão de usuários** permite revogar e aprovar novamente o acesso. Revogar invalida sessões, desafios MFA e tokens pendentes, mesmo com casos ativos. Após reaprovar uma conta ainda não ativada, envie uma nova ativação pelo mesmo formulário.
 
-Na atualização de uma instalação existente, remova IUSTUS_CLIENT_ORIGIN e IUSTUS_TEAM_ORIGIN e configure IUSTUS_PUBLIC_ORIGIN. Administradores e profissionais ativos existentes são preservados; clientes deixam de acessar o sistema. Revise a lista de profissionais antes de liberar a equipe. Não é necessária migração de esquema.
+Na atualização de uma instalação existente, remova IUSTUS_CLIENT_ORIGIN e IUSTUS_TEAM_ORIGIN e configure IUSTUS_PUBLIC_ORIGIN. Administradores e profissionais ativos existentes são preservados; clientes usam cadastro e painel no mesmo site, com permissões separadas por papel. Revise a lista de profissionais antes de liberar a equipe. Não é necessária migração de esquema.
+
+O portal compartilhado e a jornada atual estão descritos em [Acesso](../../docs/ACESSO.md). A configuração `IDENTITY_MFA_REQUIRED=false` foi autorizada para testes por senha. Nenhum worker pago deve ser criado sem autorização de custo.
