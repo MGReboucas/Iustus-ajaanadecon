@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const response = path === "/" || path.startsWith("/cliente") || path.startsWith("/checkout")
+  const response = path === "/cliente" || path.startsWith("/cliente/")
     ? NextResponse.redirect(new URL("/acessar", request.url))
     : NextResponse.next();
   response.headers.set("Cache-Control", "no-store, private");
@@ -11,4 +11,4 @@ export function middleware(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ["/", "/checkout/:path*", "/acessar", "/cliente/:path*", "/advogado/:path*"] };
+export const config = { matcher: ["/acessar", "/cliente/:path*", "/advogado/:path*"] };

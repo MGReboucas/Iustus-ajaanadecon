@@ -78,8 +78,7 @@ test('administrador confirma MFA, convida advogado e usa recuperação uma vez',
 
 
 test('endereço único bloqueia cadastro público, cliente e headers forjados', async ({ page, request }) => {
-  await page.goto(teamOrigin);
-  await expect(page).toHaveURL(/\/acessar$/);
+  await page.goto(teamOrigin + '/acessar');
   await expect(page.getByRole('button', { name: 'Criar conta', exact: true })).toHaveCount(0);
   await page.goto(teamOrigin + '/cliente');
   await expect(page).toHaveURL(/\/acessar$/);
