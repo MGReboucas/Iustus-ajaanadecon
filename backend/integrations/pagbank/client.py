@@ -2,7 +2,7 @@
 import base64
 import json
 import re
-from urllib.error import URLError
+from urllib.error import URLError, HTTPError
 from urllib.parse import urlsplit
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 from cryptography.exceptions import InvalidSignature
@@ -17,8 +17,13 @@ class NoRedirect(HTTPRedirectHandler):
         return None
 
 
-def request_api(path, payload=None, key=None):
-    if not settings.BILLING_ENABLED or not settings.PAGBANK_API_TOKEN:
+def request_api(path, payload=None, key=None, *, configuration_check=False):
+    # A consulta da chave permite preparar a integração sem habilitar cobranças.
+    if configuration_check and (path != "/public-keys?type=webhook" or payload is not None):
+        raise ValueError("Configuration checks only allow reading the webhook public key")
+    if settings.PAGBANK_ENVIRONMENT not in ("sandbox", "production"):
+        raise IdentityError("INVALID_PAYMENT_ENVIRONMENT", "Configure o ambiente PagBank como sandbox ou production.", 503)
+    if (not settings.BILLING_ENABLED and not configuration_check) or not settings.PAGBANK_API_TOKEN:
         raise IdentityError("BILLING_UNAVAILABLE", "A adesão online ainda não está disponível.", 503)
     base = "https://sandbox.api.pagseguro.com" if settings.PAGBANK_ENVIRONMENT == "sandbox" else "https://api.pagseguro.com"
     headers = {"Authorization": "Bearer " + settings.PAGBANK_API_TOKEN, "Accept": "application/json", "Content-Type": "application/json"}
@@ -31,6 +36,10 @@ def request_api(path, payload=None, key=None):
         if not isinstance(result, dict):
             raise ValueError("InvalidResponse")
         return result
+    except HTTPError as exc:
+        if exc.code in (401, 403):
+            raise IdentityError("PAGBANK_AUTH_FAILED", "O PagBank recusou a credencial ou a permissão para esta API. Confira o token e o ambiente.", 503) from exc
+        raise IdentityError("PAYMENT_PROVIDER_UNAVAILABLE", f"O PagBank retornou HTTP {exc.code}. Consulte a configuração da integração.", 503) from exc
     except (URLError, TimeoutError, ValueError) as exc:
         raise IdentityError("PAYMENT_PROVIDER_UNAVAILABLE", "Não foi possível consultar o pagamento. Tente novamente.", 503) from exc
 

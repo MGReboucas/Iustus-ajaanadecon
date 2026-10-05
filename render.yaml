@@ -42,6 +42,14 @@ services:
         sync: false
       - key: REGISTRATION_POLICY_VERSION
         value: web-evaluation-v1
+      - key: BILLING_ENABLED
+        value: "false"
+      - key: PAGBANK_ENVIRONMENT
+        value: sandbox
+      - key: PAGBANK_API_TOKEN
+        sync: false
+      - key: PAGBANK_WEBHOOK_PUBLIC_KEY
+        sync: false
   - type: worker
     name: iustus-mail
     runtime: docker
@@ -82,3 +90,11 @@ services:
         fromService: {type: web, name: iustus-api, envVarKey: DEFAULT_FROM_EMAIL}
       - key: REGISTRATION_POLICY_VERSION
         fromService: {type: web, name: iustus-api, envVarKey: REGISTRATION_POLICY_VERSION}
+      - key: BILLING_ENABLED
+        fromService: {type: web, name: iustus-api, envVarKey: BILLING_ENABLED}
+      - key: PAGBANK_ENVIRONMENT
+        fromService: {type: web, name: iustus-api, envVarKey: PAGBANK_ENVIRONMENT}
+      - key: PAGBANK_API_TOKEN
+        fromService: {type: web, name: iustus-api, envVarKey: PAGBANK_API_TOKEN}
+      - key: PAGBANK_WEBHOOK_PUBLIC_KEY
+        fromService: {type: web, name: iustus-api, envVarKey: PAGBANK_WEBHOOK_PUBLIC_KEY}

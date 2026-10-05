@@ -42,6 +42,15 @@ O checkout fica indisponível quando `BILLING_ENABLED=false`. As rotas antigas d
 
 ## Operação financeira
 
+Para preparar o sandbox sem habilitar cobranças, obtenha o token no [Portal do Desenvolvedor PagBank](https://developer.pagbank.com.br/docs/token-de-autenticacao) e configure `PAGBANK_API_TOKEN` e `PAGBANK_ENVIRONMENT=sandbox` no arquivo privado `backend/.env`. Mantenha `BILLING_ENABLED=false` inicialmente.
+
+```text
+backend/.venv/Scripts/python.exe backend/manage.py check_pagbank --settings=config.settings.local
+backend/.venv/Scripts/python.exe backend/manage.py check_pagbank --fetch-webhook-key --settings=config.settings.local
+```
+
+O segundo comando faz apenas a consulta autenticada da chave pública; não cria checkout nem pagamento. Salva a chave em `.local/pagbank-sandbox-webhook-key.txt`, fora do Git, e mostra somente sua impressão digital. Configure seu conteúdo como `PAGBANK_WEBHOOK_PUBLIC_KEY` na API e no worker. Falha de autenticação, ausência de suporte a esse endpoint ou chave de outro tipo bloqueiam essa preparação e precisam ser resolvidas com a conta/provedor antes de ativar o checkout.
+
 `Order` guarda referência, valor, ambiente, estado e associação com usuário; `Membership` guarda o período; `PaymentEvent` guarda identificadores, tentativas e processamento, sem armazenar o payload financeiro completo.
 
 Monitorar `PaymentEvent` sem `processed_at`, especialmente `attempts >= 10` ou `last_error` preenchido. A repetição tem espera crescente e não duplica associação/e-mail. O uso de e-mail de profissional ou conta desativada exige conferência operacional, sem converter o perfil em cliente.
