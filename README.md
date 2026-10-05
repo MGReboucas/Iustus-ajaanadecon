@@ -1,5 +1,7 @@
 # IUSTUS — Defesa Jurídica Online
 
+**Atualização de 05/10/2026 — associação:** o fluxo comercial agora liga checkout hospedado, confirmação financeira, ativação de associado, ocorrência com data/documentos, distribuição automática e análise pelo advogado. Após o aceite, a associação envia a procuração específica do caso para assinatura e conferência. Consulte [Associação: implementação, testes e implantação](docs/ASSOCIACAO.md). A cobrança permanece condicionada à configuração e homologação do PagBank; esta atualização não representa implantação em produção. As descrições e estimativas antigas abaixo são histórico e devem ser lidas à luz desse fluxo atualizado (valor atual: R$ 797,99).
+
 **Preparação de produção:** consulte o [roteiro técnico atualizado](infra/deploy/README.md), com checagem de API/banco, worker de documentos e pendências de infraestrutura. A implantação externa ainda precisa ser validada.
 
 Plataforma por assinatura para solicitar, acompanhar e receber defesas jurídicas online. A jornada pretendida reúne contratação, envio de casos e documentos, procuração, acompanhamento pelo cliente e preparação da defesa por advogado designado.

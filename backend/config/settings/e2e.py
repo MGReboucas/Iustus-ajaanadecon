@@ -12,3 +12,7 @@ if env.bool("IUSTUS_E2E_SQLITE", default=False):
 IDENTITY_RATE_LIMITS_ENABLED = False
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 DOCUMENT_STORAGE_ROOT = BASE_DIR.parent / ".local" / "documents-e2e"
+MEMBERSHIP_REQUIRED = env.bool("IUSTUS_E2E_ASSOCIATION", default=False)
+CASE_AUTO_ASSIGN = MEMBERSHIP_REQUIRED
+CASE_INTAKE_REQUIRED = MEMBERSHIP_REQUIRED
+BILLING_ENABLED = False  # O runner usa snapshots sintéticos, nunca cobrança real.

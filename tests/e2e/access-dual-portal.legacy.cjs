@@ -128,14 +128,14 @@ test('caso percorre liberação, triagem, procuração, peça, protocolo e encer
   const lawyerContext = await browser.newContext();
   const clientPage = await clientContext.newPage(), adminPage = await adminContext.newPage(), lawyerPage = await lawyerContext.newPage();
   await signIn(clientPage, clientOrigin, clientEmail);
-  await clientPage.getByRole('button', { name: 'Novo caso', exact: true }).click();
+  await clientPage.getByRole('button', { name: 'Cadastrar ocorrência', exact: true }).click();
   await clientPage.getByLabel('Título do caso').fill('Cobrança contratual fictícia');
   await clientPage.getByLabel('Categoria', { exact: true }).selectOption('CONTRACTS');
-  await clientPage.getByLabel('Relato', { exact: true }).fill('Informação privada de um contrato inteiramente fictício para testar a triagem.');
+  await clientPage.getByLabel('Descrição do que aconteceu', { exact: true }).fill('Informação privada de um contrato inteiramente fictício para testar a triagem.');
   await clientPage.getByLabel('Estou ciente de que família e sucessões não fazem parte do serviço.').check();
   await clientPage.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();
   await expect(clientPage.getByRole('status')).toHaveText('Alteração registrada.');
-  await expect(clientPage.getByRole('button', { name: 'Enviar para triagem' })).toBeDisabled();
+  await expect(clientPage.getByRole('button', { name: 'Enviar ocorrência para análise' })).toBeDisabled();
   await signIn(adminPage, teamOrigin, adminEmail); await enroll(adminPage);
   await adminPage.getByLabel('E-mail do cliente', {exact: true}).fill(clientEmail);
   await adminPage.getByLabel('Validade da liberação').fill('2027-12-01T12:00');
@@ -157,7 +157,7 @@ test('caso percorre liberação, triagem, procuração, peça, protocolo e encer
   const download = await downloadEvent;
   expect(download.suggestedFilename()).toBe('contrato-ficticio.pdf');
   expect(await download.failure()).toBeNull();
-  await clientPage.getByRole('button', { name: 'Enviar para triagem' }).click();
+  await clientPage.getByRole('button', { name: 'Enviar ocorrência para análise' }).click();
   await expect(clientPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Enviado para distribuição');
   const reference = (await clientPage.locator('#case-detail-title').innerText()).replace('Caso ', '');
   await signIn(lawyerPage, teamOrigin, lawyerEmail); await enroll(lawyerPage);
@@ -196,7 +196,7 @@ test('caso percorre liberação, triagem, procuração, peça, protocolo e encer
   await lawyerPage.getByLabel('Conflito de interesses analisado').check();
   await lawyerPage.getByLabel('Informações suficientes para decidir o atendimento').check();
   await lawyerPage.getByLabel('Justificativa visível ao cliente').fill('Aceite fictício após análise das informações e do escopo.');
-  await lawyerPage.getByRole('button', { name: 'Aceitar caso', exact: true }).click();
+  await lawyerPage.getByRole('button', { name: 'Aprovar caso e preparar procuração', exact: true }).click();
   await expect(lawyerPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Aceito na triagem');
   await clientPage.reload();
   await clientPage.locator('.case-list').getByRole('button', { name: /Cobrança contratual fictícia/ }).click();
@@ -265,7 +265,7 @@ test('caso percorre liberação, triagem, procuração, peça, protocolo e encer
   await lawyerPage.getByLabel('Etapas contratadas', {exact: true}).fill('Preparação da peça, protocolo e acompanhamento do caso sintético.');
   await lawyerPage.getByLabel('Posição do cliente').selectOption('DEFENDANT');
   await expect(lawyerPage.getByLabel('Documento verificado', {exact: false})).not.toHaveValue('');
-  await lawyerPage.getByRole('button', {name: 'Solicitar procuração', exact: true}).click();
+  await lawyerPage.getByRole('button', {name: 'Enviar procuração deste caso para assinatura', exact: true}).click();
   await expect(lawyerPage.locator('.case-detail > .cases-heading > .case-badge')).toHaveText('Aguardando procuração');
   await clientPage.reload();
   await clientPage.locator('.case-list').getByRole('button', {name: /Cobrança contratual fictícia/}).click();

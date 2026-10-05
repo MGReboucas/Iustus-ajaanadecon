@@ -33,8 +33,8 @@ def issue_token(purpose, email, portal, user=None, created_by=None):
         auth_version=user.auth_version if user else 1, created_by=created_by,
         expires_at=timezone.now() + timedelta(hours=hours),
     )
-    mode = {"VERIFY": "verify", "RESET": "reset", "INVITE": "invite"}[purpose]
-    titles = {"VERIFY": "Confirme seu e-mail", "RESET": "Redefina sua senha", "INVITE": "Convite para a equipe Iustus"}
+    mode = {"VERIFY": "verify", "RESET": "reset", "INVITE": "invite", "MEMBER": "member"}[purpose]
+    titles = {"VERIFY": "Confirme seu e-mail", "RESET": "Redefina sua senha", "INVITE": "Convite para a equipe Iustus", "MEMBER": "Pagamento confirmado: conclua seu cadastro na Iustus"}
     # Fragmento evita incluir o token no request HTTP, Referer ou log do servidor web.
     url = f"{settings.PORTAL_ORIGINS[portal]}/acessar#{mode}={raw}"
     IdentityEmail.objects.create(

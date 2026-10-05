@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.conf import settings
 from django.db.models import F
 from django.http import Http404
 from django.utils import timezone
@@ -26,6 +27,8 @@ class AccessView(CaseView):
 
     def post(self, request):
         self.role(request, "ADMIN")
+        if settings.MEMBERSHIP_REQUIRED:
+            raise IdentityError("MEMBERSHIP_REQUIRED", "Novos atendimentos são liberados pela confirmação da adesão.", 409)
         self.limited(request)
         data = self.data(request, AccessInput)
         if data["enabled"] and (not data.get("expiresAt") or data["expiresAt"] <= timezone.now()):

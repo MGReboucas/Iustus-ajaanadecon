@@ -61,6 +61,7 @@ class ActionToken(models.Model):
         VERIFY = "VERIFY"
         RESET = "RESET"
         INVITE = "INVITE"
+        MEMBER = "MEMBER"
 
     digest = models.CharField(max_length=64, primary_key=True)
     purpose = models.CharField(max_length=10, choices=Purpose.choices)

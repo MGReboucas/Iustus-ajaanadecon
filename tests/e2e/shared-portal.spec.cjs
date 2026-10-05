@@ -32,13 +32,13 @@ test('shared origin: customer registration, approval, case assignment and lawyer
   await cp.getByRole('button',{name:'Confirmar meu e-mail'}).click();
   await expect(cp.locator('.auth-message')).toContainText('confirmado');
   await login(cp,customer); await expect(cp).toHaveURL(/\/cliente$/);
-  await cp.getByRole('button',{name:'Novo caso',exact:true}).click();
+  await cp.getByRole('button',{name:'Cadastrar ocorrência',exact:true}).click();
   await cp.getByLabel('Título do caso').fill('Caso sintético da jornada');
   await cp.getByLabel('Categoria',{exact:true}).selectOption('CONSUMER');
-  await cp.getByLabel('Relato',{exact:true}).fill('Relato fictício completo para validar o atendimento entre cliente e advogado.');
+  await cp.getByLabel('Descrição do que aconteceu',{exact:true}).fill('Relato fictício completo para validar o atendimento entre cliente e advogado.');
   await cp.getByLabel(/Estou ciente/).check();
   await cp.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
-  await expect(cp.getByRole('button',{name:'Enviar para triagem'})).toBeDisabled();
+  await expect(cp.getByRole('button',{name:'Enviar ocorrência para análise'})).toBeDisabled();
   await login(ap,admin); await expect(ap).toHaveURL(/\/advogado$/);
   await ap.getByLabel('E-mail do cliente',{exact:true}).fill(customer);
   await ap.getByLabel('Validade da liberação').fill('2030-10-02T15:00');
@@ -47,7 +47,7 @@ test('shared origin: customer registration, approval, case assignment and lawyer
   await expect(ap.getByText('Liberação atualizada.',{exact:false})).toBeVisible();
   await cp.reload();
   await cp.locator('.case-list').getByRole('button',{name:/Caso sintético da jornada/}).click();
-  await cp.getByRole('button',{name:'Enviar para triagem'}).click();
+  await cp.getByRole('button',{name:'Enviar ocorrência para análise'}).click();
   await expect(cp.locator('.case-detail > .cases-heading')).toContainText('Enviado para distribuição');
   const ref=(await cp.locator('#case-detail-title').textContent()).replace('Caso ','');
   await ap.reload();

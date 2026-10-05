@@ -52,6 +52,8 @@ def changed(item, user, action, reason="", public=True, **metadata):
 
 
 def edit_draft(item, data):
+    if "occurredOn" in data:
+        item.occurred_on = data["occurredOn"]
     for name in ("title", "description", "category"):
         if name in data:
             setattr(item, name, data[name])
@@ -60,6 +62,12 @@ def edit_draft(item, data):
 
 
 def submission_access(user):
+    from apps.billing.services import membership_data
+    membership = membership_data(user)
+    if membership["active"]:
+        return {"canSubmit": True, "mode": "MEMBERSHIP", "expiresAt": membership["expiresAt"], "message": "Associação ativa. Cadastre uma ocorrência para análise dos advogados."}
+    if settings.MEMBERSHIP_REQUIRED:
+        return {"canSubmit": False, "mode": "INACTIVE", "message": "É necessário ter uma associação ativa para enviar novas ocorrências. Seus casos anteriores continuam disponíveis."}
     if ServiceAccess.objects.filter(user=user, enabled=True, expires_at__gt=timezone.now()).exists():
         return {"canSubmit": True, "mode": "ADMINISTRATIVE", "message": "Atendimento liberado pelo escritório. Você pode enviar seu caso para triagem."}
     # Fail closed. Futuro adaptador financeiro deve substituir esta capacidade explícita.
@@ -78,5 +86,21 @@ def case_data(item, *, administrative=False, detail=False):
     if not administrative:
         result["title"] = item.title
         if detail:
-            result.update(description=item.description, scopeAcknowledged=item.scope_acknowledged)
+            result.update(description=item.description, scopeAcknowledged=item.scope_acknowledged,
+                          occurredOn=item.occurred_on.isoformat() if item.occurred_on else None)
     return result
+
+
+def assign_automatically(item):
+    """Chamado na transação de submissão. Locks ordenados serializam a distribuição."""
+    from django.db.models import Count
+    eligible = User.objects.filter(role="LAWYER", is_active=True, email_verified_at__isnull=False)
+    if settings.IDENTITY_MFA_REQUIRED:
+        eligible = eligible.filter(mfadevice__confirmed_at__isnull=False)
+    lawyers = list(eligible.order_by("pk").select_for_update(of=("self",)))
+    if not lawyers:
+        return False
+    counts = dict(Case.objects.filter(lawyer__in=lawyers).exclude(state__in=[Case.State.CLOSED, Case.State.REJECTED]).values("lawyer_id").annotate(total=Count("id")).values_list("lawyer_id", "total"))
+    item.lawyer = min(lawyers, key=lambda lawyer: (counts.get(lawyer.pk, 0), str(lawyer.pk)))
+    changed(item, item.owner, "ASSIGNED", "Distribuição automática pela associação.", public=False, lawyerId=str(item.lawyer_id))
+    return True

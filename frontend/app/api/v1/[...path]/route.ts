@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const routes = new Set([
+  "billing/plan", "billing/checkout", "billing/activate", "billing/resend", "billing/webhook",
   "ready",
   "auth/csrf", "auth/register", "auth/verify", "auth/resend", "auth/login",
   "auth/logout", "auth/recovery", "auth/reset", "auth/mfa/enroll", "auth/mfa/verify",
@@ -41,6 +42,11 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
   for (const name of ["cookie", "origin", "referer", "x-csrftoken", "content-type", "idempotency-key"]) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
+  }
+  if (path === "billing/webhook") {
+    headers.delete("cookie");
+    const signature = request.headers.get("x-payload-signature");
+    if (signature) headers.set("x-payload-signature", signature);
   }
   let body: Uint8Array | undefined;
   if (request.method !== "GET") {

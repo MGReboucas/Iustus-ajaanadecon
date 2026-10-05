@@ -2,9 +2,17 @@ from rest_framework import serializers
 
 from apps.identity.serializers import StrictSerializer
 from .models import Case
+from django.utils import timezone
 
 
 class DraftInput(StrictSerializer):
+    occurredOn = serializers.DateField(required=False, allow_null=True)
+
+    def validate_occurredOn(self, value):
+        if value and value > timezone.localdate():
+            raise serializers.ValidationError("A data do ocorrido não pode estar no futuro.")
+        return value
+
     title = serializers.CharField(max_length=160, allow_blank=True, required=False)
     description = serializers.CharField(max_length=20000, allow_blank=True, required=False)
     category = serializers.ChoiceField(choices=Case.Category.choices, allow_blank=True, required=False)

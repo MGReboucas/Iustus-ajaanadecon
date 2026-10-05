@@ -4,6 +4,7 @@ from .models import Notification, CaseEmail
 
 
 EVENT_TITLES = {
+    "SUBMITTED": "Recebemos sua ocorrência para análise",
     "LEGAL_START": "Procuração disponível para assinatura",
     "LEGAL_SIGN": "Procuração devolvida para conferência",
     "LEGAL_RETURN_MANDATE": "A procuração precisa de um ajuste",
@@ -29,14 +30,14 @@ def notify_event(event, item):
     if not title:
         return
     recipient_id = item.lawyer_id if event.action in ("ASSIGNED", "INFORMATION_RESPONDED", "LEGAL_SIGN") else item.owner_id
-    if recipient_id and recipient_id != event.actor_id:
+    if recipient_id and (recipient_id != event.actor_id or event.action == "SUBMITTED"):
         create_notice(recipient_id=recipient_id, source_key=f"event:{event.pk}", case=item, kind=event.action, title=title)
 
 
 def visible_notifications(user):
     # Revalidar a atribuição também nos avisos antigos, inclusive na marcação de leitura.
     from apps.cases.services import accessible
-    return Notification.objects.filter(recipient=user, case__in=accessible(user))
+    return Notification.objects.filter(recipient=user, case__in=accessible(user, administrative=user.role == "ADMIN"))
 
 
 def notification_data(item):

@@ -11,3 +11,8 @@ IUSTUS_PROXY_SECRET = "test-proxy-only"
 PORTAL_ORIGINS = {"client": "http://localhost:3000", "team": "http://127.0.0.1:3000"}
 ALLOWED_HOSTS = ["testserver", "localhost", "127.0.0.1"]
 IDENTITY_RATE_LIMITS_ENABLED = False
+# Suites legadas continuam exercitando as liberações assistidas; a nova jornada
+# tem testes próprios com todas as regras comerciais ligadas.
+MEMBERSHIP_REQUIRED = False
+CASE_AUTO_ASSIGN = False
+CASE_INTAKE_REQUIRED = False

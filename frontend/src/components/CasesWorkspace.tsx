@@ -9,9 +9,9 @@ import LegalWorkflow from "./LegalWorkflow";
 import CaseExport from "./CaseExport";
 import "./cases.css";
 
-type CaseItem = { id: string; reference: string; title?: string; description?: string; category: string; categoryLabel: string; state: string; stateLabel: string; version: number; lawyerId: string | null; scopeAcknowledged?: boolean };
+type CaseItem = { id: string; reference: string; title?: string; description?: string; occurredOn?: string | null; category: string; categoryLabel: string; state: string; stateLabel: string; version: number; lawyerId: string | null; scopeAcknowledged?: boolean };
 type Page<T> = { results: T[]; nextCursor: string | null };
-type Catalog = { documentsAvailable: boolean; categories: { id: string; label: string }[]; states: { id: string; label: string }[]; submission: { canSubmit: boolean; message: string } | null };
+type Catalog = { documentsAvailable: boolean; intakeRequired: boolean; categories: { id: string; label: string }[]; states: { id: string; label: string }[]; submission: { canSubmit: boolean; message: string } | null };
 type Pending = { id: string; description: string; response: string; resolution: string; resolved: boolean; responded: boolean; attachments: DocumentVersion[] };
 type Event = { id: string; action: string; state: string; reason: string; createdAt: string };
 type Lawyer = { id: string; name: string; email: string };
@@ -33,6 +33,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
   const [notice, setNotice] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [occurredOn, setOccurredOn] = useState("");
   const [category, setCategory] = useState("");
   const [ack, setAck] = useState(false);
   const [reason, setReason] = useState("");
@@ -56,7 +57,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
       api<CaseItem>(`cases/${item.id}`), api<Page<Pending>>(`cases/${item.id}/requests`), api<Page<Event>>(`cases/${item.id}/timeline`),
       api<Page<DocumentVersion>>(`cases/${item.id}/documents`),
     ]);
-    setSelected(detail); setTitle(detail.title || ""); setDescription(detail.description || "");
+    setSelected(detail); setTitle(detail.title || ""); setDescription(detail.description || ""); setOccurredOn(detail.occurredOn || "");
     setCategory(detail.category); setAck(!!detail.scopeAcknowledged); setRequests(pending); setEvents(history);
     setDocuments(files);
   }
@@ -97,7 +98,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
   }
   function save(event: FormEvent) {
     event.preventDefault(); if (!selected) return;
-    void run(() => change(`cases/${selected.id}`, { version: selected.version, title, description, category, scopeAcknowledged: ack }, "PATCH"));
+    void run(() => change(`cases/${selected.id}`, { version: selected.version, title, description, category, occurredOn: occurredOn || null, scopeAcknowledged: ack }, "PATCH"));
   }
   function submit() {
     if (!selected) return;
@@ -105,13 +106,13 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
     const key = submission.current.key;
     void run(() => change(`cases/${selected.id}/submit`, { version: selected.version }, undefined, key));
   }
-  const dirty = selected && (title !== (selected.title || "") || description !== (selected.description || "") || category !== selected.category || ack !== !!selected.scopeAcknowledged);
+  const dirty = selected && (occurredOn !== (selected.occurredOn || "") || title !== (selected.title || "") || description !== (selected.description || "") || category !== selected.category || ack !== !!selected.scopeAcknowledged);
 
   return <section id="meus-casos" className="cases-workspace" aria-labelledby="cases-title">
     <div className="cases-heading"><div><h2 id="cases-title">{admin ? "Distribuição de casos" : client ? "Meus casos" : "Casos atribuídos"}</h2><p>{admin ? "A fila mostra apenas referência, categoria, estado e responsável. Relatos ficam restritos ao cliente e ao advogado atribuído." : "Multas de trânsito e direito civil, exceto família e sucessões."}</p></div>
-      {client && <button disabled={busy} onClick={() => void run(async () => { const item = await api<CaseItem>("cases", {}); onChange(); setFilter(""); await list(""); await load(item); })}>Novo caso</button>}
+      {client && <button disabled={busy} onClick={() => void run(async () => { const item = await api<CaseItem>("cases", {}); onChange(); setFilter(""); await list(""); await load(item); })}>Cadastrar ocorrência</button>}
     </div>
-    <p className="dashboard-note">Ambiente de testes: use somente informações e arquivos fictícios.</p>
+    <p className="dashboard-note">Cada ocorrência é analisada individualmente. Após o aceite, a associação envia a procuração específica deste caso para sua assinatura.</p>
     {client && <p className="case-access">{catalog?.submission?.message}</p>}
     {error && <p role="alert" className="dashboard-error">{error} <button disabled={busy} onClick={() => void run(async () => { await list(); if (selected) await load(selected); })}>Atualizar dados</button></p>}
     {notice && <p role="status">{notice}</p>}
@@ -136,18 +137,19 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
           <form onSubmit={save}><fieldset disabled={busy}><legend>Dados do rascunho</legend>
             <label>Título do caso<input maxLength={160} value={title} onChange={e => setTitle(e.target.value)} /></label>
             <label htmlFor="case-category">Categoria</label><select id="case-category" value={category} onChange={e => setCategory(e.target.value)}><option value="">Selecione</option>{catalog?.categories.map(row => <option key={row.id} value={row.id}>{row.label}</option>)}</select>
-            <label>Relato<textarea rows={7} maxLength={20000} value={description} onChange={e => setDescription(e.target.value)} /></label>
+            <label>Data do ocorrido<input type="date" value={occurredOn} onChange={e => setOccurredOn(e.target.value)} /></label>
+            <label>Descrição do que aconteceu<textarea rows={7} maxLength={20000} value={description} onChange={e => setDescription(e.target.value)} /></label>
             <label className="case-check"><input type="checkbox" checked={ack} onChange={e => setAck(e.target.checked)} />Estou ciente de que família e sucessões não fazem parte do serviço.</label>
             <button>Salvar rascunho</button>
           </fieldset></form>
-          <p>Salve os dados antes de enviar. A submissão encaminha o relato para distribuição e triagem; não garante aceite.</p>
-          <button disabled={busy || !!dirty || !catalog?.submission?.canSubmit} onClick={submit}>Enviar para triagem</button>
-        </> : <><h4>{selected.title}</h4><p>{selected.categoryLabel}</p><p className="case-narrative">{selected.description}</p></>}
+          <p>Salve os dados antes de enviar. Anexe os documentos comprobatórios abaixo e aguarde a verificação. O envio encaminha a ocorrência para análise; não garante aceite.</p>
+          <button disabled={busy || !!dirty || !catalog?.submission?.canSubmit || (catalog?.intakeRequired && (!occurredOn || !documents.results.some(file => file.status === "AVAILABLE" && file.uploadedById === user.id)))} onClick={submit}>Enviar ocorrência para análise</button>
+        </> : <><h4>{selected.title}</h4><p>{selected.categoryLabel}</p><p>Data do ocorrido: {selected.occurredOn ? selected.occurredOn.split("-").reverse().join("/") : "Não informada"}</p><p className="case-narrative">{selected.description}</p></>}
         {user.role === "LAWYER" && selected.state === "SUBMETIDO" && <button disabled={busy} onClick={() => void run(() => change(`cases/${selected.id}/transitions`, { version: selected.version, targetState: "EM_TRIAGEM" }))}>Iniciar triagem</button>}
         {user.role === "LAWYER" && selected.state === "EM_TRIAGEM" && <fieldset disabled={busy}><legend>Decisão de triagem</legend>
           {["Escopo compatível: trânsito ou civil, exceto família e sucessões", "Conflito de interesses analisado", "Informações suficientes para decidir o atendimento"].map((label, index) => <label key={label} className="case-check"><input type="checkbox" checked={checks[index]} onChange={e => setChecks(old => old.map((value, i) => i === index ? e.target.checked : value))} />{label}</label>)}
           <label>Justificativa visível ao cliente<textarea maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} /></label>
-          <div className="case-actions"><button disabled={reason.trim().length < 5 || !checks.every(Boolean)} onClick={() => void run(() => change(`cases/${selected.id}/transitions`, { version: selected.version, targetState: "ACEITO", reason, scopeConfirmed: checks[0], conflictChecked: checks[1], informationSufficient: checks[2] }))}>Aceitar caso</button>
+          <div className="case-actions"><button disabled={reason.trim().length < 5 || !checks.every(Boolean)} onClick={() => void run(() => change(`cases/${selected.id}/transitions`, { version: selected.version, targetState: "ACEITO", reason, scopeConfirmed: checks[0], conflictChecked: checks[1], informationSufficient: checks[2] }))}>Aprovar caso e preparar procuração</button>
           <button disabled={reason.trim().length < 5} onClick={() => void run(() => change(`cases/${selected.id}/transitions`, { version: selected.version, targetState: "RECUSADO", reason }))}>Recusar com justificativa</button></div>
           <label>Informações a complementar<textarea maxLength={4000} value={complement} onChange={e => setComplement(e.target.value)} /></label><button disabled={complement.trim().length < 5} onClick={() => void run(() => change(`cases/${selected.id}/requests`, { version: selected.version, description: complement }))}>Solicitar complemento</button>
         </fieldset>}

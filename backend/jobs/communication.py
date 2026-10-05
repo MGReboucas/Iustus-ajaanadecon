@@ -9,7 +9,7 @@ from django.utils import timezone
 from apps.cases.models import Case
 from apps.cases.services import accessible
 from apps.communication.models import CaseEmail
-from apps.communication.services import create_notice
+from apps.communication.services import create_notice, EVENT_TITLES
 from apps.legal.models import LegalTask
 
 
@@ -28,7 +28,7 @@ def deliver_case_email():
     user = notice.recipient
     # Nenhuma mensagem é enviada após revogação conhecida ou opt-out.
     portal = "client" if user.role == "CLIENT" else "team"
-    allowed = portal in settings.PORTAL_ORIGINS and user.is_active and user.email_verified_at and user.case_email_enabled and accessible(user).filter(pk=notice.case_id).exists()
+    allowed = portal in settings.PORTAL_ORIGINS and user.is_active and user.email_verified_at and user.case_email_enabled and accessible(user, administrative=user.role == "ADMIN").filter(pk=notice.case_id).exists()
     if notice.kind == "TASK_REMINDER":
         allowed = allowed and LegalTask.objects.filter(pk=item.reminder_task_id, case_id=notice.case_id, due_at=item.reminder_due_at, completed_at__isnull=True,
             due_at__lte=timezone.now()+timedelta(hours=24)).exclude(case__state__in=[Case.State.CLOSED, Case.State.REJECTED]).exists()
@@ -38,7 +38,9 @@ def deliver_case_email():
     portal = "client" if user.role == "CLIENT" else "team"
     path = "/cliente" if portal == "client" else "/advogado"
     url = settings.PORTAL_ORIGINS[portal] + path
-    body = "Há uma novidade ou pendência no seu atendimento Iustus.\n\nEntre no painel para consultar os detalhes com segurança:\n" + url + "\n\nVocê pode ajustar estes e-mails em Minha conta."
+    # Usar somente textos estáticos; títulos persistidos podem conter dados privados.
+    title = EVENT_TITLES.get(notice.kind, "Há uma novidade ou pendência no seu atendimento Iustus.")
+    body = title + "\n\nEntre no painel para consultar os detalhes com segurança:\n" + url + "\n\nVocê pode ajustar estes e-mails em Minha conta."
     try:
         message = EmailMessage("Iustus: atualização no atendimento", body, None, [user.email],
                                headers={"Message-ID": f"<case-{notice.pk}@iustus.invalid>"})

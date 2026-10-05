@@ -7,6 +7,11 @@ from django.core.exceptions import ImproperlyConfigured
 from .base import *  # noqa: F403
 from .base import env
 
+if PAGBANK_ENVIRONMENT not in ("sandbox", "production"):
+    raise ImproperlyConfigured("PAGBANK_ENVIRONMENT deve ser sandbox ou production.")
+if BILLING_ENABLED and (not PAGBANK_API_TOKEN or not PAGBANK_WEBHOOK_PUBLIC_KEY):
+    raise ImproperlyConfigured("Configure token PagBank e chave pública de webhook antes de habilitar adesões.")
+
 
 def required_secret(name, minimum=32):
     value = env(name)

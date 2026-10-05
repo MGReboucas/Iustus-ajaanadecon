@@ -1,5 +1,5 @@
 # billing
 
-Planos, pedidos, pagamentos, eventos e assinaturas. O adaptador legado continua no frontend até a migração financeira.
+Adesão anual, pedidos, confirmação financeira, eventos duráveis e associação com vigência. Checkout hospedado PagBank; o adaptador transparente foi desativado.
 
-Estrutura inicial; regras e endpoints ainda serão implementados. Modelos, serviços, serializers, endpoints e testes devem ficar neste módulo à medida que cada tarefa for executada. Migrações pertencem ao Django; não criar tabelas pelo frontend.
+Endpoints: `billing/plan`, `billing/checkout`, `billing/webhook`, `billing/activate` e `billing/resend`. O worker consulta o pagamento no provedor antes de ativar a associação. Detalhes, configuração e limitações em [ASSOCIACAO.md](../../../docs/ASSOCIACAO.md). Migrações pertencem ao Django; não criar tabelas pelo frontend.

@@ -19,7 +19,7 @@ export default function CaseDocuments({ available, caseId, versions, busy, readO
   return <section className="case-documents" aria-labelledby="case-documents-title">
     <div className="cases-heading"><h4 id="case-documents-title">Documentos do caso</h4><button disabled={busy} onClick={() => void run(refresh)}>Atualizar documentos</button></div>
     <p>Arquivos compartilhados entre o cliente e o advogado responsável. PDF, JPEG ou PNG, até 20 MiB por arquivo. O download fica disponível após a verificação.</p>
-    {!available && <p role="status">O envio de arquivos ainda não está habilitado neste ambiente. Você pode testar o cadastro do caso, a triagem e as mensagens.</p>}
+    {!available && <p role="status">O envio de documentos está indisponível neste momento. Você pode salvar o rascunho e completar os anexos quando o serviço estiver disponível.</p>}
     {available && !readOnly && <form onSubmit={event => { event.preventDefault(); if (!file) return; setMessage(""); void run(async () => {
       try {
         await uploadDocument(caseId, file, versions.find(item => item.id === target));

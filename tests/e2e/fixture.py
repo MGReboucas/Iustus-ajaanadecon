@@ -45,6 +45,21 @@ else:
         names = {"admin": "Admin Teste", "lawyer": "Advogado Teste", "client": "Cliente Teste"}
         user = User.objects.create_user(email, "Synthetic-Browser-Passphrase-938!", first_name=names[action], role=action.upper(), email_verified_at=timezone.now())
         print(json.dumps({"id": str(user.pk)}))
+    elif action == "paid-member":
+        from unittest.mock import patch
+        from uuid import uuid4
+        from apps.billing.models import Order
+        from apps.billing.services import reconcile
+        order = Order.objects.create(request_key=uuid4().hex, session_digest=uuid4().hex, amount=79799,
+            environment="sandbox", policy_version="development-v1")
+        data = {"id": "ORDE_" + uuid4().hex, "reference_id": str(order.pk),
+            "items": [{"reference_id": "iustus-associacao-anual", "quantity": 1, "unit_amount": 79799}],
+            "customer": {"email": email, "name": "Associado Sintético"},
+            "charges": [{"status": "PAID", "paid_at": timezone.now().isoformat(),
+                "amount": {"value": 79799, "currency": "BRL", "summary": {"paid": 79799, "refunded": 0}}}]}
+        with patch("apps.billing.services.request_api", return_value=data):
+            reconcile(order.pk, data["id"])
+        print(json.dumps({"paid": True}))
     elif action == "case-grant":
         from datetime import timedelta
         from apps.cases.models import LocalCaseAccess

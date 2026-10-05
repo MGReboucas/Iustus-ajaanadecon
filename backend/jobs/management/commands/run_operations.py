@@ -6,6 +6,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from jobs.mail import deliver_one
 from jobs.communication import deliver_case_email, schedule_reminders
+from jobs.billing import process_payment
 class Command(BaseCommand):
     help = "Executa e-mails, lembretes, scanner e limpeza de exportações; --once executa um ciclo limitado."
     def add_arguments(self, parser):
@@ -14,6 +15,9 @@ class Command(BaseCommand):
         try:
             while True:
                 close_old_connections()
+                if settings.BILLING_ENABLED:
+                    for _ in range(10):
+                        if not process_payment(): break
                 schedule_reminders()
                 for _ in range(100):
                     identity = deliver_one()

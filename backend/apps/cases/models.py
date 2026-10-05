@@ -31,6 +31,7 @@ class Case(models.Model):
     lawyer = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT, related_name="assigned_cases")
     title = models.CharField(max_length=160, blank=True)
     description = models.TextField(blank=True)
+    occurred_on = models.DateField(null=True, blank=True)
     category = models.CharField(max_length=20, choices=Category.choices, blank=True)
     scope_acknowledged = models.BooleanField(default=False)
     state = models.CharField(max_length=24, choices=State.choices, default=State.DRAFT)

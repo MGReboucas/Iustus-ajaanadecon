@@ -16,7 +16,7 @@ from apps.documents.services import version_data
 from . import serializers as inputs
 from .models import Case, InformationRequest
 from .services import (accessible, case_data, changed, edit_draft, expect_state, expect_version,
-                       get_case, record, submission_access)
+                       get_case, record, submission_access, assign_automatically)
 
 
 class Page(CursorPagination):
@@ -44,7 +44,7 @@ class CaseView(IdentityView):
 
 class CatalogView(CaseView):
     def get(self, request):
-        return Response({"documentsAvailable": settings.DOCUMENT_STORAGE_BACKEND != "disabled", "categories": [{"id": key, "label": label} for key, label in Case.Category.choices],
+        return Response({"documentsAvailable": settings.DOCUMENT_STORAGE_BACKEND != "disabled", "intakeRequired": settings.CASE_INTAKE_REQUIRED, "categories": [{"id": key, "label": label} for key, label in Case.Category.choices],
                          "states": [{"id": key, "label": label} for key, label in Case.State.choices],
                          "submission": submission_access(request.user) if request.user.role == "CLIENT" else None})
 
@@ -114,12 +114,22 @@ class SubmitView(CaseView):
             if not item.title.strip() or len(item.description.strip()) < 20 or not item.category or not item.scope_acknowledged:
                 raise IdentityError("INCOMPLETE_CASE", "Preencha título, categoria, relato de pelo menos 20 caracteres e ciência do escopo.", 422)
             User.objects.select_for_update().get(pk=request.user.pk)
+            if settings.CASE_INTAKE_REQUIRED:
+                if not item.occurred_on or item.occurred_on > timezone.localdate():
+                    raise IdentityError("OCCURRENCE_DATE_REQUIRED", "Informe a data em que o fato ocorreu.", 422)
+                if not DocumentVersion.objects.filter(document__case=item, uploaded_by=request.user, status="AVAILABLE").exists():
+                    raise IdentityError("EVIDENCE_REQUIRED", "Anexe ao menos um documento e aguarde a verificação antes de enviar a ocorrência.", 422)
             if not submission_access(request.user)["canSubmit"]:
-                raise IdentityError("SUBMISSION_UNAVAILABLE", "Aguarde a liberação de atendimento pelo escritório; mantenha o rascunho.", 422)
+                raise IdentityError("SUBMISSION_UNAVAILABLE", submission_access(request.user)["message"], 422)
             item.state = Case.State.SUBMITTED
             item.submitted_at = timezone.now()
             item.submission_key, item.submission_version = digest(key), item.version
             changed(item, request.user, "SUBMITTED")
+            if settings.CASE_AUTO_ASSIGN:
+                if not assign_automatically(item):
+                    from apps.communication.services import create_notice
+                    for admin_id in User.objects.filter(role="ADMIN", is_active=True, email_verified_at__isnull=False).values_list("pk", flat=True):
+                        create_notice(recipient_id=admin_id, source_key=f"unassigned:{item.pk}", case=item, kind="UNASSIGNED", title="Nova ocorrência aguardando advogado responsável")
         return Response(case_data(item, detail=True))
 
 

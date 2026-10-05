@@ -46,13 +46,20 @@ class PublicView(IdentityView):
 
 class CSRFView(PublicView):
     def get(self, request):
+        # Estabelecer a sessão antes de uma chamada ao provedor: Django não salva
+        # cookies de sessão em respostas 5xx, mas a repetição deve usar o mesmo pedido.
+        if not request.session.session_key:
+            request.session.create()
+            request.session["browser_initialized"] = True
         return Response({"csrfToken": get_token(request), "portal": request.portal,
                          "policyVersion": settings.REGISTRATION_POLICY_VERSION, "mfaRequired": settings.IDENTITY_MFA_REQUIRED,
-                         "registrationAvailable": request.shared_portal or request.portal == "client"})
+                         "registrationAvailable": not settings.MEMBERSHIP_REQUIRED and (request.shared_portal or request.portal == "client")})
 
 
 class RegisterView(PublicView):
     def post(self, request):
+        if settings.MEMBERSHIP_REQUIRED:
+            raise IdentityError("PAYMENT_REQUIRED", "Após o pagamento da adesão, use o link recebido por e-mail para concluir seu cadastro.", 403)
         if request.shared_portal:
             request.portal = "client"
         self.require_portal(request, "client")
@@ -265,4 +272,5 @@ class ClientDashboardView(IdentityView):
 class TeamDashboardView(IdentityView):
     def get(self, request):
         self.require_portal(request, "team")
-        return Response({"user": profile(request.user), "portal": "team", "caseManagementAvailable": True})
+        return Response({"user": profile(request.user), "portal": "team", "caseManagementAvailable": True,
+                         "manualAdmissionAvailable": not settings.MEMBERSHIP_REQUIRED})
