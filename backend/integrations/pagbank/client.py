@@ -51,7 +51,7 @@ def create_checkout(order):
         "reference_id": str(order.pk), "customer_modifiable": True,
         "items": [{"reference_id": "iustus-associacao-anual", "name": "Adesão anual à associação Iustus", "quantity": 1, "unit_amount": order.amount}],
         "payment_methods": [{"type": "CREDIT_CARD"}, {"type": "PIX"}],
-        "payment_methods_configs": [{"type": "CREDIT_CARD", "config_options": [{"option": "INSTALLMENTS_LIMIT", "value": "12"}, {"option": "INTEREST_FREE_INSTALLMENTS", "value": "1"}]}],
+        "payment_methods_configs": [{"type": "CREDIT_CARD", "config_options": [{"option": "INSTALLMENTS_LIMIT", "value": "12"}, {"option": "INTEREST_FREE_INSTALLMENTS", "value": "12"}]}],
         "redirect_url": origin + "/checkout?retorno=1", "return_url": origin + "/checkout?retorno=1",
         "notification_urls": [webhook], "payment_notification_urls": [webhook],
     }, order.pk)

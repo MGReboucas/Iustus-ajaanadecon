@@ -173,6 +173,8 @@ class AssociationTests(TestCase):
             self.assertEqual(create().status_code, 201)
             self.assertEqual(provider.call_count, 1)
         self.assertEqual(Order.objects.get().pk, original)
+        self.assertEqual(Order.objects.get().amount, 95880)
+        self.assertEqual(browser.get("/api/v1/billing/plan").json()["amount"], 95880)
         self.assertEqual(browser.get("/api/v1/billing/checkout").json()["status"], "WAITING")
         self.assertEqual(self.browser().get("/api/v1/billing/checkout").status_code, 404)
 
@@ -183,6 +185,10 @@ class AssociationTests(TestCase):
             data = provider.call_args.args[1]
             self.assertEqual(data["items"][0]["unit_amount"], 79799)
             self.assertIn("billing/webhook", data["payment_notification_urls"][0])
+            self.assertEqual(data["payment_methods_configs"], [{"type": "CREDIT_CARD", "config_options": [
+                {"option": "INSTALLMENTS_LIMIT", "value": "12"},
+                {"option": "INTEREST_FREE_INSTALLMENTS", "value": "12"},
+            ]}])
         for url in ["https://pagamento.pagbank.com.br.evil.test", "http://pagbank.com.br", "https://evil.test"]:
             with patch("integrations.pagbank.client.request_api", return_value={"id": "CHEC_test", "links": [{"rel": "PAY", "href": url}]}):
                 with self.assertRaises(IdentityError): create_checkout(order)

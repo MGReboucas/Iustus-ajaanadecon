@@ -6,7 +6,7 @@ export const metadata = {
     default: 'ÍUSTUS | Atendimento online, sem complicação',
     template: '%s | ÍUSTUS',
   },
-  description: 'Associe-se à Iustus por R$ 797,99 ao ano. Cadastre ocorrências, assine a procuração dos casos aprovados e acompanhe o atendimento online.',
+  description: 'Associe-se à Iustus por 12x de R$ 79,90. Cadastre ocorrências, assine a procuração dos casos aprovados e acompanhe o atendimento online.',
   keywords: ['assinatura jurídica', 'dashboard jurídico', 'procuração online'],
   openGraph: {
     title: 'ÍUSTUS | Atendimento online por assinatura',

@@ -102,7 +102,7 @@ test('landing e checkout explicam adesão, análise e procuração posterior', a
 test('nova adesão após pagamento concluído usa uma referência nova e não coleta cartão', async ({ page }) => {
   test.skip(process.env.IUSTUS_E2E_ASSOCIATION !== 'true', 'Requer o perfil de associação');
   await page.addInitScript(() => sessionStorage.setItem('iustus-checkout-key', 'previous-completed-order'));
-  await page.route('**/api/v1/billing/plan', route => route.fulfill({ json: { amount: 79799, available: true, sandbox: true } }));
+  await page.route('**/api/v1/billing/plan', route => route.fulfill({ json: { amount: 95880, available: true, sandbox: true } }));
   let submitted;
   await page.route('**/api/v1/billing/checkout', async route => {
     if (route.request().method() === 'GET') return route.fulfill({ json: { status: 'PAID' } });
