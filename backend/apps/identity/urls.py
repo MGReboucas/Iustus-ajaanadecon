@@ -10,6 +10,7 @@ urlpatterns = [
     path("mobile/cases", mobile.MobileCasesView.as_view()),
     path("mobile/cases/<uuid:case_id>", mobile.MobileCaseView.as_view()),
     path("mobile/cases/<uuid:case_id>/timeline", mobile.MobileTimelineView.as_view()),
+    path("mobile/cases/<uuid:case_id>/messages", mobile.MobileMessagesView.as_view()),
     path("auth/csrf", views.CSRFView.as_view()),
     path("auth/register", views.RegisterView.as_view()),
     path("auth/verify", views.VerifyView.as_view()),

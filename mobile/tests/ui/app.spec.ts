@@ -6,6 +6,8 @@ const item = { id, reference: '00000000', title: 'Revisão de cobrança', catego
 const dashboard = { user, totalCases: 1, attentionCount: 0, unreadCount: 0, states: [], attentionCases: [], recentActivity: [], membership: { active: true, expiresAt: '2027-10-06T12:00:00Z' }, submission: { canSubmit: true, mode: 'MEMBERSHIP', message: 'Associação ativa.' } };
 
 async function mockApi(page: Page, options: { expired?: boolean; offline?: boolean } = {}) {
+  let previousMessage: Record<string, unknown> | undefined;
+  let firstSend = true;
   await page.route('https://mobile-api.example.test/api/v1/mobile/**', async route => {
     const request = route.request();
     const path = new URL(request.url()).pathname.split('/mobile/')[1];
@@ -22,8 +24,18 @@ async function mockApi(page: Page, options: { expired?: boolean; offline?: boole
     if (path === 'auth/logout') { await route.fulfill({ status: 204, headers }); return; }
     if (options.expired) { await route.fulfill({ status: 401, headers, json: { error: { code: 'AUTH_REQUIRED', message: 'Entre novamente.' } } }); return; }
     if (options.offline) { await route.abort(); return; }
+    if (path.endsWith('/messages')) {
+      if (request.method() === 'POST') {
+        const body = request.postDataJSON();
+        if (previousMessage) expect(body.clientMessageId).toBe(previousMessage.clientMessageId);
+        previousMessage = { ...body, id: 'sent-message', authorName: user.name, authorId: id, createdAt: item.createdAt };
+        if (firstSend) { firstSend = false; await route.abort(); return; }
+        await route.fulfill({ headers, json: previousMessage }); return;
+      }
+      await route.fulfill({ headers, json: { results: [], nextCursor: null } }); return;
+    }
     const data = path === 'dashboard' ? dashboard : path === 'cases' ? { results: [item], nextCursor: null } : path.endsWith('/timeline') ? { results: [{ id, action: 'TRIAGE_STARTED', state: 'EM_TRIAGEM', reason: 'Documentação recebida.', createdAt: item.createdAt }], nextCursor: null } : item;
-    await route.fulfill({ headers, json: data });
+    await route.fulfill({ headers, json: data === item ? { ...item, canMessage: true } : data });
   });
 }
 
@@ -51,6 +63,13 @@ test('login, dashboard, case history and logout', async ({ page }, testInfo) => 
   await page.getByRole('button', { name: 'Abrir Revisão de cobrança: Em triagem' }).click();
   await expect(page.getByText(item.description)).toBeVisible();
   await expect(page.getByText('Documentação recebida.')).toBeVisible();
+  await page.getByLabel('Sua mensagem', { exact: true }).fill('Tenho uma atualização sobre o caso.');
+  await page.getByRole('button', { name: 'Enviar mensagem', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Não foi possível conectar');
+  await expect(page.getByLabel('Sua mensagem', { exact: true })).toHaveValue('Tenho uma atualização sobre o caso.');
+  await page.getByRole('button', { name: 'Enviar mensagem', exact: true }).click();
+  await expect(page.getByLabel('Sua mensagem', { exact: true })).toHaveValue('');
+  await expect(page.getByText('Tenho uma atualização sobre o caso.', { exact: true })).toHaveCount(1);
   await page.screenshot({ path: testInfo.outputPath('case.png'), fullPage: true, scale: 'css' });
   await page.goBack();
   await page.getByRole('tab', { name: /Minha conta/ }).click();

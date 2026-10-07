@@ -1,10 +1,12 @@
 from datetime import timedelta
+from uuid import uuid4
 
 from django.conf import settings
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
 from apps.cases.models import Case, CaseEvent
+from apps.communication.models import Message, Notification
 from apps.identity.models import IdentityEmail, MobileSession, User
 from apps.identity.security import digest
 
@@ -110,6 +112,35 @@ class MobileTests(TestCase):
         self.assertEqual(len(first["results"]), 20)
         self.assertEqual(len(second["results"]), 3)
         self.assertFalse(set(row["id"] for row in first["results"]) & set(row["id"] for row in second["results"]))
+
+    def test_mobile_conversation_permissions_and_retry(self):
+        lawyer = User.objects.create_user("lawyer@example.test", PASSWORD, role="LAWYER")
+        item = Case.objects.create(owner=self.user, lawyer=lawyer, state=Case.State.TRIAGE)
+        other = User.objects.create_user("outsider@example.test", PASSWORD)
+        hidden = Case.objects.create(owner=other, lawyer=lawyer, state=Case.State.TRIAGE)
+        Message.objects.create(case=item, author=lawyer, text="Nota privada", visibility="INTERNAL", client_id=uuid4())
+        Message.objects.create(case=item, author=lawyer, text="Mensagem pública", visibility="PUBLIC", client_id=uuid4())
+        headers = self.headers()
+        url = f"/api/v1/mobile/cases/{item.pk}/messages"
+        payload = {"text": "Resposta do associado", "clientMessageId": str(uuid4())}
+        self.assertEqual(self.client.get(url).status_code, 401)
+        self.assertTrue(self.client.get(f"/api/v1/mobile/cases/{item.pk}", **headers).json()["canMessage"])
+        self.assertEqual([row["text"] for row in self.client.get(url, **headers).json()["results"]], ["Mensagem pública"])
+        for method in (self.client.get, self.client.post):
+            self.assertEqual(method(f"/api/v1/mobile/cases/{hidden.pk}/messages", payload if method == self.client.post else {},
+                                   content_type="application/json", **headers).status_code, 404)
+        self.assertEqual(self.client.post(url, {**payload, "visibility": "INTERNAL"}, content_type="application/json", **headers).status_code, 403)
+        first = self.client.post(url, payload, content_type="application/json", **headers)
+        repeated = self.client.post(url, payload, content_type="application/json", **headers)
+        self.assertEqual(first.status_code, 201, first.content)
+        self.assertEqual(repeated.status_code, 200)
+        self.assertEqual(first.json()["id"], repeated.json()["id"])
+        self.assertEqual(Notification.objects.filter(recipient=lawyer).count(), 1)
+        self.assertEqual(self.client.post(url, {**payload, "text": "Mudou"}, content_type="application/json", **headers).status_code, 409)
+        for state in (Case.State.DRAFT, Case.State.REJECTED, Case.State.CLOSED):
+            Case.objects.filter(pk=item.pk).update(state=state)
+            self.assertFalse(self.client.get(f"/api/v1/mobile/cases/{item.pk}", **headers).json()["canMessage"])
+            self.assertEqual(self.client.post(url, {**payload, "clientMessageId": str(uuid4())}, content_type="application/json", **headers).status_code, 409)
 
     def test_recovery_does_not_disclose_accounts(self):
         responses = [self.client.post("/api/v1/mobile/auth/recovery", {"email": email}, content_type="application/json")

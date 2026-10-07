@@ -19,7 +19,7 @@ export function apiOrigin() {
 }
 
 export async function request<T>(path: string, token?: string, body?: object): Promise<T> {
-  if (!/^(auth\/(login|logout|recovery)|dashboard|cases(?:\/[0-9a-f-]+(?:\/timeline)?)?)(\?cursor=[^#]*)?$/.test(path)) {
+  if (!/^(auth\/(login|logout|recovery)|dashboard|cases(?:\/[0-9a-f-]+(?:\/(?:timeline|messages))?)?)(\?cursor=[^#]*)?$/.test(path)) {
     throw new ApiError('INVALID_ROUTE', 'Não foi possível abrir esta página.');
   }
   const url = `${apiOrigin()}/api/v1/mobile/${path}`;

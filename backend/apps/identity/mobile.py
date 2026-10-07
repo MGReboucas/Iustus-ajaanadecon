@@ -15,9 +15,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.billing.services import membership_data
+from apps.cases.models import Case
 from apps.cases.services import accessible, case_data, get_case
 from apps.cases.views import CaseView, TimelineView
-from apps.communication.views import OverviewView
+from apps.communication.views import MessagesView, OverviewView
 from .models import ActionToken, MobileSession, User
 from .security import IdentityError, digest, throttle
 from .serializers import EmailSerializer, LoginSerializer
@@ -140,9 +141,19 @@ class MobileCasesView(MobileView):
 
 class MobileCaseView(MobileView):
     def get(self, request, case_id):
-        return Response(case_data(get_case(request.user, case_id), detail=True))
+        item = get_case(request.user, case_id)
+        return Response({**case_data(item, detail=True), "canMessage": bool(item.lawyer_id)
+                         and item.state not in (Case.State.DRAFT, Case.State.REJECTED, Case.State.CLOSED)})
 
 
 class MobileTimelineView(MobileView):
     def get(self, request, case_id):
         return TimelineView.get(self, request, case_id)
+
+
+class MobileMessagesView(MobileView):
+    role = CaseView.role
+    limited = CaseView.limited
+    data = MobileView.validated
+    get = MessagesView.get
+    post = MessagesView.post

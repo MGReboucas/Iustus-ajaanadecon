@@ -9,6 +9,7 @@ Aplicativo do associado em Expo SDK 57, React Native e TypeScript. Android e iOS
 - Sessão opaca por aparelho, guardada no SecureStore; somente hash no servidor. Expiração absoluta e por inatividade iguais às do associado web (hoje 24 h e 2 h), sem refresh nesta entrega.
 - Início com indicadores reais, situação e vigência da associação, casos que precisam de atenção e últimas movimentações.
 - Lista paginada, detalhes e histórico público dos casos; conta e logout.
+- Conversa por caso (07/10/2026): mensagens públicas paginadas, atualização manual e envio durante o atendimento com advogado atribuído. Repetir um envio com o mesmo texto após falha de rede reutiliza a chave para evitar duplicação enquanto a tela permanece aberta; notas internas não são expostas.
 - Carregamento, estados vazios, falha de conexão, repetição e retorno ao login em sessão inválida.
 
 Consulta não representa liberação para novos atendimentos. O backend continua sendo a autoridade sobre associação, propriedade dos casos e permissões. Contas de equipe/administrador não entram no app nesta entrega.
@@ -36,6 +37,7 @@ O app chama `/api/v1/mobile/*` pelo proxy Next.js existente. Apenas as novas rot
 | `/cases` | GET | Casos próprios, paginação por `cursor` |
 | `/cases/:id` | GET | Detalhes do caso próprio |
 | `/cases/:id/timeline` | GET | Histórico público paginado |
+| `/cases/:id/messages` | GET, POST | Conversa pública paginada e envio com chave de idempotência |
 
 Tokens não ficam em URLs, AsyncStorage, logs ou localStorage. A prévia web do Expo usa somente memória; o produto web permanece no Next.js. Reset de senha (`auth_version`), desativação, perda da verificação de e-mail e mudança de papel invalidam a sessão. Até cinco sessões por associado; novo login substitui a mais antiga ao exceder o limite. Logout offline apaga o acesso local, mas a revogação remota depende de conexão ou expiração.
 

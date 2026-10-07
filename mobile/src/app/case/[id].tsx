@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSession } from '../../auth/SessionProvider';
+import { CaseConversation } from '../../components/CaseConversation';
 import type { Case, CaseEvent, Page } from '../../lib/types';
 import { errorMessage } from '../../lib/api';
 import { Badge, Body, Button, Card, date, Empty, ErrorNotice, Label, Loading, Screen, Title, s } from '../../components/ui';
@@ -41,6 +42,7 @@ export default function Detail() {
     <View><Label>CASO #{item.reference}</Label><Title>{item.title || 'Rascunho sem título'}</Title></View><Badge>{item.stateLabel}</Badge>
     <Card><Label>INFORMAÇÕES DO CASO</Label><Body>{item.categoryLabel || 'Categoria não definida'}</Body><Body>Cadastrado em {date(item.createdAt)}</Body>{item.occurredOn && <Body>Data do ocorrido: {date(item.occurredOn)}</Body>}</Card>
     <Card><Text style={s.cardTitle}>Seu relato</Text><Body>{item.description || 'O relato ainda não foi preenchido.'}</Body></Card>
+    <CaseConversation key={id} caseId={id} canMessage={item.canMessage === true} />
     <Text style={s.section} accessibilityRole="header">Histórico do atendimento</Text>
     {timeline.length ? timeline.map(event => <Card key={event.id}><Text style={s.caption}>{date(event.createdAt)}</Text><Text style={s.cardTitle}>{events[event.action] || 'Atualização do atendimento'}</Text>{!!event.reason && <Body>{event.reason}</Body>}</Card>) : <Empty title="Aguardando movimentações" message="As atualizações do atendimento aparecerão aqui." />}
     {cursor && <Button title="Ver movimentações anteriores" secondary busy={loading} onPress={() => void load(cursor)} />}

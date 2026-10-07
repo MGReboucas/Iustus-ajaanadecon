@@ -24,7 +24,7 @@ test('proxy hides debug text and HTML even when upstream returns 400', async () 
 });
 
 test('mobile proxy forwards bearer only to allowed mobile routes and strips browser cookies', async () => {
-  for (const path of ['mobile/dashboard', 'mobile/cases/00000000-0000-0000-0000-000000000001/timeline', 'me']) {
+  for (const path of ['mobile/dashboard', 'mobile/cases/00000000-0000-0000-0000-000000000001/timeline', 'mobile/cases/00000000-0000-0000-0000-000000000001/messages', 'me']) {
     const request = new Request('https://app.example.test/api/v1/' + path, { headers: {
       host: 'app.example.test', authorization: 'Bearer synthetic', cookie: 'session=browser', 'x-iustus-proxy-key': 'attacker',
     } });
