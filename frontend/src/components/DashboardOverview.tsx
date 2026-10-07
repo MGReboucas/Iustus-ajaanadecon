@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { api, ApiError, Profile } from "@/lib/api/client";
-import type { RecentActivity } from "../../../contracts/api";
+import type { Overview, Notice, Page } from "../../../contracts/api";
 import CaseStatusChart from "./CaseStatusChart";
 
-type CaseLink = { id: string; reference: string; title?: string; stateLabel: string };
-type Overview = { totalCases: number; attentionCount: number; unreadCount: number; states: { id: string; label: string; count: number }[]; attentionCases: CaseLink[]; recentActivity: RecentActivity[]; submission: { message: string; expiresAt?: string; canSubmit: boolean } | null };
-type Notice = { id: string; caseId: string; reference: string; title: string; createdAt: string; readAt: string | null };
-type Notices = { results: Notice[]; nextCursor: string | null };
+type Notices = Page<Notice>;
 const actions: Record<string, string> = { PROPOSAL_PUBLISHED: "Proposta apresentada", PROPOSAL_ACCEPTED: "Proposta aceita", PROPOSAL_DECLINED: "Proposta recusada", MANDATE_GENERATED: "Procuração gerada", LEGAL_START: "Procuração solicitada", LEGAL_SIGN: "Procuração devolvida", LEGAL_VERIFY: "Procuração conferida", LEGAL_RETURN_MANDATE: "Correção da procuração solicitada", LEGAL_DRAFT: "Minuta interna atualizada", LEGAL_PUBLISH: "Peça publicada", LEGAL_FILE: "Protocolo registrado", LEGAL_UPDATE: "Movimentação publicada", LEGAL_TASK: "Compromisso agendado", LEGAL_RESCHEDULE: "Compromisso remarcado", LEGAL_COMPLETE: "Compromisso concluído", LEGAL_CLOSE: "Atendimento encerrado", SUBMITTED: "Caso enviado", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Triagem concluída", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido", DOCUMENT_UPLOADED: "Documento enviado" };
 
 export default function DashboardOverview({ user, revision, openCase }: { user: Profile; revision: number; openCase: (id: string) => void }) {

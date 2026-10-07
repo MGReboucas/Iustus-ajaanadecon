@@ -15,7 +15,7 @@ Iniciada em 07/10/2026. Status: EM ANDAMENTO. Etapa 1 segue com regras comerciai
 - [x] Unificar DTO de propostas sem dependências de execução compartilhadas.
 - [x] Conferir resposta HTTP de propostas com testes.
 - [x] Compartilhar contratos de casos, timeline, mensagens e atividades recentes.
-- [ ] Estender contratos a documentos, notificações, identidade e associação.
+- [x] Compartilhar tipos usados nas telas de documentos, notificações, identidade e associação (tipos não substituem validação em execução).
 - [x] Corrigir estado histórico das atividades recentes e tipar estados dos casos.
 - [ ] Completar padronização dos nomes e rótulos de eventos.
 - [ ] Revisar campos de cliente/advogado necessários às telas, preservando autorização.
@@ -40,3 +40,15 @@ Título sugerido do próximo commit: `refactor(api): share proposal contracts ac
 - Incremento local pronto para revisão/commit: `refactor(api): share case contracts and preserve historical state`. Não commitado nem enviado nesta rodada.
 
 Próximo conjunto: documentos, notificações e identidade/associação. Etapa 2 ainda em andamento.
+
+## Terceiro incremento — documentos, identidade e associação
+
+- `b156f22`, com contratos de casos e correção do estado histórico, publicado na main.
+- Centralizados `Profile`, `ClientProfile`, `AuthContext`, `Membership`, `SubmissionAccess`, `Overview`, `MobileDashboard`, `Notice`, `DocumentVersion`, `DocumentUpload`, `DirectUpload` e `BillingPlan`.
+- Web consome esses tipos em autenticação, documentos, painel e checkout. Mobile reutiliza perfil de cliente e dashboard, sem ampliar permissão de login de profissionais.
+- Incluído `expiresAt` no contrato de upload: o backend já o retornava e o tipo anterior não o descrevia.
+- Testes HTTP verificam upload/listagem, perfil, associação inativa e notificações sem narrativa do caso. Respostas administrativas e profissionais continuam sujeitas à autorização do backend.
+- Validações: 37 testes backend de documentos/mobile/comunicação; 10 testes frontend de documentos/proxy; TypeScript web/mobile, lint mobile e 4 testes mobile aprovados.
+- Sem alteração de banco, preço ou fluxo de cobrança. Novo conjunto será commitado e enviado automaticamente após revisão, conforme autorização do usuário.
+
+Restam revisão integral de rotas documentadas, nomes/rótulos de eventos, validações em execução e testes de compatibilidade complementares. A etapa 2 ainda não está encerrada.

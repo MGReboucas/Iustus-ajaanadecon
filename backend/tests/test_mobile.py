@@ -189,3 +189,16 @@ class MobileTests(TestCase):
         other = User.objects.create_user("other-proposal@example.test", None)
         Case.objects.filter(pk=case.pk).update(owner=other)
         self.assertEqual(self.client.get(path, **headers).status_code, 404)
+
+    @override_settings(MEMBERSHIP_REQUIRED=True)
+    def test_dashboard_identity_and_membership_contract(self):
+        result = self.client.get("/api/v1/mobile/dashboard", **self.headers())
+        self.assertEqual(result.status_code, 200)
+        data = result.json()
+        self.assertEqual(set(data["user"]), {"id", "name", "email", "role", "caseEmailEnabled"})
+        self.assertEqual(data["user"]["role"], "CLIENT")
+        self.assertIsInstance(data["user"]["caseEmailEnabled"], bool)
+        self.assertEqual(data["membership"], {"active": False, "expiresAt": None})
+        self.assertFalse(data["submission"]["canSubmit"])
+        self.assertEqual(data["submission"]["mode"], "INACTIVE")
+        self.assertEqual(data["attentionCases"], [])

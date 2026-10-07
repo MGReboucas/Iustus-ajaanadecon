@@ -181,3 +181,11 @@ Modelos de procuração, emissão PDF e exportação privada: [contratos](PROCUR
 Timeline retorna `Page<CaseEvent>` com estado registrado no evento. Mensagens retornam `Page<Message>` e visibilidade `PUBLIC` ou `INTERNAL`; a API filtra conteúdo interno antes de responder ao cliente. Compartilhar o tipo não concede permissão de leitura.
 
 No resumo, `recentActivity.stateLabel` descreve o estado na data do evento; `attentionCases[].stateLabel` descreve o estado atual do caso. Essa distinção é testada para não reescrever o significado de movimentações antigas.
+
+## Documentos, notificações e acesso — tipos compartilhados
+
+O mesmo módulo de contratos contém perfil web e perfil mobile restrito a cliente, contexto CSRF web, associação, capacidade de submissão, resumos do painel, avisos e plano de cobrança. `Membership.expiresAt` é `null` sem associação ativa; `Overview.submission` é `null` para profissionais. O dashboard nativo é exclusivo do cliente.
+
+Upload retorna `uploadId`, `uploadUrl`, `expiresAt`, `directUpload` e `version`. A versão informa autor, arquivo, tamanho, estado e data. Autorização de envio direto descreve URL temporária, método PUT, cabeçalhos e validade em segundos. Esses tipos não tornam o arquivo disponível: a liberação continua dependente da verificação no backend.
+
+Notificações incluem `kind` e `readAt` anulável; não incluem o texto da mensagem privada. O plano retorna valor em centavos, parcelas, versão do plano, disponibilidade, ambiente sandbox e versão de política.

@@ -2,13 +2,8 @@
 
 import { api, ApiError, Context } from "./client";
 
-export type DocumentVersion = {
-  id: string; documentId: string; uploadedById: string; number: number; filename: string; sizeBytes: number;
-  status: "UPLOADING" | "QUARANTINED" | "SCANNING" | "AVAILABLE" | "REJECTED" | "ERROR";
-  statusLabel: string; createdAt: string;
-};
-type Upload = { uploadId: string; uploadUrl: string; directUpload?: boolean; version: DocumentVersion };
-type DirectUpload = { url: string; method: "PUT"; headers: Record<string, string>; expiresIn: number };
+export type { DocumentVersion } from '../../../../contracts/api';
+import type { DocumentVersion, DocumentUpload as Upload, DirectUpload } from '../../../../contracts/api';
 
 export async function uploadDocument(caseId: string, file: File, previous?: DocumentVersion) {
   if (!file.size || file.size > 20 * 1024 * 1024) throw new Error("Escolha um arquivo de até 20 MiB, com conteúdo.");

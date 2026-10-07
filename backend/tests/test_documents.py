@@ -28,6 +28,21 @@ class DocumentTests(TestCase):
     login = identity.IdentityTests.login
     team_login = identity.IdentityTests.team_login
 
+    def test_upload_and_list_share_document_version_contract(self):
+        result = self.post(self.customer, f"cases/{self.case.pk}/documents/uploads", {
+            "filename": "contract.pdf", "sizeBytes": len(PDF), "mime": "application/pdf"})
+        self.assertEqual(result.status_code, 201, result.content)
+        upload = result.json()
+        self.assertEqual(set(upload), {"uploadId", "uploadUrl", "expiresAt", "directUpload", "version"})
+        version = upload["version"]
+        self.assertEqual(set(version), {"id", "documentId", "number", "uploadedById", "filename",
+            "sizeBytes", "status", "statusLabel", "createdAt"})
+        self.assertEqual(version["status"], "UPLOADING")
+        self.assertIsInstance(version["sizeBytes"], int)
+        self.assertIsInstance(upload["directUpload"], bool)
+        listing = self.customer.get(f"/api/v1/cases/{self.case.pk}/documents").json()
+        self.assertEqual(listing["results"][0], version)
+
     @override_settings(DOCUMENT_LOCAL_STORAGE_ENABLED=False, DOCUMENT_STORAGE_ROOT=None)
     def test_unconfigured_storage_rejects_before_creating_metadata(self):
         response = self.post(self.customer, f"cases/{self.case.pk}/documents/uploads", {

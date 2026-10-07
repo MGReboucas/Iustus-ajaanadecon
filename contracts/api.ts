@@ -50,3 +50,34 @@ export type RecentActivity = {
   id: string; caseId: string; reference: string; title: string;
   action: string; stateLabel: string; createdAt: string;
 };
+
+export type Portal = 'client' | 'team';
+export type UserRole = 'CLIENT' | 'LAWYER' | 'ADMIN';
+export type Profile = { id: string; name: string; email: string; caseEmailEnabled: boolean; role: UserRole };
+export type ClientProfile = Omit<Profile, 'role'> & { role: 'CLIENT' };
+export type AuthContext = { csrfToken: string; portal: Portal; policyVersion: string; mfaRequired: boolean; registrationAvailable: boolean };
+export type Membership = { active: boolean; expiresAt: string | null };
+export type SubmissionAccess = {
+  canSubmit: boolean; mode: 'MEMBERSHIP' | 'INACTIVE' | 'ADMINISTRATIVE' | 'LOCAL_TEST' | 'UNAVAILABLE';
+  message: string; expiresAt?: string;
+};
+export type Overview = {
+  totalCases: number; attentionCount: number; unreadCount: number;
+  states: { id: CaseState; label: string; count: number }[];
+  attentionCases: CaseItem[]; recentActivity: RecentActivity[]; submission: SubmissionAccess | null;
+};
+export type MobileDashboard = Omit<Overview, 'attentionCases' | 'submission'> & {
+  user: ClientProfile; membership: Membership; attentionCases: MobileCase[]; submission: SubmissionAccess;
+};
+export type Notice = {
+  id: string; caseId: string; reference: string; kind: string; title: string;
+  createdAt: string; readAt: string | null;
+};
+export type DocumentStatus = 'UPLOADING' | 'QUARANTINED' | 'SCANNING' | 'AVAILABLE' | 'REJECTED' | 'ERROR';
+export type DocumentVersion = {
+  id: string; documentId: string; uploadedById: string; number: number; filename: string;
+  sizeBytes: number; status: DocumentStatus; statusLabel: string; createdAt: string;
+};
+export type DocumentUpload = { uploadId: string; uploadUrl: string; expiresAt: string; directUpload: boolean; version: DocumentVersion };
+export type DirectUpload = { url: string; method: 'PUT'; headers: Record<string, string>; expiresIn: number };
+export type BillingPlan = { amount: number; installments: number; planVersion: string; available: boolean; sandbox: boolean; policyVersion: string };

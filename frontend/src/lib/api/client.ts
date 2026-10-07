@@ -1,8 +1,7 @@
 "use client";
 
-export type Portal = "client" | "team";
-export type Profile = { id: string; name: string; email: string; caseEmailEnabled: boolean; role: "CLIENT" | "LAWYER" | "ADMIN" };
-export type Context = { csrfToken: string; portal: Portal; policyVersion: string; mfaRequired: boolean; registrationAvailable: boolean };
+export type { Portal, Profile, AuthContext as Context } from '../../../../contracts/api';
+import type { AuthContext as Context } from '../../../../contracts/api';
 
 export class ApiError extends Error {
   constructor(public code: string, message: string, public httpStatus?: number) { super(message); }

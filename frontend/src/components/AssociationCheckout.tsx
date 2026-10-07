@@ -6,7 +6,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import Brand from "./Brand";
 import { api, ApiError } from "@/lib/api/client";
 
-type Plan = { amount: number; installments: number; available: boolean; sandbox: boolean };
+import type { BillingPlan as Plan } from "../../../contracts/api";
 type Payment = { accepted: boolean; customer: { name: string; email: string; cpf: string; phone: string }; card: { encrypted: string; holderName: string; holderCpf: string } };
 type CardSDK = { encryptCard(data: { publicKey: string; holder: string; number: string; expMonth: string; expYear: string; securityCode: string }): { encryptedCard?: string; hasErrors: boolean; errors?: { code: string }[] } };
 declare global { interface Window { PagSeguro?: CardSDK } }

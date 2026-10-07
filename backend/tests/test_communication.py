@@ -179,3 +179,12 @@ class CommunicationTests(TestCase):
         timeline = self.client.get(f"/api/v1/cases/{self.case.pk}/timeline").json()
         self.assertEqual(set(timeline), {"results", "nextCursor"})
         self.assertEqual(set(timeline["results"][0]), {"id", "action", "state", "reason", "createdAt"})
+
+    def test_notification_wire_contract_excludes_message_content(self):
+        self.send(self.lawyer, text="Private case narrative")
+        notice = self.notices()[0]
+        self.assertEqual(set(notice), {"id", "caseId", "reference", "kind", "title", "createdAt", "readAt"})
+        self.assertIsNone(notice["readAt"])
+        self.assertEqual(notice["caseId"], str(self.case.pk))
+        self.assertNotIn("Private case narrative", str(notice))
+        self.assertEqual(self.notices(self.other), [])
