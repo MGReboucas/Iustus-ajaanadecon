@@ -1,0 +1,85 @@
+import { expect, test, type Page } from '@playwright/test';
+
+const id = '00000000-0000-0000-0000-000000000001';
+const user = { id, name: 'Pessoa Teste', email: 'mobile@example.test', role: 'CLIENT', caseEmailEnabled: true };
+const item = { id, reference: '00000000', title: 'Revisão de cobrança', categoryLabel: 'Relações de consumo', state: 'EM_TRIAGEM', stateLabel: 'Em triagem', createdAt: '2026-10-06T12:00:00Z', description: 'Cobrança apresentada para análise do advogado.', occurredOn: '2026-10-01' };
+const dashboard = { user, totalCases: 1, attentionCount: 0, unreadCount: 0, states: [], attentionCases: [], recentActivity: [], membership: { active: true, expiresAt: '2027-10-06T12:00:00Z' }, submission: { canSubmit: true, mode: 'MEMBERSHIP', message: 'Associação ativa.' } };
+
+async function mockApi(page: Page, options: { expired?: boolean; offline?: boolean } = {}) {
+  await page.route('https://mobile-api.example.test/api/v1/mobile/**', async route => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname.split('/mobile/')[1];
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,OPTIONS' };
+    if (request.method() === 'OPTIONS') { await route.fulfill({ status: 204, headers }); return; }
+    if (path === 'auth/login') {
+      if (request.postDataJSON().password === 'wrong') {
+        await route.fulfill({ status: 403, headers, json: { error: { code: 'INVALID_CREDENTIALS', message: 'Não foi possível entrar com os dados informados.' } } }); return;
+      }
+      await route.fulfill({ headers, json: { token: 'x'.repeat(43), expiresAt: new Date(Date.now() + 86400000).toISOString(), user } }); return;
+    }
+    if (path === 'auth/recovery') { await route.fulfill({ status: 202, headers, json: { message: 'Se houver uma conta elegível, enviaremos as instruções por e-mail.' } }); return; }
+    expect(request.headers()['authorization']).toBe('Bearer ' + 'x'.repeat(43));
+    if (path === 'auth/logout') { await route.fulfill({ status: 204, headers }); return; }
+    if (options.expired) { await route.fulfill({ status: 401, headers, json: { error: { code: 'AUTH_REQUIRED', message: 'Entre novamente.' } } }); return; }
+    if (options.offline) { await route.abort(); return; }
+    const data = path === 'dashboard' ? dashboard : path === 'cases' ? { results: [item], nextCursor: null } : path.endsWith('/timeline') ? { results: [{ id, action: 'TRIAGE_STARTED', state: 'EM_TRIAGEM', reason: 'Documentação recebida.', createdAt: item.createdAt }], nextCursor: null } : item;
+    await route.fulfill({ headers, json: data });
+  });
+}
+
+async function signIn(page: Page, password = 'synthetic') {
+  await page.getByLabel('E-mail', { exact: true }).fill(user.email);
+  await page.getByLabel('Senha', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Entrar na minha conta' }).click();
+}
+
+test('login, dashboard, case history and logout', async ({ page }, testInfo) => {
+  await mockApi(page);
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Entrar na minha conta' })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('login.png'), fullPage: true, scale: 'css' });
+  await signIn(page, 'wrong');
+  await expect(page.getByRole('alert')).toContainText('Não foi possível entrar');
+  await signIn(page);
+  await expect(page.getByText('Olá, Pessoa.')).toBeVisible();
+  await expect(page.getByText('Associação ativa', { exact: true })).toBeVisible();
+  const tabLabel = await page.getByText('Minha conta', { exact: true }).boundingBox();
+  expect(tabLabel).not.toBeNull();
+  expect(tabLabel!.y + tabLabel!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  await page.screenshot({ path: testInfo.outputPath('dashboard.png'), fullPage: true, scale: 'css' });
+  await page.getByRole('button', { name: 'Ver todos os meus casos' }).click();
+  await page.getByRole('button', { name: 'Abrir Revisão de cobrança: Em triagem' }).click();
+  await expect(page.getByText(item.description)).toBeVisible();
+  await expect(page.getByText('Documentação recebida.')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('case.png'), fullPage: true, scale: 'css' });
+  await page.goBack();
+  await page.getByRole('tab', { name: /Minha conta/ }).click();
+  await expect(page.getByText(user.email)).toBeVisible();
+  await page.getByRole('button', { name: 'Sair da minha conta' }).click();
+  await expect(page.getByRole('button', { name: 'Entrar na minha conta' })).toBeVisible();
+  await page.goto('/case/' + id);
+  await expect(page.getByRole('button', { name: 'Entrar na minha conta' })).toBeVisible();
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([]);
+});
+
+test('recovery and expired sessions', async ({ page }) => {
+  await mockApi(page, { expired: true });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Esqueci minha senha' }).click();
+  await page.getByLabel('E-mail da sua conta').fill(user.email);
+  await page.getByRole('button', { name: 'Enviar instruções' }).click();
+  await expect(page.getByText('Se houver uma conta elegível, enviaremos as instruções por e-mail.')).toBeVisible();
+  await page.getByRole('button', { name: 'Voltar para entrar' }).click();
+  await signIn(page);
+  await expect(page.getByRole('button', { name: 'Entrar na minha conta' })).toBeVisible();
+});
+
+test('offline dashboard can retry without losing the session', async ({ page }) => {
+  const options = { offline: true };
+  await mockApi(page, options);
+  await page.goto('/'); await signIn(page);
+  await expect(page.getByRole('alert')).toContainText('Não foi possível conectar');
+  options.offline = false;
+  await page.getByRole('button', { name: 'Tentar novamente' }).click();
+  await expect(page.getByText('Olá, Pessoa.')).toBeVisible();
+});

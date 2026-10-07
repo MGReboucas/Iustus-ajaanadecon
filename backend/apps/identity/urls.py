@@ -1,8 +1,15 @@
 from django.urls import path
 
-from . import views
+from . import mobile, views
 
 urlpatterns = [
+    path("mobile/auth/login", mobile.MobileLoginView.as_view()),
+    path("mobile/auth/recovery", mobile.MobileRecoveryView.as_view()),
+    path("mobile/auth/logout", mobile.MobileLogoutView.as_view()),
+    path("mobile/dashboard", mobile.MobileDashboardView.as_view()),
+    path("mobile/cases", mobile.MobileCasesView.as_view()),
+    path("mobile/cases/<uuid:case_id>", mobile.MobileCaseView.as_view()),
+    path("mobile/cases/<uuid:case_id>/timeline", mobile.MobileTimelineView.as_view()),
     path("auth/csrf", views.CSRFView.as_view()),
     path("auth/register", views.RegisterView.as_view()),
     path("auth/verify", views.VerifyView.as_view()),

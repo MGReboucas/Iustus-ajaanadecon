@@ -8,6 +8,25 @@ permissions:
   contents: read
 
 jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+        working-directory: mobile
+      - run: npm run mobile:check
+      - run: npm run export:check
+        working-directory: mobile
+      - run: npx playwright install --with-deps chromium
+        working-directory: mobile
+      - run: npm run test:ui
+        working-directory: mobile
+
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -20,6 +39,7 @@ jobs:
       - run: npm run frontend:install
       - run: npm run typecheck
       - run: npm run test:documents
+      - run: node --test tests/frontend/proxy.test.cjs
       - run: npm run build
       - run: npm run docs:check
 

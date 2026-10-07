@@ -2,6 +2,7 @@
 .github
 .local
 backend
+mobile
 docs
 infra
 tests

@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const routes = new Set([
+  "mobile/auth/login", "mobile/auth/logout", "mobile/auth/recovery", "mobile/dashboard", "mobile/cases",
   "billing/plan", "billing/checkout", "billing/activate", "billing/resend", "billing/webhook",
   "ready",
   "auth/csrf", "auth/register", "auth/verify", "auth/resend", "auth/login",
@@ -12,6 +13,7 @@ const routes = new Set([
   "admin/users", "privacy/requests", "cases", "cases/catalog", "cases/lawyers", "dashboard/overview", "notifications", "admin/service-access", "legal/mandate-templates",
 ]);
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+const mobileCaseRoute = new RegExp(`^mobile/cases/${uuid}(?:/timeline)?$`, "i");
 const caseRoute = new RegExp(`^cases/${uuid}(?:/(?:submit|assignment|transitions|requests|timeline|messages|summary|workflow|mandates|exports)|/requests/${uuid}/(?:response|resolve))?$`, "i");
 const managementRoute = new RegExp(`^(?:admin/users/${uuid}/access|privacy/requests/${uuid}/resolve)$`, "i");
 const notificationRoute = new RegExp(`^notifications/${uuid}/read$`, "i");
@@ -28,7 +30,7 @@ function failure(code: string, message: string, status: number) {
 
 async function forward(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const path = (await context.params).path.join("/");
-  if (!managementRoute.test(path) && !routes.has(path) && !caseRoute.test(path) && !documentRoute.test(path) && !notificationRoute.test(path) && !exportRoute.test(path)) return failure("NOT_FOUND", "Recurso não encontrado.", 404);
+  if (!managementRoute.test(path) && !routes.has(path) && !caseRoute.test(path) && !mobileCaseRoute.test(path) && !documentRoute.test(path) && !notificationRoute.test(path) && !exportRoute.test(path)) return failure("NOT_FOUND", "Recurso não encontrado.", 404);
   const origin = process.env.DJANGO_API_ORIGIN;
   const key = process.env.IUSTUS_PROXY_SECRET;
   const publicOrigin = process.env.IUSTUS_PUBLIC_ORIGIN || (process.env.NODE_ENV === "development" ? "http://localhost:3000" : "");
@@ -42,6 +44,13 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
   for (const name of ["cookie", "origin", "referer", "x-csrftoken", "content-type", "idempotency-key"]) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
+  }
+  if (path.startsWith("mobile/")) {
+    // Sessões nativas não herdam cookies do navegador; o segredo do proxy
+    // continua apenas no servidor e Bearer só atravessa as rotas mobile.
+    headers.delete("cookie");
+    const authorization = request.headers.get("authorization");
+    if (authorization) headers.set("authorization", authorization);
   }
   if (path === "billing/webhook") {
     headers.delete("cookie");

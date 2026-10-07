@@ -4,10 +4,10 @@ const fs = require('node:fs');
 const ts = require('../../frontend/node_modules/typescript');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../../frontend/app/api/v1/[...path]/route.ts'), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-function handler(response) {
+function handler(response, inspect = () => {}) {
   const exports = {};
   const process = { env: { DJANGO_API_ORIGIN: 'https://api.example.test', IUSTUS_PUBLIC_ORIGIN: 'https://app.example.test', IUSTUS_PROXY_SECRET: 'synthetic-test-key' } };
-  new Function('exports', 'require', 'fetch', 'process', compiled)(exports, () => ({}), async () => response, process);
+  new Function('exports', 'require', 'fetch', 'process', compiled)(exports, () => ({}), async (url, options) => { inspect(url, options); return response; }, process);
   return exports.GET;
 }
 async function call(response, path = 'auth/csrf') {
@@ -20,6 +20,27 @@ test('proxy hides debug text and HTML even when upstream returns 400', async () 
     const result = await call(new Response('DisallowedHost INTERNAL_DETAILS', { status: 400, headers: { 'content-type': type } }));
     assert.equal(result.status, 502);
     assert.equal((await result.json()).error.code, 'UPSTREAM_ERROR');
+  }
+});
+
+test('mobile proxy forwards bearer only to allowed mobile routes and strips browser cookies', async () => {
+  for (const path of ['mobile/dashboard', 'mobile/cases/00000000-0000-0000-0000-000000000001/timeline', 'me']) {
+    const request = new Request('https://app.example.test/api/v1/' + path, { headers: {
+      host: 'app.example.test', authorization: 'Bearer synthetic', cookie: 'session=browser', 'x-iustus-proxy-key': 'attacker',
+    } });
+    request.nextUrl = new URL(request.url);
+    let observed;
+    const result = await handler(Response.json({}), (_, options) => { observed = options.headers; })(request, { params: Promise.resolve({ path: path.split('/') }) });
+    assert.equal(result.status, 200);
+    assert.equal(observed.get('authorization'), path.startsWith('mobile/') ? 'Bearer synthetic' : null);
+    assert.equal(observed.get('cookie'), path.startsWith('mobile/') ? null : 'session=browser');
+    assert.equal(observed.get('x-iustus-proxy-key'), 'synthetic-test-key');
+  }
+});
+
+test('mobile proxy does not open arbitrary endpoints', async () => {
+  for (const path of ['mobile/admin/users', 'mobile/billing/checkout', 'mobile/cases/invalid', 'mobile/cases/00000000-0000-0000-0000-000000000001/assignment']) {
+    assert.equal((await call(Response.json({}), path)).status, 404);
   }
 });
 test('proxy preserves structured authentication errors', async () => {

@@ -4,6 +4,8 @@
   "private": true,
   "description": "Repositório único do frontend, backend e infraestrutura Iustus",
   "scripts": {
+    "mobile:start": "npm --prefix mobile start",
+    "mobile:check": "npm --prefix mobile run typecheck && npm --prefix mobile run lint && npm --prefix mobile test",
     "dev": "npm --prefix frontend run dev",
     "build": "npm --prefix frontend run build",
     "start": "npm --prefix frontend run start",

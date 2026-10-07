@@ -83,6 +83,16 @@ class MFADevice(models.Model):
     recovery_hashes = models.JSONField(default=list)
 
 
+class MobileSession(models.Model):
+    """Credencial opaca nativa; somente o hash é persistido no servidor."""
+    digest = models.CharField(max_length=64, primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mobile_sessions")
+    auth_version = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(db_index=True)
+    last_active_at = models.DateTimeField()
+
+
 class RateLimitBucket(models.Model):
     key = models.CharField(max_length=64, primary_key=True)
     attempts = models.PositiveIntegerField(default=0)
