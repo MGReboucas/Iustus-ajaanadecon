@@ -133,3 +133,17 @@ Campos desconhecidos são rejeitados; respostas não incluem dados de cartão. C
 Verificação: 19 testes aprovados no módulo `test_proposals` (inclui testes importados da infraestrutura existente); 7 testes do proxy aprovados. Novos cenários HTTP cobrem publicação, consulta, aceite repetido, CSRF, perfil, campos extras e proposta de outro caso. Testes de domínio anteriores cobrem isolamento entre clientes e advogados. Acesso nativo mobile e telas ainda pendentes.
 
 Próximo incremento: telas de proposta e decisão no portal web; notificações e integração ao fluxo após definição sobre triagem e pagamento. Regras pendentes não foram presumidas. Título sugerido: `feat(legal): expose authenticated proposal API`.
+
+### Interface web e avisos de propostas — 07/10/2026
+
+- Commit local `d6e234f` criado: API autenticada de propostas. Não houve push neste turno.
+- Tela do caso agora inclui propostas para cliente e advogado: histórico paginado, honorários em reais, escopo, despesas, condições de pagamento, validade e decisão.
+- Advogado apresenta nova versão pelo formulário; cliente confirma leitura antes do aceite ou pode recusar. Valores são convertidos para centavos sem usar arredondamento de ponto flutuante. Ações indisponíveis em casos encerrados/recusados e decisões indisponíveis em propostas expiradas.
+- Falha de publicação preserva formulário; botões bloqueiam envios simultâneos. Após sucesso, caso e histórico são recarregados. Conflitos de versão continuam decididos pelo backend. Não há cobrança disparada pelo formulário.
+- Publicação notifica o titular; aceite e recusa notificam o advogado atribuído. Avisos usam a fila existente, sem valor ou conteúdo da proposta no título. Histórico e visão geral receberam rótulos em português.
+- Verificações: TypeScript aprovado; 2 testes de navegador Edge com API simulada (publicação e aceite) aprovados; 26 testes backend de propostas/comunicação aprovados, incluindo destinatários e não duplicação dos avisos.
+- Testes de navegador: `npm --prefix frontend exec -- playwright test --config frontend/playwright.proposals.config.ts`.
+- Limites: sem homologação de SMTP, pagamento ou concorrência em PostgreSQL; sem tela nativa mobile; ainda não vinculado ao bloqueio de início de trabalho jurídico. Triagem remunerada/gratuita, recebimento e eventual pagamento antecipado aguardam regra comercial.
+- Unidade de commit pronta: `feat(web): add case proposals and decision notifications`. Alterações locais ainda não commitadas.
+
+Próxima integração: definir as pré-condições de contratação e início do atendimento e expor a consulta/decisão no aplicativo. Etapa 1 permanece em andamento.

@@ -4,6 +4,9 @@ from .models import Notification, CaseEmail
 
 
 EVENT_TITLES = {
+    "PROPOSAL_PUBLISHED": "Uma proposta de atendimento está disponível",
+    "PROPOSAL_ACCEPTED": "O cliente aceitou a proposta de atendimento",
+    "PROPOSAL_DECLINED": "O cliente recusou a proposta de atendimento",
     "SUBMITTED": "Recebemos sua ocorrência para análise",
     "LEGAL_START": "Procuração disponível para assinatura",
     "LEGAL_SIGN": "Procuração devolvida para conferência",
@@ -29,7 +32,7 @@ def notify_event(event, item):
     title = EVENT_TITLES.get(event.action)
     if not title:
         return
-    recipient_id = item.lawyer_id if event.action in ("ASSIGNED", "INFORMATION_RESPONDED", "LEGAL_SIGN") else item.owner_id
+    recipient_id = item.lawyer_id if event.action in ("ASSIGNED", "INFORMATION_RESPONDED", "LEGAL_SIGN", "PROPOSAL_ACCEPTED", "PROPOSAL_DECLINED") else item.owner_id
     if recipient_id and (recipient_id != event.actor_id or event.action == "SUBMITTED"):
         create_notice(recipient_id=recipient_id, source_key=f"event:{event.pk}", case=item, kind=event.action, title=title)
 

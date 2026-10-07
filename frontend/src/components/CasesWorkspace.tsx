@@ -1,4 +1,5 @@
 "use client";
+import CaseProposals from "./CaseProposals";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api, ApiError, Profile } from "@/lib/api/client";
@@ -15,7 +16,7 @@ type Catalog = { documentsAvailable: boolean; intakeRequired: boolean; categorie
 type Pending = { id: string; description: string; response: string; resolution: string; resolved: boolean; responded: boolean; attachments: DocumentVersion[] };
 type Event = { id: string; action: string; state: string; reason: string; createdAt: string };
 type Lawyer = { id: string; name: string; email: string };
-const labels: Record<string, string> = { MANDATE_GENERATED: "Procuração gerada", LEGAL_START: "Procuração solicitada", LEGAL_SIGN: "Procuração devolvida", LEGAL_VERIFY: "Procuração conferida", LEGAL_RETURN_MANDATE: "Correção da procuração solicitada", LEGAL_DRAFT: "Minuta interna atualizada", LEGAL_PUBLISH: "Peça publicada", LEGAL_FILE: "Protocolo registrado", LEGAL_UPDATE: "Movimentação publicada", LEGAL_TASK: "Compromisso agendado", LEGAL_RESCHEDULE: "Compromisso remarcado", LEGAL_COMPLETE: "Compromisso concluído", LEGAL_CLOSE: "Atendimento encerrado", DRAFT_CREATED: "Rascunho criado", DRAFT_UPDATED: "Rascunho atualizado", SUBMITTED: "Caso enviado", ASSIGNED: "Responsável atribuído", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Decisão de triagem", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido" };
+const labels: Record<string, string> = { PROPOSAL_PUBLISHED: "Proposta apresentada", PROPOSAL_ACCEPTED: "Proposta aceita", PROPOSAL_DECLINED: "Proposta recusada", MANDATE_GENERATED: "Procuração gerada", LEGAL_START: "Procuração solicitada", LEGAL_SIGN: "Procuração devolvida", LEGAL_VERIFY: "Procuração conferida", LEGAL_RETURN_MANDATE: "Correção da procuração solicitada", LEGAL_DRAFT: "Minuta interna atualizada", LEGAL_PUBLISH: "Peça publicada", LEGAL_FILE: "Protocolo registrado", LEGAL_UPDATE: "Movimentação publicada", LEGAL_TASK: "Compromisso agendado", LEGAL_RESCHEDULE: "Compromisso remarcado", LEGAL_COMPLETE: "Compromisso concluído", LEGAL_CLOSE: "Atendimento encerrado", DRAFT_CREATED: "Rascunho criado", DRAFT_UPDATED: "Rascunho atualizado", SUBMITTED: "Caso enviado", ASSIGNED: "Responsável atribuído", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Decisão de triagem", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido" };
 
 export default function CasesWorkspace({ user, openCase, onChange }: { user: Profile; openCase?: { id: string; sequence: number }; onChange: () => void }) {
   const [catalog, setCatalog] = useState<Catalog>();
@@ -154,6 +155,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
           <label>Informações a complementar<textarea maxLength={4000} value={complement} onChange={e => setComplement(e.target.value)} /></label><button disabled={complement.trim().length < 5} onClick={() => void run(() => change(`cases/${selected.id}/requests`, { version: selected.version, description: complement }))}>Solicitar complemento</button>
         </fieldset>}
         {["ACEITO", "AGUARDANDO_PROCURACAO", "EM_PREPARACAO", "EM_ACOMPANHAMENTO", "ENCERRADO"].includes(selected.state) && <LegalWorkflow key={`workflow-${selected.id}`} caseId={selected.id} version={selected.version} user={user} documents={documents.results} onChange={async () => {onChange(); await list(); await load(selected);}} />}
+        <CaseProposals key={`proposals-${selected.id}`} caseId={selected.id} version={selected.version} state={selected.state} user={user} onChange={async () => {onChange(); await list(); await load(selected);}} />
         <CaseMessages key={`messages-${selected.id}`} caseId={selected.id} user={user} available={!!selected.lawyerId && !["RASCUNHO", "RECUSADO", "ENCERRADO"].includes(selected.state)} onChange={onChange} />
         <CaseDocuments available={catalog?.documentsAvailable ?? false} key={selected.id} caseId={selected.id} versions={documents.results} busy={busy} readOnly={["RECUSADO", "ENCERRADO"].includes(selected.state)} run={run} refresh={refreshDocuments} hasMore={!!documents.nextCursor} more={async () => {
           const result = await api<Page<DocumentVersion>>(`cases/${selected.id}/documents?cursor=${encodeURIComponent(documents.nextCursor!)}`);

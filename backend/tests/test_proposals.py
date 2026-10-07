@@ -3,6 +3,7 @@ from django.http import Http404
 from django.test import TestCase
 from django.utils import timezone
 from apps.cases.models import Case, CaseEvent
+from apps.communication.models import Notification, CaseEmail
 from apps.identity.models import User
 from apps.identity.security import IdentityError
 from apps.legal.models import ServiceProposal
@@ -40,6 +41,9 @@ class ProposalTests(TestCase):
         self.assertEqual(self.case.state, Case.State.TRIAGE)
         self.assertEqual(CaseEvent.objects.filter(action="PROPOSAL_ACCEPTED").count(), 1)
         self.assertEqual(proposal_list(self.owner, self.case.pk).count(), 1)
+        self.assertEqual(Notification.objects.filter(recipient=self.owner, kind="PROPOSAL_PUBLISHED").count(), 1)
+        self.assertEqual(Notification.objects.filter(recipient=self.lawyer, kind="PROPOSAL_ACCEPTED").count(), 1)
+        self.assertEqual(CaseEmail.objects.count(), 2)
 
     def test_new_version_supersedes_open_but_preserves_accepted_terms(self):
         old = self.publish()
@@ -60,6 +64,7 @@ class ProposalTests(TestCase):
         with self.assertRaises(IdentityError): self.decide(p)
         p = self.publish()
         self.decide(p, False)
+        self.assertEqual(Notification.objects.filter(recipient=self.lawyer, kind="PROPOSAL_DECLINED").count(), 1)
         with self.assertRaises(IdentityError): self.decide(p, True)
         self.case.state = Case.State.CLOSED; self.case.save()
         with self.assertRaises(IdentityError): self.publish()
