@@ -172,6 +172,8 @@ class CardCheckoutTests(TestCase):
             self.assertEqual(result.status_code, 403)
             provider.assert_not_called()
 
+    @override_settings(MEMBERSHIP_PRICE_CENTS=95880, MEMBERSHIP_INSTALLMENTS=12,
+                       MEMBERSHIP_PLAN_VERSION="annual-legacy-v1")
     def test_pending_order_keeps_original_terms_after_offer_change(self):
         browser = self.browser()
         with patch("apps.billing.views.create_card_order", side_effect=IdentityError("PROVIDER", "Timeout", 503)):
@@ -209,3 +211,11 @@ class CardCheckoutTests(TestCase):
             with patch("apps.billing.services.request_api", return_value=self.snapshot(order)):
                 reconcile(order.pk, "ORDE_synthetic")
         self.assertEqual(Membership.objects.count(), 1)
+
+    def test_active_plan_matches_new_order_price_and_installments(self):
+        browser, order = self.create()
+        plan = browser.get("/api/v1/billing/plan").json()
+        self.assertEqual((plan["amount"], plan["installments"], plan["planVersion"]),
+                         (69990, 10, "annual-2026-v2"))
+        self.assertEqual((order.amount, order.installments, order.plan_version),
+                         (plan["amount"], plan["installments"], plan["planVersion"]))

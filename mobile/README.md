@@ -68,7 +68,7 @@ Da raiz: `node --test tests/frontend/proxy.test.cjs` (requer dependências de `f
 
 1. Homologar login, reabertura, expiração, navegação e logout em Android e iPhone reais.
 2. Cadastro de ocorrência, câmera/arquivos, upload seguro e procuração por caso.
-3. Adesão e pagamento após definir o enquadramento nas lojas; o checkout não foi colocado no app. Oferta comercial: 12x de R$ 79,90; viabilidade nas lojas ainda pendente.
+3. Adesão e pagamento após definir o enquadramento nas lojas; o checkout não foi colocado no app. Oferta comercial: 10x de R$ 69,99; viabilidade nas lojas ainda pendente.
 4. Notificações push, links diretos de casos e ações sobre pendências.
 5. Fluxo de exclusão de conta/privacidade, textos legais, ícone de loja em alta resolução, splash e acessibilidade em aparelhos.
 6. Builds assinadas e distribuição de teste; publicação só depois de homologação e revisão das lojas.

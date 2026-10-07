@@ -30,7 +30,8 @@ class CardKeyView(PublicView):
 
 class PlanView(PublicView):
     def get(self, request):
-        return Response({"amount": settings.MEMBERSHIP_PRICE_CENTS, "available": settings.BILLING_ENABLED,
+        return Response({"amount": settings.MEMBERSHIP_PRICE_CENTS, "installments": settings.MEMBERSHIP_INSTALLMENTS,
+            "planVersion": settings.MEMBERSHIP_PLAN_VERSION, "available": settings.BILLING_ENABLED,
             "sandbox": settings.PAGBANK_ENVIRONMENT == "sandbox", "policyVersion": settings.REGISTRATION_POLICY_VERSION})
 
 

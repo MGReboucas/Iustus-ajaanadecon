@@ -6,9 +6,9 @@
 
 ## RN-001 — Preço base
 
-Código conferido em 07/10/2026: R$ 958,80 por ano em 12 parcelas de R$ 79,90. Nova oferta aprovada em 07/10/2026: R$ 699,90 anuais em 10 parcelas de R$ 69,99 com renovação automática; implementação em andamento conforme docs/ETAPA_01_PRODUTO_CONTRATACAO.md. Alterações exigem versão de plano e preservam pedidos anteriores.
+Preço ativo no código em 07/10/2026: R$ 699,90 anuais em 10 parcelas de R$ 69,99. Pedidos antigos preservam suas condições. Renovação automática aprovada, mas ainda não implementada; acompanhar docs/ETAPA_01_PRODUTO_CONTRATACAO.md.
 
-**Situação:** Nova condição comercial aprovada; implementação pendente.
+**Situação:** Preço implementado; recorrência pendente.
 
 ## RN-002 — Confirmação financeira
 

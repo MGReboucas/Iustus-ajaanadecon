@@ -6,7 +6,7 @@ Atualização: 07/10/2026. Status: EM ANDAMENTO. Autorizado iniciar o desenvolvi
 
 Os commits `dd48bec`, `8d45c10`, `d6e234f`, `7efb5eb` e `80cbf26` foram enviados à branch `main` do GitHub e conferidos no servidor. As notas de “local”, “sem commit” e “sem push” nas entradas de progresso abaixo descrevem o momento de cada entrega e foram superadas por esta atualização.
 
-Preço comercial confirmado: R$ 699,90 anuais em 10 parcelas de R$ 69,99. O checkout ativo continua com as condições antigas; novo preço e renovação automática ainda não foram ativados. Publicação de código no GitHub não certifica deploy ou homologação.
+Preço comercial confirmado: R$ 699,90 anuais em 10 parcelas de R$ 69,99. Preço ativado no código em 07/10/2026: novos pedidos usam 69990 centavos e 10 parcelas; landing e checkout alinhados. Renovação automática ainda não implementada. Publicação de código no GitHub não certifica deploy ou homologação.
 ## Referência e objetivo
 
 Consolidar regras para site, aplicativo e backend Django. Complementa [regras do serviço](REGRAS_DO_SERVICO.md), [decisões](DECISOES.md) e [associação](ASSOCIACAO.md). Não é o contrato publicado.
@@ -29,7 +29,7 @@ Consolidar regras para site, aplicativo e backend Django. Complementa [regras do
 
 ## Implementação atual, distinta da nova oferta aprovada
 
-- Código e oferta atual: R$ 958,80 em 12 parcelas de R$ 79,90.
+- Oferta atual no código: R$ 699,90 em 10 parcelas de R$ 69,99. Pedidos históricos preservam as condições originais.
 - Confirmação pelo provedor concede associação anual; nova compra estende o período existente. Fonte: `backend/apps/billing/services.py`.
 - Checkout informa ausência de renovação automática. Fonte: `frontend/src/components/AssociationCheckout.tsx`.
 - Submissão exige associação ativa; consulta de casos existentes usa titularidade/atribuição. Fontes: `backend/apps/cases/services.py` e `backend/apps/cases/views.py`.
@@ -163,3 +163,9 @@ Próxima integração: definir as pré-condições de contratação e início do
 - Não houve teste em aparelho físico, assinatura de build, cobrança, deploy ou envio ao GitHub deste incremento.
 - Próximo commit sugerido: `feat(mobile): add service proposal review and decisions`.
 - Etapa 1 permanece aberta pelas regras de triagem, pagamento de honorários e demais condições operacionais, além da implementação/homologação da renovação automática. A decisão de proposta não inicia automaticamente cobrança ou atendimento.
+
+### Preço ativado no código — 07/10/2026
+
+Novos pedidos usam R$ 699,90 em 10 parcelas de R$ 69,99, versão `annual-2026-v2`. A API do plano retorna parcelas e versão; checkout usa as parcelas da API. Landing, metadados e referência mobile atualizados. Pedidos históricos mantêm valor e parcelas próprios.
+
+Validação: 43 testes financeiros aprovados, TypeScript web aprovado e 7 testes de checkout em Edge aprovados, incluindo layout móvel e preço visível com API indisponível. Não houve cobrança real. Esta entrega altera o preço, não implementa renovação automática; o aceite continua descrevendo corretamente o comportamento atual da cobrança. Deploy produtivo não foi verificado.

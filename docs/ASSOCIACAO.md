@@ -4,7 +4,7 @@ Este documento descreve o checkout transparente e substitui o fluxo anterior de 
 
 ## Jornada
 
-1. Landing e checkout apresentam **12x de R$ 79,90 sem juros**, total anual de **R$ 958,80**. O preço aparece no HTML inicial mesmo com a API indisponível; a cobrança fica bloqueada enquanto a configuração não estiver pronta.
+1. Landing e checkout apresentam **10x de R$ 69,99 sem juros**, total anual de **R$ 699,90**. O preço aparece no HTML inicial mesmo com a API indisponível; a cobrança fica bloqueada enquanto a configuração não estiver pronta.
 2. O formulário Next recebe nome, e-mail confirmado, CPF e celular do associado, além do cartão. O SDK oficial PagBank criptografa o cartão no navegador; PAN, validade e CVV não são enviados ao backend Iustus nem persistidos pelo aplicativo. A API aceita apenas o cartão criptografado e envia o pedido para `/orders`, com captura, preço do servidor e exatamente 12 parcelas. O titular do cartão pode ser diferente do associado. Não há redirecionamento externo.
 3. Webhook com assinatura ECDSA válida gera um evento durável. O worker consulta o pedido diretamente na API autenticada do PagBank, verifica referência, produto, moeda, valor pago e ausência de estorno. Pedidos integrados também exigem e-mail, CPF e parcelamento correspondentes ao cadastro. A consulta de status do checkout faz a mesma reconciliação autenticada, no máximo a cada 15 segundos por pedido.
 4. Apenas pagamento PAID confirmado cria associação e envia acesso. Retorno do navegador, checkout criado, pagamento em análise ou recusado não concedem acesso.

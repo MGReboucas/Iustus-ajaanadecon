@@ -9,7 +9,7 @@ async function setup(page, { offline = false, declined = false, uncertain = fals
   await page.route('**/api/v1/**', async route => {
     const request = route.request();
     const endpoint = new URL(request.url()).pathname.split('/api/v1/')[1];
-    if (endpoint === 'billing/plan') return offline ? route.fulfill({ status: 503, json: {} }) : route.fulfill({ json: { amount: 95880, available: true, sandbox: true } });
+    if (endpoint === 'billing/plan') return offline ? route.fulfill({ status: 503, json: {} }) : route.fulfill({ json: { amount: 69990, installments: 10, available: true, sandbox: true } });
     if (endpoint === 'billing/card-key') return route.fulfill(keyFailure ? { status: 503, json: {} } : { json: { publicKey: 'public-test-key' } });
     if (endpoint === 'auth/csrf') return route.fulfill({ json: { csrfToken: 'synthetic-csrf' } });
     if (endpoint === 'billing/checkout') {
@@ -42,11 +42,11 @@ async function fill(page) {
 test('preço e formulário aparecem mesmo com API indisponível', async ({ page }) => {
   await setup(page, { offline: true });
   await page.goto('/checkout');
-  await expect(page.locator('.summary-price strong')).toHaveText(/79,90/);
+  await expect(page.locator('.summary-price strong')).toHaveText(/69,99/);
   await expect(page.getByLabel('E-mail do associado', { exact: true })).toBeVisible();
   await expect(page.getByLabel('CPF do associado', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Número do cartão')).toBeVisible();
-  await expect(page.getByRole('button', { name: /Pagar · 12x de/ })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /Pagar · 10x de/ })).toBeDisabled();
   await expect(page.locator('.mp-error[role=alert]')).toBeVisible();
   await expect(page.getByText(/Continuar no PagBank/)).toHaveCount(0);
 });
@@ -58,7 +58,7 @@ test('cadastro e cartão de terceiro são enviados separadamente e sem dados abe
   await page.getByLabel('O cartão está no nome do associado.').uncheck();
   await page.getByLabel('Nome do titular do cartão').fill('Titular Teste');
   await page.getByLabel('CPF do titular do cartão').fill('52998224725');
-  await page.getByRole('button', { name: /Pagar · 12x de/ }).click();
+  await page.getByRole('button', { name: /Pagar · 10x de/ }).click();
   await expect(page.getByRole('heading', { name: 'Sua associação está ativa' })).toBeVisible();
   expect(new URL(page.url()).pathname).toBe('/checkout');
   expect(requests).toHaveLength(1);
@@ -73,11 +73,11 @@ test('CPF inválido e confirmação de e-mail divergente impedem cobrança', asy
   const requests = await setup(page);
   await page.goto('/checkout'); await fill(page);
   await page.getByLabel('CPF do associado', { exact: true }).fill('11111111111');
-  await page.getByRole('button', { name: /Pagar · 12x de/ }).click();
+  await page.getByRole('button', { name: /Pagar · 10x de/ }).click();
   await expect(page.locator('.mp-error[role=alert]')).toHaveText('Informe um CPF válido para o associado.');
   await page.getByLabel('CPF do associado', { exact: true }).fill('12345678909');
   await page.getByLabel('Confirme seu e-mail').fill('different@example.test');
-  await page.getByRole('button', { name: /Pagar · 12x de/ }).click();
+  await page.getByRole('button', { name: /Pagar · 10x de/ }).click();
   await expect(page.locator('.mp-error[role=alert]')).toContainText('Os e-mails devem ser iguais');
   expect(requests).toHaveLength(0);
 });
@@ -85,7 +85,7 @@ test('CPF inválido e confirmação de e-mail divergente impedem cobrança', asy
 test('falha de comunicação repete a mesma referência e o mesmo cartão criptografado', async ({ page }) => {
   const requests = await setup(page, { uncertain: true });
   await page.goto('/checkout'); await fill(page);
-  await page.getByRole('button', { name: /Pagar · 12x de/ }).click();
+  await page.getByRole('button', { name: /Pagar · 10x de/ }).click();
   await expect(page.getByRole('button', { name: 'Reenviar a mesma tentativa' })).toBeVisible();
   await page.getByRole('button', { name: 'Reenviar a mesma tentativa' }).click();
   await expect(page.getByRole('heading', { name: 'Sua associação está ativa' })).toBeVisible();
@@ -96,11 +96,11 @@ test('falha de comunicação repete a mesma referência e o mesmo cartão cripto
 test('cartão recusado permite outra tentativa com nova referência', async ({ page }) => {
   const requests = await setup(page, { declined: true });
   await page.goto('/checkout'); await fill(page);
-  await page.getByRole('button', { name: /Pagar · 12x de/ }).click();
+  await page.getByRole('button', { name: /Pagar · 10x de/ }).click();
   await expect(page.getByText(/O cartão não foi aprovado/)).toBeVisible();
   await page.getByRole('button', { name: 'Tentar novamente' }).click();
   await fill(page);
-  await page.getByRole('button', { name: /Pagar · 12x de/ }).click();
+  await page.getByRole('button', { name: /Pagar · 10x de/ }).click();
   await expect(page.getByText(/O cartão não foi aprovado/)).toBeVisible();
   expect(requests).toHaveLength(2);
   expect(requests[1].key).not.toBe(requests[0].key);
@@ -109,7 +109,7 @@ test('cartão recusado permite outra tentativa com nova referência', async ({ p
 test('falha na chave pública bloqueia envio do cartão', async ({ page }) => {
   const requests = await setup(page, { keyFailure: true });
   await page.goto('/checkout'); await fill(page);
-  await expect(page.getByRole('button', { name: /Pagar · 12x de/ })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /Pagar · 10x de/ })).toBeDisabled();
   await expect(page.locator('.mp-error[role=alert]')).toBeVisible();
   expect(requests).toHaveLength(0);
 });
@@ -118,7 +118,7 @@ test('checkout cabe na tela do celular e mantém preço e cadastro visíveis', a
   await setup(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/checkout');
-  await expect(page.locator('.summary-price strong')).toHaveText(/79,90/);
+  await expect(page.locator('.summary-price strong')).toHaveText(/69,99/);
   await expect(page.getByLabel('Nome completo', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: path.join(__dirname, '../../.local/checkout-integrated-mobile.png'), fullPage: true });

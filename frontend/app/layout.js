@@ -6,7 +6,7 @@ export const metadata = {
     default: 'ÍUSTUS | Atendimento online, sem complicação',
     template: '%s | ÍUSTUS',
   },
-  description: 'Íustus, um projeto da AJA ANADECON. Associe-se por 12x de R$ 79,90. Cadastre ocorrências, assine a procuração dos casos aprovados e acompanhe o atendimento online.',
+  description: 'Íustus, um projeto da AJA ANADECON. Associe-se por 10x de R$ 69,99. Cadastre ocorrências, assine a procuração dos casos aprovados e acompanhe o atendimento online.',
   keywords: ['assinatura jurídica', 'dashboard jurídico', 'procuração online'],
   openGraph: {
     title: 'ÍUSTUS | Atendimento online por assinatura',

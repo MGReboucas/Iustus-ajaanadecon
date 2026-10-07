@@ -6,7 +6,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import Brand from "./Brand";
 import { api, ApiError } from "@/lib/api/client";
 
-type Plan = { amount: number; available: boolean; sandbox: boolean };
+type Plan = { amount: number; installments: number; available: boolean; sandbox: boolean };
 type Payment = { accepted: boolean; customer: { name: string; email: string; cpf: string; phone: string }; card: { encrypted: string; holderName: string; holderCpf: string } };
 type CardSDK = { encryptCard(data: { publicKey: string; holder: string; number: string; expMonth: string; expYear: string; securityCode: string }): { encryptedCard?: string; hasErrors: boolean; errors?: { code: string }[] } };
 declare global { interface Window { PagSeguro?: CardSDK } }
@@ -46,7 +46,8 @@ export default function AssociationCheckout() {
   const payment = useRef<Payment | null>(null);
   const submitting = useRef(false);
   // A oferta aparece no HTML inicial, mesmo antes de a API responder.
-  const amount = plan?.amount ?? 95880;
+  const amount = plan?.amount ?? 69990;
+  const installments = plan?.installments ?? 10;
 
   useEffect(() => {
     let current = true;
@@ -155,7 +156,7 @@ export default function AssociationCheckout() {
               <p className="form-hint">Use seu próprio e-mail e CPF, mesmo que outra pessoa pague com o cartão dela.</p>
             </fieldset>
             <fieldset disabled={busy}><legend>2. Pagamento com cartão de crédito</legend>
-              <div className="checkout-total"><strong>12x de {money(amount / 12)} sem juros</strong><span>Total da adesão anual: {money(amount)}</span></div>
+              <div className="checkout-total"><strong>{installments}x de {money(amount / installments)} sem juros</strong><span>Total da adesão anual: {money(amount)}</span></div>
               <label className="checkout-acceptance"><input type="checkbox" checked={sameHolder} onChange={e => setSameHolder(e.target.checked)} />O cartão está no nome do associado.</label>
               {!sameHolder && <><label>Nome do titular do cartão<input name="holderName" autoComplete="cc-name" required minLength={3} maxLength={120} /></label><label>CPF do titular do cartão<input name="holderCpf" inputMode="numeric" autoComplete="off" required maxLength={14} /></label></>}
               <label>Número do cartão<input name="cardNumber" inputMode="numeric" autoComplete="cc-number" placeholder="0000 0000 0000 0000" required minLength={13} maxLength={23} /></label>
@@ -165,11 +166,11 @@ export default function AssociationCheckout() {
             <label className="checkout-acceptance"><input type="checkbox" required disabled={busy} checked={accepted} onChange={e => setAccepted(e.target.checked)} />Entendi que cada ocorrência passa por análise e que a procuração específica será solicitada após o aceite do caso. A adesão é anual, sem renovação automática nesta contratação.</label>
             {plan?.sandbox && plan.available && <p className="checkout-notice" role="note">Ambiente de teste: utilize somente dados de teste do PagBank.</p>}
             {plan && !plan.available && <p className="checkout-notice" role="status">O pagamento online ainda não está disponível. Associados com acesso ativado podem entrar normalmente.</p>}
-            <button className="checkout-submit" disabled={busy || !checkoutReady || !accepted || !plan?.available || !sdkReady || !publicKey}>{busy ? "Processando pagamento…" : "Pagar · 12x de " + money(amount / 12)}</button>
+            <button className="checkout-submit" disabled={busy || !checkoutReady || !accepted || !plan?.available || !sdkReady || !publicKey}>{busy ? "Processando pagamento…" : `Pagar · ${installments}x de ` + money(amount / installments)}</button>
             {(!checkoutReady || (plan?.available && (!publicKey || !sdkReady))) && <p className="form-hint">{error ? "Atualize a página para carregar o pagamento." : "Preparando pagamento seguro…"}</p>}
           </form>}
       </section>
-      <aside className="order-summary" aria-label="Resumo da adesão"><div className="summary-top"><span>ASSOCIAÇÃO ANUAL</span><b>Acompanhamento online</b></div><h2>Iustus</h2><div className="summary-price"><small>12 parcelas sem juros de</small><strong>{money(amount / 12)}</strong><p>Total: {money(amount)} no cartão de crédito.</p></div><ul><li>Cadastro de ocorrências durante a vigência</li><li>Análise individual por advogado</li><li>Procuração específica após o aceite de cada caso</li><li>Documentos, histórico e acompanhamento no painel</li><li>Avisos por e-mail sobre o atendimento</li></ul><p className="summary-description">Multas de trânsito e direito civil, exceto família e sucessões. O envio de uma ocorrência não garante seu aceite.</p><div className="summary-security"><p><b>Um projeto AJA ANADECON</b>Associação vinculada ao e-mail e CPF informados no cadastro.</p></div></aside>
+      <aside className="order-summary" aria-label="Resumo da adesão"><div className="summary-top"><span>ASSOCIAÇÃO ANUAL</span><b>Acompanhamento online</b></div><h2>Iustus</h2><div className="summary-price"><small>{installments} parcelas sem juros de</small><strong>{money(amount / installments)}</strong><p>Total: {money(amount)} no cartão de crédito.</p></div><ul><li>Cadastro de ocorrências durante a vigência</li><li>Análise individual por advogado</li><li>Procuração específica após o aceite de cada caso</li><li>Documentos, histórico e acompanhamento no painel</li><li>Avisos por e-mail sobre o atendimento</li></ul><p className="summary-description">Multas de trânsito e direito civil, exceto família e sucessões. O envio de uma ocorrência não garante seu aceite.</p><div className="summary-security"><p><b>Um projeto AJA ANADECON</b>Associação vinculada ao e-mail e CPF informados no cadastro.</p></div></aside>
     </div>
   </main>;
 }

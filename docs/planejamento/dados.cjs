@@ -113,7 +113,7 @@ Retenção verificável|Política aprovada por classe de dado, bloqueio de elimi
 Tarefas assíncronas|Worker com tentativas limitadas, backoff e fila de falhas; reprocessamento auditado não duplica efeitos; jobs não dependem de requisição aberta
 `).map((r,i)=>({id:prefix('RNF',i+1),title:r[0],acceptance:r[1]}));
 const rules = parse(`
-Preço base|Código conferido em 07/10/2026: R$ 958,80 por ano em 12 parcelas de R$ 79,90. Nova oferta aprovada em 07/10/2026: R$ 699,90 anuais em 10 parcelas de R$ 69,99 com renovação automática; implementação em andamento conforme docs/ETAPA_01_PRODUTO_CONTRATACAO.md. Alterações exigem versão de plano e preservam pedidos anteriores|Nova condição comercial aprovada; implementação pendente
+Preço base|Preço ativo no código em 07/10/2026: R$ 699,90 anuais em 10 parcelas de R$ 69,99. Pedidos antigos preservam suas condições. Renovação automática aprovada, mas ainda não implementada; acompanhar docs/ETAPA_01_PRODUTO_CONTRATACAO.md|Preço implementado; recorrência pendente
 Confirmação financeira|Acesso contratado só é ativado após confirmação confiável de pagamento pelo provedor; token ou código de transação isolado não basta|Proposto
 Parcelamento|Pagamento parcelado de contratação anual não representa assinatura mensal; parcelas e juros devem coincidir com a cotação validada|Confirmado parcialmente; validar oferta
 Período anual|Associação anual com renovação automática no mesmo parcelamento e possibilidade de cancelar a próxima renovação antes da cobrança, aprovada em 07/10/2026. Implementação e detalhes de calendário e falha de cobrança pendentes; preservar contratos anteriores sem consentimento recorrente|Regra aprovada; integração pendente

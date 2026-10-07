@@ -93,14 +93,14 @@ test('landing e checkout explicam adesão, análise e procuração posterior', a
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: path.join(root, '.local/association-landing-mobile.png'), fullPage: true });
   await page.goto(origin + '/checkout');
-  await expect(page.getByRole('button', { name: /Pagar · 12x de/ })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /Pagar · 10x de/ })).toBeDisabled();
   await expect(page.getByText(/O pagamento online ainda não está disponível/)).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: path.join(root, '.local/association-checkout-mobile.png'), fullPage: true });
 });
 
 test('pagamento concluído permanece confirmado ao reabrir o checkout', async ({ page }) => {
-  await page.route('**/api/v1/billing/plan', route => route.fulfill({ json: { amount: 95880, available: false, sandbox: true } }));
+  await page.route('**/api/v1/billing/plan', route => route.fulfill({ json: { amount: 69990, installments: 10, available: false, sandbox: true } }));
   await page.route('**/api/v1/billing/checkout', route => route.fulfill({ json: { status: 'PAID' } }));
   await page.goto(origin + '/checkout');
   await expect(page.getByRole('heading', { name: 'Sua associação está ativa' })).toBeVisible();
