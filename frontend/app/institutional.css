@@ -1,0 +1,45 @@
+.institutional-credit {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.association-logo {
+  display: block;
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+  object-fit: contain;
+  padding: 6px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.institutional-credit strong {
+  color: var(--gold-light);
+  font-weight: 700;
+}
+
+.footer-inner .footer-credit {
+  margin: 0;
+  line-height: 1.8;
+}
+
+.footer-credit .association-logo {
+  width: 72px;
+  height: 72px;
+}
+
+.footer-credit strong {
+  color: var(--muted);
+}
+
+@media (max-width: 480px) {
+  .institutional-credit {
+    gap: 12px;
+  }
+}
