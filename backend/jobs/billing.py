@@ -18,11 +18,12 @@ def process_payment():
         event.attempts += 1
         event.save()
     try:
-        reconcile(event.order_id, event.provider_order_id)
+        order = reconcile(event.order_id, event.provider_order_id)
     except Exception as exc:
         PaymentEvent.objects.filter(pk=event.pk, lease_id=lease).update(lease_id=None, lease_until=None,
             last_error=getattr(exc, "identity_code", type(exc).__name__)[:40], available_at=now + timedelta(seconds=min(3600, 30 * 2 ** event.attempts)))
     else:
         PaymentEvent.objects.filter(pk=event.pk, lease_id=lease).update(lease_id=None, lease_until=None,
-            processed_at=timezone.now(), last_error="")
+            processed_at=None if order.status == "WAITING" else timezone.now(), last_error="",
+            available_at=now + timedelta(seconds=min(3600, 30 * 2 ** event.attempts)))
     return True

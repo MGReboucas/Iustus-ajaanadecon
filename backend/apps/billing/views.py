@@ -1,27 +1,31 @@
 import hashlib
 import json
 import re
+from datetime import timedelta
 from uuid import UUID
 from django.conf import settings
 from django.db import transaction
 from django.http import Http404
 from django.utils import timezone
-from rest_framework import serializers
+from django.db.models import Q
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.identity.models import User
 from apps.identity.views import PublicView
-from apps.identity.serializers import StrictSerializer, AcceptInviteSerializer, EmailSerializer
+from apps.identity.serializers import AcceptInviteSerializer, EmailSerializer
 from apps.identity.services import locked_token, consume, validate_new_password, audit
-from apps.identity.security import IdentityError, digest
-from integrations.pagbank.client import create_checkout, verify_signature
+from apps.identity.security import IdentityError, digest, encrypt
+from integrations.pagbank.client import create_card_order, card_public_key, verify_signature
 from .models import Order, PaymentEvent
-from .services import active_memberships, send_access
+from .services import active_memberships, send_access, reconcile
+from .checkout import CheckoutInput, canonical, fingerprint, check_identity
 
 
-class CheckoutInput(StrictSerializer):
-    accepted = serializers.BooleanField()
+class CardKeyView(PublicView):
+    def get(self, request):
+        self.public_limit(request, "card-key", limit=30)
+        return Response({"publicKey": card_public_key()})
 
 
 class PlanView(PublicView):
@@ -44,23 +48,47 @@ class CheckoutView(PublicView):
         if not request.session.session_key:
             request.session.create()
         session_digest = digest(request.session.session_key)
-        # Persistir a referência antes da chamada externa para repetir com a mesma chave.
+        customer = data["customer"]
+        check_identity(customer, settings.PAGBANK_ENVIRONMENT)
+        payload_digest = fingerprint(canonical(data))
+        reference = digest(session_digest + key)
+        if Order.objects.filter(session_digest=session_digest, environment=settings.PAGBANK_ENVIRONMENT, status__in=["CREATING", "WAITING"]).exclude(request_key=reference).exists():
+            raise IdentityError("PAYMENT_PENDING", "Existe um pagamento em conferência. Aguarde a confirmação antes de iniciar outro.", 409)
+        # Persistir referência e sessão antes da chamada externa, inclusive em timeouts.
         order, _ = Order.objects.get_or_create(request_key=digest(session_digest + key), defaults={
             "session_digest": session_digest, "amount": settings.MEMBERSHIP_PRICE_CENTS,
-            "environment": settings.PAGBANK_ENVIRONMENT, "policy_version": settings.REGISTRATION_POLICY_VERSION})
+            "environment": settings.PAGBANK_ENVIRONMENT, "policy_version": settings.REGISTRATION_POLICY_VERSION,
+            "encrypted_customer": encrypt(canonical(customer)), "payload_digest": payload_digest})
+        if order.payload_digest != payload_digest or order.environment != settings.PAGBANK_ENVIRONMENT:
+            raise IdentityError("CHECKOUT_CHANGED", "Os dados desta tentativa não podem ser alterados enquanto o pagamento está em conferência.", 409)
+        request.session["checkout_order"] = str(order.pk)
+        request.session.save()
         with transaction.atomic():
             order = Order.objects.select_for_update().get(pk=order.pk)
-            if not order.checkout_id:
-                order.checkout_id, order.payment_url = create_checkout(order)
+            if not order.provider_order_id:
+                # Não arriscar uma cobrança duplicada fora da janela de repetição local.
+                if order.created_at < timezone.now() - timedelta(hours=1):
+                    raise IdentityError("PAYMENT_REVIEW_REQUIRED", "Esta tentativa precisa de conferência. Entre em contato com a associação antes de pagar novamente.", 409)
+                order.provider_order_id = create_card_order(order, customer, data["card"])
                 order.status = "WAITING"
                 order.save()
-        request.session["checkout_order"] = str(order.pk)
-        return Response({"paymentUrl": order.payment_url, "status": order.status}, status=201)
+                PaymentEvent.objects.get_or_create(digest=digest("checkout:" + str(order.pk)), defaults={
+                    "order": order, "provider_order_id": order.provider_order_id, "available_at": timezone.now()})
+        return Response({"status": order.status}, status=201)
 
     def get(self, request):
         order = Order.objects.filter(pk=request.session.get("checkout_order")).first()
         if not order or order.session_digest != digest(request.session.session_key or ""):
             raise Http404
+        # Uma consulta autenticada confirma o pagamento mesmo se o webhook atrasar.
+        if order.provider_order_id and order.status == "WAITING":
+            due = timezone.now() - timedelta(seconds=15)
+            claimed = Order.objects.filter(pk=order.pk).filter(Q(checked_at__isnull=True) | Q(checked_at__lt=due)).update(checked_at=timezone.now())
+            if claimed:
+                try:
+                    order = reconcile(order.pk, order.provider_order_id)
+                except IdentityError:
+                    pass  # O evento durável continua disponível ao worker.
         return Response({"status": order.status})
 
 

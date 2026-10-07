@@ -159,25 +159,6 @@ class AssociationTests(TestCase):
         Membership.objects.update(expires_at=timezone.now()-timedelta(seconds=1))
         self.assertFalse(submission_access(first.user)["canSubmit"])
 
-    def test_checkout_is_session_scoped_and_retries_keep_reference(self):
-        browser = self.browser()
-        csrf = browser.get("/api/v1/auth/csrf").json()["csrfToken"]
-        def create():
-            return browser.post("/api/v1/billing/checkout", {"accepted": True}, content_type="application/json",
-                HTTP_X_CSRFTOKEN=csrf, HTTP_IDEMPOTENCY_KEY="synthetic-checkout-001")
-        with patch("apps.billing.views.create_checkout", side_effect=IdentityError("PROVIDER", "Timeout", 503)):
-            self.assertEqual(create().status_code, 503)
-        original = Order.objects.get().pk
-        with patch("apps.billing.views.create_checkout", return_value=("CHEC_test", "https://pagamento.pagbank.com.br/test")) as provider:
-            self.assertEqual(create().status_code, 201)
-            self.assertEqual(create().status_code, 201)
-            self.assertEqual(provider.call_count, 1)
-        self.assertEqual(Order.objects.get().pk, original)
-        self.assertEqual(Order.objects.get().amount, 95880)
-        self.assertEqual(browser.get("/api/v1/billing/plan").json()["amount"], 95880)
-        self.assertEqual(browser.get("/api/v1/billing/checkout").json()["status"], "WAITING")
-        self.assertEqual(self.browser().get("/api/v1/billing/checkout").status_code, 404)
-
     def test_checkout_payload_uses_server_price_and_validates_redirect(self):
         order = self.order()
         with patch("integrations.pagbank.client.request_api", return_value={"id": "CHEC_test", "links": [{"rel": "PAY", "href": "https://pagamento.pagbank.com.br/test"}]}) as provider:

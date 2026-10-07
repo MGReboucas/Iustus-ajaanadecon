@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 const routes = new Set([
   "mobile/auth/login", "mobile/auth/logout", "mobile/auth/recovery", "mobile/dashboard", "mobile/cases",
-  "billing/plan", "billing/checkout", "billing/activate", "billing/resend", "billing/webhook",
+  "billing/plan", "billing/card-key", "billing/checkout", "billing/activate", "billing/resend", "billing/webhook",
   "ready",
   "auth/csrf", "auth/register", "auth/verify", "auth/resend", "auth/login",
   "auth/logout", "auth/recovery", "auth/reset", "auth/mfa/enroll", "auth/mfa/verify",

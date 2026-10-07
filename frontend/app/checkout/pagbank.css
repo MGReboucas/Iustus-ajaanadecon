@@ -3,3 +3,19 @@
 .pagbank-form .checkout-acceptance { display: flex; align-items: flex-start; gap: 12px; line-height: 1.6; }
 .pagbank-form .checkout-acceptance input { width: 20px; height: 20px; flex-shrink: 0; margin-top: 4px; }
 .pagbank-form ol { padding-left: 22px; line-height: 1.9; }
+.pagbank-form legend { font-size: 16px; }
+.pagbank-form label { font-size: 13px; }
+.pagbank-form input { font-size: 16px; min-width: 0; }
+.pagbank-form fieldset:disabled { opacity: .65; }
+.form-grid { min-width: 0; }
+.form-hint, .checkout-notice { color: #b5c1d2; font-size: 13px; line-height: 1.6; }
+.checkout-total { margin-bottom: 20px; padding: 16px; border: 1px solid #bd8e4470; border-radius: 10px; background: #e5b8690d; }
+.checkout-total strong, .checkout-total span { display: block; }
+.checkout-total strong { color: #f5d594; font-size: 19px; }
+.checkout-total span { margin-top: 6px; color: #b5c1d2; font-size: 13px; }
+.checkout-submit:disabled { cursor: not-allowed; opacity: .55; transform: none; box-shadow: none; }
+.mp-error { padding: 14px; border: 1px solid #ff9e9e55; border-radius: 9px; font-size: 14px; line-height: 1.5; }
+.checkout-success h2 { color: #e7f2ec; font-size: 22px; }
+.checkout-success .checkout-submit { margin-top: 20px; }
+.summary-price small, .summary-price p { font-size: 13px; }
+@media(max-width:800px) { .checkout-layout { padding-top: 28px; } .order-summary ul, .order-summary > .summary-description { display: none; } .summary-price { margin: 14px 0; } .summary-security { margin-top: 10px; padding-top: 10px; } .checkout-heading { margin-top: 0; } }

@@ -1,4 +1,5 @@
 from datetime import timedelta
+import json
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.core.validators import validate_email
@@ -8,10 +9,11 @@ from django.db.models import Max
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from apps.identity.models import User, IdentityEmail
-from apps.identity.security import IdentityError, encrypt
+from apps.identity.security import IdentityError, encrypt, decrypt
 from apps.identity.services import issue_token, audit
 from integrations.pagbank.client import request_api
-from .models import Order, Membership
+from .models import Order, Membership, BillingIdentity
+from .checkout import check_identity
 
 
 def active_memberships(user):
@@ -58,6 +60,14 @@ def reconcile(order_id, provider_id):
                 raise ValidationError("InvalidCustomer")
         except ValidationError as exc:
             raise IdentityError("INVALID_BUYER", "Dados do associado inválidos.", 422) from exc
+        if candidate.encrypted_customer:
+            expected = json.loads(decrypt(candidate.encrypted_customer))
+            if email != expected["email"] or str(customer.get("tax_id", "")) != expected["cpf"]:
+                raise IdentityError("BUYER_MISMATCH", "E-mail ou CPF do pagamento não corresponde ao associado.", 422)
+            # O preço integral e o parcelamento são fixos no checkout integrado.
+            method = paid[0].get("payment_method", {})
+            if paid[0]["amount"]["value"] != candidate.amount or method.get("type") != "CREDIT_CARD" or method.get("installments") != 12:
+                raise IdentityError("PAYMENT_AMOUNT_MISMATCH", "Condições do pagamento não correspondem à adesão.", 422)
     with transaction.atomic():
         order = Order.objects.select_for_update().get(pk=order_id)
         if order.environment != settings.PAGBANK_ENVIRONMENT or (order.provider_order_id and order.provider_order_id != provider_id):
@@ -69,6 +79,12 @@ def reconcile(order_id, provider_id):
             user = User.objects.select_for_update().get(pk=user.pk)
             if user.role != "CLIENT" or not user.is_active:
                 raise IdentityError("BUYER_REVIEW_REQUIRED", "O cadastro precisa de conferência pela associação.", 422)
+            if order.encrypted_customer:
+                cpf_digest = check_identity(expected, order.environment)
+                identity, _ = BillingIdentity.objects.get_or_create(user=user, environment=order.environment,
+                    defaults={"cpf_digest": cpf_digest, "encrypted_cpf": encrypt(expected["cpf"])})
+                if identity.cpf_digest != cpf_digest:
+                    raise IdentityError("BUYER_MISMATCH", "CPF incompatível com o cadastro.", 422)
             if created:
                 user.set_unusable_password()
                 user.save(update_fields=["password"])

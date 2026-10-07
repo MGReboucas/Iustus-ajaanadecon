@@ -5,7 +5,7 @@ export type Profile = { id: string; name: string; email: string; caseEmailEnable
 export type Context = { csrfToken: string; portal: Portal; policyVersion: string; mfaRequired: boolean; registrationAvailable: boolean };
 
 export class ApiError extends Error {
-  constructor(public code: string, message: string) { super(message); }
+  constructor(public code: string, message: string, public httpStatus?: number) { super(message); }
 }
 
 export async function api<T>(path: string, body?: object, options?: { method?: "POST" | "PATCH"; idempotencyKey?: string }): Promise<T> {
@@ -24,6 +24,6 @@ export async function api<T>(path: string, body?: object, options?: { method?: "
     });
   } catch { throw new ApiError("NETWORK_ERROR", "Não foi possível conectar. Tente novamente."); }
   const result = response.status === 204 ? null : await response.json().catch(() => null);
-  if (!response.ok) throw new ApiError(result?.error?.code ?? "REQUEST_FAILED", result?.error?.message ?? "Não foi possível concluir a solicitação.");
+  if (!response.ok) throw new ApiError(result?.error?.code ?? "REQUEST_FAILED", result?.error?.message ?? "Não foi possível concluir a solicitação.", response.status);
   return result as T;
 }

@@ -18,6 +18,9 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     paid_at = models.DateTimeField(null=True)
     checked_at = models.DateTimeField(null=True)
+    # Identidade do comprador protegida; nunca armazenar PAN, CVV ou cartão criptografado.
+    encrypted_customer = models.TextField(blank=True)
+    payload_digest = models.CharField(max_length=64, blank=True)
 
 
 class Membership(models.Model):
@@ -26,6 +29,19 @@ class Membership(models.Model):
     starts_at = models.DateTimeField()
     expires_at = models.DateTimeField()
     revoked_at = models.DateTimeField(null=True)
+
+
+class BillingIdentity(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    environment = models.CharField(max_length=12)
+    cpf_digest = models.CharField(max_length=64)
+    encrypted_cpf = models.TextField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["environment", "cpf_digest"], name="billing_unique_cpf"),
+            models.UniqueConstraint(fields=["environment", "user"], name="billing_unique_user"),
+        ]
 
 
 class PaymentEvent(models.Model):

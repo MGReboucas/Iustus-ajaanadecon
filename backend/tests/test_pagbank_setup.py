@@ -2,7 +2,7 @@ import base64
 from io import StringIO
 from unittest.mock import patch
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from django.core.management import call_command, CommandError
 from django.test import SimpleTestCase, override_settings
 from apps.identity.security import IdentityError
@@ -27,7 +27,7 @@ class PagBankSetupTests(SimpleTestCase):
         output = StringIO()
         with patch("jobs.management.commands.check_pagbank.request_api", return_value={"public_key": encoded}) as provider, patch("pathlib.Path.write_text") as write:
             call_command("check_pagbank", fetch_webhook_key=True, stdout=output)
-            provider.assert_called_once_with("/public-keys?type=webhook", configuration_check=True)
+            provider.assert_called_once_with("/public-keys/webhook", configuration_check=True)
             write.assert_called_once()
         self.assertNotIn("synthetic-private-token", output.getvalue())
         self.assertNotIn(encoded, output.getvalue())
@@ -38,3 +38,17 @@ class PagBankSetupTests(SimpleTestCase):
             request_api("/checkouts", {}, configuration_check=True)
         with self.assertRaises(IdentityError):
             request_api("/checkouts", {})
+        with self.assertRaises(ValueError):
+            request_api("/public-keys", {"type": "card"}, configuration_check=True)
+
+    @override_settings(PAGBANK_API_TOKEN="synthetic-private-token")
+    def test_card_key_diagnostic_is_read_only_and_does_not_print_credentials(self):
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048).public_key()
+        encoded = base64.b64encode(key.public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)).decode()
+        output = StringIO()
+        with patch("jobs.management.commands.check_pagbank.request_api", return_value={"public_key": encoded}) as provider:
+            call_command("check_pagbank", fetch_card_key=True, stdout=output)
+            provider.assert_called_once_with("/public-keys/card", configuration_check=True)
+        self.assertIn("Chave de cartão válida", output.getvalue())
+        self.assertNotIn("synthetic-private-token", output.getvalue())
+        self.assertNotIn(encoded, output.getvalue())

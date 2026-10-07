@@ -4,7 +4,7 @@ import hashlib
 from pathlib import Path
 from urllib.parse import urlsplit
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from integrations.pagbank.client import request_api
@@ -15,6 +15,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--fetch-webhook-key", action="store_true")
+        parser.add_argument("--fetch-card-key", action="store_true")
 
     def handle(self, *args, **options):
         origin = settings.PORTAL_ORIGINS.get("client", "")
@@ -26,12 +27,23 @@ class Command(BaseCommand):
         self.stdout.write(f"Origem HTTPS pública: {'sim' if public else 'não'}")
         if public:
             self.stdout.write(f"Webhook: {origin}/api/v1/billing/webhook")
+        if options["fetch_card_key"]:
+            try:
+                card_value = request_api("/public-keys/card", configuration_check=True).get("public_key", "")
+                card_raw = base64.b64decode(card_value, validate=True)
+                card_key = serialization.load_der_public_key(card_raw)
+                if not isinstance(card_key, rsa.RSAPublicKey):
+                    raise ValueError()
+            except Exception as exc:
+                reason = str(getattr(exc, "detail", "Chave RSA de cartão ausente ou inválida."))
+                raise CommandError(reason + " Confira token, ambiente e criação da chave type=card na conta PagBank.") from exc
+            self.stdout.write("Chave de cartão válida; fingerprint SHA-256: " + hashlib.sha256(card_raw).hexdigest()[:16])
         value = settings.PAGBANK_WEBHOOK_PUBLIC_KEY
         if options["fetch_webhook_key"]:
             if not settings.PAGBANK_API_TOKEN:
                 raise CommandError("Configure PAGBANK_API_TOKEN no backend/.env ou no ambiente do backend. Não envie a credencial pelo chat.")
             try:
-                value = request_api("/public-keys?type=webhook", configuration_check=True).get("public_key", "")
+                value = request_api("/public-keys/webhook", configuration_check=True).get("public_key", "")
             except Exception as exc:
                 raise CommandError(getattr(exc, "detail", "Falha ao consultar a chave PagBank.")) from exc
         if value:

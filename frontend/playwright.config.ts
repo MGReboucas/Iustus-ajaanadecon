@@ -7,6 +7,7 @@ export default defineConfig({
   workers: 1,
   timeout: 45000,
   use: {
+    baseURL: `http://localhost:${process.env.IUSTUS_TEST_WEB_PORT || "3000"}`,
     browserName: "chromium",
     channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
     trace: "off", // Não persistir senhas, chaves MFA ou tokens em traces.
