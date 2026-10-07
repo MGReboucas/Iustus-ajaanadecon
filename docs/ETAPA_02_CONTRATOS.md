@@ -17,10 +17,10 @@ Iniciada em 07/10/2026. Status: EM ANDAMENTO. Etapa 1 segue com regras comerciai
 - [x] Compartilhar contratos de casos, timeline, mensagens e atividades recentes.
 - [x] Compartilhar tipos usados nas telas de documentos, notificações, identidade e associação (tipos não substituem validação em execução).
 - [x] Corrigir estado histórico das atividades recentes e tipar estados dos casos.
-- [ ] Completar padronização dos nomes e rótulos de eventos.
+- [x] Completar padronização dos nomes e rótulos de eventos.
 - [ ] Revisar campos de cliente/advogado necessários às telas, preservando autorização.
-- [ ] Conferir todos os endpoints documentados e remover descrições obsoletas.
-- [ ] Definir validação em tempo de execução nos pontos em que respostas inválidas possam comprometer o fluxo.
+- [x] Conferir todos os endpoints documentados e remover descrições obsoletas.
+- [x] Definir validação em tempo de execução nos pontos em que respostas inválidas possam comprometer o fluxo.
 - [ ] Completar testes de compatibilidade entre canais e registrar evidências finais.
 
 Os tipos TypeScript não substituem os serializers do Django e não constituem validação de runtime. Não houve mudança de payload ou regra de cobrança neste incremento.
@@ -52,3 +52,15 @@ Próximo conjunto: documentos, notificações e identidade/associação. Etapa 2
 - Sem alteração de banco, preço ou fluxo de cobrança. Novo conjunto será commitado e enviado automaticamente após revisão, conforme autorização do usuário.
 
 Restam revisão integral de rotas documentadas, nomes/rótulos de eventos, validações em execução e testes de compatibilidade complementares. A etapa 2 ainda não está encerrada.
+
+## Quarto incremento — eventos, validação em execução e inventário
+
+- `283cf0f` publicado: contratos de documentos, notificações, identidade e associação.
+- Rótulos centralizados em `contracts/events.json`, usados nos históricos web/mobile e no resumo web; incluídos eventos reais de documentos e procuração. Eventos desconhecidos preservam mensagem genérica para compatibilidade.
+- `contracts/validation.ts` valida o plano antes de preparar pagamento e a resposta de login antes de persistir sessão mobile. Oferta inválida bloqueia o formulário; sessão malformada, expirada ou de profissional não é persistida no app. Não substitui autorização no servidor.
+- `export_api_routes` gera `API_ROTAS.md` do roteamento Django e possui `--check`; conferência adicionada à CI. As tabelas de endpoints propostos foram preservadas em `API_PROPOSTAS_HISTORICAS.md`, explicitamente separadas da API atual.
+- Testes dos validadores adicionados à CI. A configuração Metro inclui apenas a pasta de contratos sem dependências, pois este repositório mantém lockfiles separados e não usa npm workspaces.
+- Validações locais: tipos web/mobile e testes mobile; 2 testes de validadores; inventário conferido; 3 testes UI mobile e exportações Android/iOS/web aprovados. Checkout inclui regressão de resposta inválida, além dos cenários existentes.
+- A validação em execução foi priorizada para oferta e criação de sessão; demais respostas ainda dependem de tipos estáticos, tratamento de erro e verificações do backend. Não afirmar cobertura universal de payloads.
+
+Restam a revisão final dos campos necessários de cliente/advogado e a consolidação das evidências de compatibilidade para encerrar a etapa. Nenhuma mudança de pagamento real, migração de banco ou deploy produtivo neste incremento.

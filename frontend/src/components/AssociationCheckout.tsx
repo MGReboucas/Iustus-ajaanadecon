@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Script from "next/script";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { isBillingPlan } from "../../../contracts/validation";
 import Brand from "./Brand";
 import { api, ApiError } from "@/lib/api/client";
 
@@ -55,8 +56,9 @@ export default function AssociationCheckout() {
       requestKey.current = sessionStorage.getItem("iustus-checkout-key") || crypto.randomUUID();
       sessionStorage.setItem("iustus-checkout-key", requestKey.current);
     } catch { requestKey.current = crypto.randomUUID(); }
-    api<Plan>("billing/plan").then(async data => {
+    api<unknown>("billing/plan").then(async data => {
       if (!current) return;
+      if (!isBillingPlan(data)) throw new Error("INVALID_PLAN_RESPONSE");
       setPlan(data);
       if (data.available) {
         const key = await api<{ publicKey: string }>("billing/card-key");

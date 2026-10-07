@@ -1,3 +1,4 @@
+import eventLabels from "../../../../contracts/events.json";
 import { CaseProposals } from '../../components/CaseProposals';
 import { useCallback, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
@@ -8,7 +9,7 @@ import type { Case, CaseEvent, Page } from '../../lib/types';
 import { errorMessage } from '../../lib/api';
 import { Badge, Body, Button, Card, date, Empty, ErrorNotice, Label, Loading, Screen, Title, s } from '../../components/ui';
 
-const events: Record<string, string> = { PROPOSAL_PUBLISHED: 'Proposta apresentada', PROPOSAL_ACCEPTED: 'Proposta aceita', PROPOSAL_DECLINED: 'Proposta recusada', DRAFT_CREATED: 'Rascunho criado', DRAFT_UPDATED: 'Rascunho atualizado', SUBMITTED: 'Ocorrência enviada', TRIAGE_STARTED: 'Análise iniciada', TRIAGE_DECISION: 'Análise atualizada', INFORMATION_REQUESTED: 'Complemento solicitado', INFORMATION_RESPONDED: 'Complemento enviado', INFORMATION_RESOLVED: 'Complemento analisado', MANDATE_REQUESTED: 'Procuração solicitada', MANDATE_SIGNED: 'Procuração assinada' };
+const events: Record<string, string> = eventLabels;
 
 export default function Detail() {
   const { id } = useLocalSearchParams<{ id: string }>();

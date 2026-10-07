@@ -1,4 +1,5 @@
 "use client";
+import eventLabels from "../../../contracts/events.json";
 
 import { useEffect, useState } from "react";
 import { api, ApiError, Profile } from "@/lib/api/client";
@@ -6,7 +7,7 @@ import type { Overview, Notice, Page } from "../../../contracts/api";
 import CaseStatusChart from "./CaseStatusChart";
 
 type Notices = Page<Notice>;
-const actions: Record<string, string> = { PROPOSAL_PUBLISHED: "Proposta apresentada", PROPOSAL_ACCEPTED: "Proposta aceita", PROPOSAL_DECLINED: "Proposta recusada", MANDATE_GENERATED: "Procuração gerada", LEGAL_START: "Procuração solicitada", LEGAL_SIGN: "Procuração devolvida", LEGAL_VERIFY: "Procuração conferida", LEGAL_RETURN_MANDATE: "Correção da procuração solicitada", LEGAL_DRAFT: "Minuta interna atualizada", LEGAL_PUBLISH: "Peça publicada", LEGAL_FILE: "Protocolo registrado", LEGAL_UPDATE: "Movimentação publicada", LEGAL_TASK: "Compromisso agendado", LEGAL_RESCHEDULE: "Compromisso remarcado", LEGAL_COMPLETE: "Compromisso concluído", LEGAL_CLOSE: "Atendimento encerrado", SUBMITTED: "Caso enviado", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Triagem concluída", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido", DOCUMENT_UPLOADED: "Documento enviado" };
+const actions: Record<string, string> = eventLabels;
 
 export default function DashboardOverview({ user, revision, openCase }: { user: Profile; revision: number; openCase: (id: string) => void }) {
   const [overview, setOverview] = useState<Overview>();

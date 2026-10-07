@@ -9,7 +9,7 @@ async function setup(page, { offline = false, declined = false, uncertain = fals
   await page.route('**/api/v1/**', async route => {
     const request = route.request();
     const endpoint = new URL(request.url()).pathname.split('/api/v1/')[1];
-    if (endpoint === 'billing/plan') return offline ? route.fulfill({ status: 503, json: {} }) : route.fulfill({ json: { amount: 69990, installments: 10, available: true, sandbox: true } });
+    if (endpoint === 'billing/plan') return offline ? route.fulfill({ status: 503, json: {} }) : route.fulfill({ json: { amount: 69990, installments: 10, planVersion: "annual-2026-v2", policyVersion: "test-v1", available: true, sandbox: true } });
     if (endpoint === 'billing/card-key') return route.fulfill(keyFailure ? { status: 503, json: {} } : { json: { publicKey: 'public-test-key' } });
     if (endpoint === 'auth/csrf') return route.fulfill({ json: { csrfToken: 'synthetic-csrf' } });
     if (endpoint === 'billing/checkout') {
@@ -124,4 +124,12 @@ test('checkout cabe na tela do celular e mantém preço e cadastro visíveis', a
   await page.screenshot({ path: path.join(__dirname, '../../.local/checkout-integrated-mobile.png'), fullPage: true });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.screenshot({ path: path.join(__dirname, '../../.local/checkout-integrated-desktop.png'), fullPage: true });
+});
+
+test('resposta de plano inválida bloqueia pagamento', async ({ page }) => {
+  await setup(page);
+  await page.route('**/api/v1/billing/plan', route => route.fulfill({ json: { amount: 69990, installments: 0, planVersion: 'v2', policyVersion: 'test', available: true, sandbox: true } }));
+  await page.goto('/checkout');
+  await expect(page.getByRole('main').getByRole('alert')).toContainText('Não foi possível preparar o pagamento');
+  await expect(page.getByRole('button', { name: /Pagar/ })).toBeDisabled();
 });

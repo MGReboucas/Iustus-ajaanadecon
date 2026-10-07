@@ -1,3 +1,4 @@
+import { isMobileLogin } from "../../../contracts/validation";
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { ApiError, apiOrigin, request } from '../lib/api';
 import type { Profile, Session } from '../lib/types';
@@ -63,6 +64,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     const response = await request<{ token: string; expiresAt: string; user: Profile }>('auth/login', undefined, { email: email.trim(), password });
+    if (!isMobileLogin(response)) throw new ApiError("INVALID_RESPONSE", "Resposta de acesso invalida. Tente novamente.");
     const value = { token: response.token, expiresAt: response.expiresAt, origin: apiOrigin() };
     try { await persist(value); }
     catch {
