@@ -65,3 +65,36 @@ class CaseExport(models.Model):
     expires_at = models.DateTimeField()
     purged_at = models.DateTimeField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ServiceProposal(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Open"
+        ACCEPTED = "ACCEPTED", "Accepted"
+        DECLINED = "DECLINED", "Declined"
+        SUPERSEDED = "SUPERSEDED", "Superseded"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    case = models.ForeignKey("cases.Case", on_delete=models.PROTECT, related_name="service_proposals")
+    number = models.PositiveIntegerField()
+    author = models.ForeignKey("identity.User", on_delete=models.PROTECT, related_name="authored_proposals")
+    scope = models.TextField()
+    fee_cents = models.PositiveBigIntegerField()
+    expenses = models.TextField()
+    payment_terms = models.TextField()
+    valid_until = models.DateTimeField()
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.OPEN)
+    decided_by = models.ForeignKey("identity.User", null=True, on_delete=models.PROTECT, related_name="decided_proposals")
+    decided_at = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["case", "number"], name="proposal_case_number_unique"),
+            models.UniqueConstraint(fields=["case"], condition=models.Q(status="OPEN"), name="proposal_one_open_per_case"),
+            models.CheckConstraint(condition=models.Q(number__gte=1), name="proposal_positive_number"),
+            models.CheckConstraint(condition=(
+                models.Q(status__in=["OPEN", "SUPERSEDED"], decided_by__isnull=True, decided_at__isnull=True)
+                | models.Q(status__in=["ACCEPTED", "DECLINED"], decided_by__isnull=False, decided_at__isnull=False)
+            ), name="proposal_decision_consistent"),
+        ]

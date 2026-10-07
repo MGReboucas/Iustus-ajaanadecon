@@ -106,3 +106,14 @@ Impacto no desenvolvimento: distinguir associação ativa, envio de solicitaçã
 Fluxo técnico proposto para detalhamento: registrar proposta individual versionada com escopo, honorários, despesas, condições de pagamento e validade; apresentar ao cliente; registrar aceite ou recusa; preservar versões e comprovantes. Vincular o início das etapas contratadas ao aceite aplicável. Definir com o produto se e quando será exigido pagamento antecipado e se o recebimento ocorrerá na plataforma ou externamente. Não presumir triagem remunerada ou gratuita sem definir o limite entre triagem inicial e análise jurídica contratada.
 
 Atualizar o fluxo de atendimento das etapas 8 e 9 e as telas web/mobile para incluir proposta e aceite individual. A cobrança anual não deve gerar automaticamente uma cobrança de honorários. Implementação de propostas individuais ainda pendente.
+
+### Publicação e próximo incremento — 07/10/2026
+
+- Commit `dd48bec` publicado na branch `main`: preservação das condições dos pedidos e regras comerciais confirmadas. Repositório: https://github.com/MGReboucas/Iustus-ajaanadecon.
+- Base de propostas individuais implementada localmente em `apps/legal/proposals.py`, com modelo `ServiceProposal` e migração própria: escopo, honorários em centavos, despesas, condições de pagamento, validade, autor, versão e decisão do titular.
+- Publicação serializada pelo bloqueio do caso e controle de versão. Nova proposta substitui apenas a aberta; propostas aceitas preservam seus termos. Aceite/recusa registra ator e data e gera evento no caso. Repetição da mesma decisão não duplica o evento. Proposta expirada ou substituída não pode ser aceita.
+- Consulta e decisão limitadas aos participantes autorizados; somente advogado atribuído publica e somente cliente titular decide. A base permite propostas em diferentes fases, sem impor ainda uma política de triagem remunerada.
+- 23 testes aprovados (`test_proposals` e `test_workflow`) em SQLite temporário. Concorrência real em PostgreSQL ainda não homologada.
+- Este segundo incremento ainda não possui endpoints ou telas; não inicia trabalho jurídico nem cobrança. Propostas complementares ainda exigem definição da relação entre seus escopos. Não substitui contrato publicado ou aceite do novo plano anual.
+- Próximas entregas: contratos HTTP, telas profissionais e do cliente, notificações, integração das pré-condições de atendimento e modalidade de pagamento confirmada pelo usuário. Perguntas sobre triagem e pagamento enviadas; respostas pendentes.
+- Título sugerido para o segundo commit: `feat(legal): add versioned service proposal domain`. Ainda não enviado ao GitHub.
