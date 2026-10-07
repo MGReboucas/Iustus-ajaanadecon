@@ -72,3 +72,7 @@ node docs/planejamento/verificar.cjs
 Documentos narrativos são editados diretamente. Toda mudança de escopo deve indicar motivo, requisitos afetados, horas, riscos e impacto nas datas; o responsável pelo produto aceita a nova baseline. Não registrar aprovação presumida. O desenvolvedor mantém evidências e status por tarefa, e revisa a previsão ao concluir cada fase.
 
 **Vocabulário:** implementado = há código; validado = cenário executado com evidência; aprovado = responsável identificado aceitou; proposto = decisão técnica sugerida; hipótese = regra ainda não confirmada. Feature Complete encerra implementação do escopo, mas precede a regressão final, homologação e produção.
+
+- [Propostas historicas de API](API_PROPOSTAS_HISTORICAS.md)
+- [Inventario de rotas Django](API_ROTAS.md)
+- [Associação Iustus — checkout integrado atualizado em 06/10/2026](ASSOCIACAO.md)

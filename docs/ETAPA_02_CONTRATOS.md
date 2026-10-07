@@ -87,3 +87,14 @@ Revisão concluída dos campos consumidos pelas telas atuais e da compatibilidad
 - Permanece a pendência documental preexistente do link para `frontend/.env.example`, excluído localmente. Essa exclusão não faz parte desta entrega.
 
 A etapa 2 está encerrada no escopo de contratos das telas existentes. Isso não representa homologação em aparelho físico, deploy produtivo, ativação de recorrência nem auditoria integral de todos os fluxos jurídicos. As demais etapas do produto continuam separadas.
+
+## Correção da validação contínua — 07/10/2026
+
+O commit de encerramento passou nas verificações locais descritas acima, mas a execução remota revelou duas falhas que precisavam ser corrigidas antes de considerar a CI aprovada:
+
+- O verificador documental exige todos os documentos de topo nos dois índices. Foram incluídos os links ausentes, sem desativar a verificação. A reprodução em cópia limpa do Git passou com 61 arquivos Markdown e 257 links locais; a exclusão local de `frontend/.env.example` permanece fora desta alteração.
+- A regressão de reabertura do checkout pago estava no arquivo de associação e usava a porta fixa 3011. Ela foi movida para a suíte de checkout, usando o endereço do runner, inclusive a porta 3000 da CI. O cenário continua sendo executado; nenhuma asserção foi removida.
+
+O build de produção foi executado novamente. A validação remota deve ser acompanhada após cada push; confirmar somente o hash no servidor não comprova que os jobs passaram.
+
+Validação local da correção: 12 testes E2E aprovados com MFA e 12 sem MFA; 3 cenários ignorados em cada execução por pertencerem a outro perfil de execução. Build de produção aprovado.

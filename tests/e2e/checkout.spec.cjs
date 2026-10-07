@@ -133,3 +133,11 @@ test('resposta de plano inválida bloqueia pagamento', async ({ page }) => {
   await expect(page.getByRole('main').getByRole('alert')).toContainText('Não foi possível preparar o pagamento');
   await expect(page.getByRole('button', { name: /Pagar/ })).toBeDisabled();
 });
+
+test('pagamento concluído permanece confirmado ao reabrir o checkout', async ({ page }) => {
+  await page.route('**/api/v1/billing/plan', route => route.fulfill({ json: { amount: 69990, installments: 10, planVersion: "annual-2026-v2", policyVersion: "test-v1", available: false, sandbox: true } }));
+  await page.route('**/api/v1/billing/checkout', route => route.fulfill({ json: { status: 'PAID' } }));
+  await page.goto('/checkout');
+  await expect(page.getByRole('heading', { name: 'Sua associação está ativa' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Pagar/ })).toHaveCount(0);
+});

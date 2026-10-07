@@ -182,3 +182,8 @@ A fonte única de requisitos e estimativas está em [dados.cjs](docs/planejament
 **Incremento atual:** [dashboard e comunicação](docs/DASHBOARD_COMUNICACAO.md), com contadores autorizados, pendências, mensagens, notas internas e avisos persistidos. **Próxima etapa de comunicação:** e-mails de novidades do caso com outbox e retry. Pagamentos e assinatura (DEV-012 a DEV-016 e DEV-062), scanner real, armazenamento produtivo e infraestrutura/políticas continuam necessários antes da operação comercial. A estimativa de 1696h continua sendo a baseline integral, sem desconto automático do trabalho realizado.
 
 A comunicação jurídica, critérios de atendimento, modelos, condições comerciais, retenção de dados e fluxos de contratação devem ser revisados pelos responsáveis da operação antes da publicação.
+
+- [Propostas historicas de API](docs/API_PROPOSTAS_HISTORICAS.md)
+- [Inventario de rotas Django](docs/API_ROTAS.md)
+- [Etapa 1 — Produto e contratação](docs/ETAPA_01_PRODUTO_CONTRATACAO.md)
+- [Etapa 2 — Contratos entre site, aplicativo e backend](docs/ETAPA_02_CONTRATOS.md)
