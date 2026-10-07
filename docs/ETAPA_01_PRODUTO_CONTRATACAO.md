@@ -2,6 +2,11 @@
 
 Atualização: 07/10/2026. Status: EM ANDAMENTO. Autorizado iniciar o desenvolvimento; decisões comerciais pendentes ainda não estão aprovadas.
 
+## Situação de publicação em 07/10/2026
+
+Os commits `dd48bec`, `8d45c10`, `d6e234f`, `7efb5eb` e `80cbf26` foram enviados à branch `main` do GitHub e conferidos no servidor. As notas de “local”, “sem commit” e “sem push” nas entradas de progresso abaixo descrevem o momento de cada entrega e foram superadas por esta atualização.
+
+Preço comercial confirmado: R$ 699,90 anuais em 10 parcelas de R$ 69,99. O checkout ativo continua com as condições antigas; novo preço e renovação automática ainda não foram ativados. Publicação de código no GitHub não certifica deploy ou homologação.
 ## Referência e objetivo
 
 Consolidar regras para site, aplicativo e backend Django. Complementa [regras do serviço](REGRAS_DO_SERVICO.md), [decisões](DECISOES.md) e [associação](ASSOCIACAO.md). Não é o contrato publicado.

@@ -115,6 +115,16 @@ class ProposalAPITests(TestCase):
         result = self.post(self.lawyer, path, data)
         self.assertEqual(result.status_code, 201, result.content)
         item = result.json()
+        self.assertEqual(set(item), {"proposal", "version"})
+        wire = item["proposal"]
+        self.assertEqual(set(wire), {"id", "number", "scope", "feeCents", "currency", "expenses",
+            "paymentTerms", "validUntil", "status", "authorId", "decidedById", "decidedAt", "createdAt"})
+        self.assertEqual(wire["currency"], "BRL")
+        self.assertIsInstance(wire["feeCents"], int)
+        self.assertIsInstance(item["version"], int)
+        self.assertIsNone(wire["decidedAt"])
+        self.assertIsNone(wire["decidedById"])
+        self.assertEqual(wire["authorId"], str(self.lawyer_user.pk))
         response = self.browser_client.get("/api/v1/"+path)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["results"][0]["feeCents"], 50000)
@@ -124,6 +134,8 @@ class ProposalAPITests(TestCase):
             response = self.post(self.browser_client, decision, body)
             self.assertEqual(response.status_code, 200, response.content)
             self.assertEqual(response.json()["proposal"]["status"], "ACCEPTED")
+            self.assertEqual(response.json()["proposal"]["decidedById"], str(self.client_user.pk))
+            self.assertIsNotNone(response.json()["proposal"]["decidedAt"])
         self.assertEqual(CaseEvent.objects.filter(case=case, action="PROPOSAL_ACCEPTED").count(), 1)
 
     def test_http_permissions_csrf_and_strict_contract(self):

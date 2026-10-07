@@ -1,20 +1,40 @@
 # Contratos de API
 
-> Identidade está implementada e testada localmente conforme a seção abaixo. Casos/triagem possuem contrato local detalhado em [Casos](CASOS.md); pagamentos e demais recursos descrevem o produto futuro. As duas rotas PagBank legadas permanecem no frontend.
+> Atualização parcial em 07/10/2026: Django concentra identidade, casos, documentos, atendimento, comunicação e associação. Os contratos abaixo devem distinguir código implementado de propostas históricas. Homologação produtiva é separada de implementação.
 
-## API atual
+## Rotas financeiras atuais e legado
 
-| Método e rota | Entrada / saída | Limitação encontrada |
+- `GET /api/v1/billing/plan`: oferta atualmente configurada; não confundir com a nova oferta comercial aprovada e ainda não ativada.
+- `GET /api/v1/billing/card-key`: chave pública do provedor.
+- `POST /api/v1/billing/checkout`: cria/reenvia tentativa de pagamento; `GET` consulta situação na sessão do comprador.
+- `POST /api/v1/billing/webhook`: notificação autenticada do provedor, sem autenticação por cookie.
+- `POST /api/v1/billing/activate` e `/billing/resend`: ativação e reenvio de acesso.
+- As rotas legadas `/api/pagbank/session` e `/api/pagbank/payment` retornam HTTP 410; não constituem outro caminho de cobrança. Detalhes em [Associação](ASSOCIACAO.md).
+- `GET /api/v1/health/`: liveness público. `GET /api/v1/ready`: verificação de banco; não certifica filas, e-mail ou demais fornecedores.
+
+## Contratos compartilhados de propostas
+
+A fonte TypeScript consumida pelo site e aplicativo é [contracts/api.ts](../contracts/api.ts). O backend permanece responsável pela validação e autorização; tipos TypeScript não validam respostas em tempo de execução. Testes HTTP conferem os campos emitidos pelo Django, os identificadores de decisão e valores monetários.
+
+| Operação | Web (prefixo `/api/v1`) | Mobile (prefixo `/api/v1/mobile`) |
 | --- | --- | --- |
-| GET `/api/pagbank/session` | Sem corpo; retorna `{ id }` ou `{ message }` | Sem identidade de cliente; cria sessão externa; depende de credenciais |
-| POST `/api/pagbank/payment` | `cardToken`, `senderHash`, `installment`, `form`; retorna `{ code }` | Recebe campos sensíveis desnecessários, não persiste pedido nem confirma estado financeiro |
-| GET `/api/v1/health/` | Público, sem credenciais; retorna `{ "status": "ok" }`, no-store | Somente liveness do processo Django; não verifica PostgreSQL, jobs ou autenticação; ainda sem integração ao frontend |
+| Consultar | GET `/cases/{caseId}/proposals` | GET `/cases/{caseId}/proposals` |
+| Publicar | POST `/cases/{caseId}/proposals`, advogado atribuído | Não exposta |
+| Decidir | POST `/cases/{caseId}/proposals/{proposalId}/decision`, titular | Mesmo caminho, titular |
 
-Migração aprovada: transferir a integração ao módulo billing do backend Django e atualizar o frontend junto, em DEV-012/013/062. Retirar a execução financeira das rotas Next.js antigas; não manter um caminho alternativo de cobrança. O contrato final com PagBank deve corresponder ao produto habilitado em EXT-01; nomes externos de campos, headers e status só serão fixados após DEV-012.
+- Lista: `Page<ServiceProposal>` com `results` e `nextCursor`; cursor opaco enviado como `?cursor=...`.
+- Publicação: `ProposalInput`; decisão: `ProposalDecisionInput`; retorno de mutação: `ProposalResult` com proposta e versão atual do caso.
+- Valores: inteiro em centavos e moeda `BRL`; datas ISO 8601 com fuso; identificadores UUID; campos ausentes de decisão retornam `null`.
+- Estados: `OPEN`, `ACCEPTED`, `DECLINED`, `SUPERSEDED`. Expiração deriva de `validUntil`; proposta aberta expirada não pode ser aceita.
+- Mutação usa a versão do caso; conflito retorna 409. Repetição da mesma decisão já registrada é idempotente. Nova publicação exige versão atualizada.
+- Web usa sessão e CSRF. Mobile usa bearer, sem cookies. O proxy não encaminha bearer para rotas web. APIs mobile não herdam autenticação por sessão web.
+- Campos extras são rejeitados. Erros seguem envelope `error` com `code`, `message` e campos quando aplicáveis.
+- Consulta respeita titularidade/atribuição; administrador não recebe acesso ao conteúdo das propostas. Nenhuma ação destes endpoints cobra honorários.
 
+Acompanhar expansão dos contratos na [etapa 2](ETAPA_02_CONTRATOS.md).
 ## Identidade implementada neste incremento
 
-Prefixo /api/v1, sem barra final nas rotas abaixo. Todas as mutações exigem CSRF, inclusive anônimas. Acesso por proxy privado validado; exemplos de HTTP e cookies locais não são configuração de produção. Campos desconhecidos são rejeitados.
+Prefixo /api/v1, sem barra final nas rotas abaixo. As mutações web de identidade exigem CSRF, inclusive anônimas; as rotas mobile usam autenticação bearer própria. Acesso por proxy privado validado; exemplos de HTTP e cookies locais não são configuração de produção. Campos desconhecidos são rejeitados.
 
 | Método / rota | Contrato atual |
 | --- | --- |

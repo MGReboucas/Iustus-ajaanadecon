@@ -6,6 +6,8 @@ Esta documentação descreve o código encontrado e propõe o MVP da plataforma 
 
 ## Desenvolvimento atual
 
+[Etapa 2 — Contratos](ETAPA_02_CONTRATOS.md): unificação de dados entre site, aplicativo e backend, em andamento.
+
 Acompanhar a [Etapa 1 — Produto e contratação](ETAPA_01_PRODUTO_CONTRATACAO.md): decisões, pendências, commits e critérios de encerramento.
 
 ## Comece por aqui

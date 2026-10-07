@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Switch, Text, View } from 'react-native';
 import { useSession } from '../auth/SessionProvider';
 import { errorMessage } from '../lib/api';
-import type { Case, Page, ServiceProposal } from '../lib/types';
+import type { Case, Page, ServiceProposal, ProposalResult, ProposalDecisionInput } from '../lib/types';
 import { Body, Button, Card, ErrorNotice, Loading, s } from './ui';
 const labels = { OPEN: 'Aguardando decisão', ACCEPTED: 'Aceita', DECLINED: 'Recusada', SUPERSEDED: 'Substituída' };
 export function CaseProposals({ caseId, onChange }: { caseId: string; onChange: () => Promise<void> }) {
@@ -37,7 +37,8 @@ export function CaseProposals({ caseId, onChange }: { caseId: string; onChange: 
     if (!detail || busy.current) return;
     busy.current = true; setSending(true); setError(''); setMessage('');
     try {
-      const result = await api<{ proposal: ServiceProposal; version: number }>(`cases/${caseId}/proposals/${proposal.id}/decision`, { version: detail.version, accepted });
+      const body: ProposalDecisionInput = { version: detail.version, accepted };
+      const result = await api<ProposalResult>(`cases/${caseId}/proposals/${proposal.id}/decision`, body);
       if (!active.current) return;
       setPage(old => ({ ...old, results: old.results.map(row => row.id === result.proposal.id ? result.proposal : row) }));
       setDetail(old => old ? { ...old, version: result.version } : old);

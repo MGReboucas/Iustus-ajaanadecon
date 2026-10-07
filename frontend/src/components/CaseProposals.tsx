@@ -2,8 +2,8 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api, Profile } from "@/lib/api/client";
 
-type Proposal = { id: string; number: number; scope: string; feeCents: number; expenses: string; paymentTerms: string; validUntil: string; status: "OPEN" | "ACCEPTED" | "DECLINED" | "SUPERSEDED"; decidedAt: string | null };
-type Page = { results: Proposal[]; nextCursor: string | null };
+import type { ServiceProposal as Proposal, Page as ApiPage, ProposalInput, ProposalDecisionInput, ProposalResult } from "../../../contracts/api";
+type Page = ApiPage<Proposal>;
 type Props = { caseId: string; version: number; state: string; user: Profile; onChange: () => Promise<void> };
 const labels = { OPEN: "Aguardando decisão", ACCEPTED: "Aceita", DECLINED: "Recusada", SUPERSEDED: "Substituída" };
 const money = (cents: number) => (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -31,11 +31,11 @@ export default function CaseProposals({ caseId, version, state, user, onChange }
     }).finally(() => { if (mounted.current && generation.current === current) setLoading(false); });
   }, [caseId, version, refresh]);
 
-  async function mutate(path: string, body: object, form?: HTMLFormElement) {
+  async function mutate(path: string, body: ProposalInput | ProposalDecisionInput, form?: HTMLFormElement) {
     if (pending.current) return;
     pending.current = true; setBusy(true); setError(""); setMessage("");
     try {
-      await api(path, body);
+      await api<ProposalResult>(path, body);
       if (!mounted.current) return;
       form?.reset(); setConfirmed(null); setMessage("Proposta registrada. Nenhuma cobrança foi realizada por esta ação.");
       setRefresh(n => n + 1);
@@ -53,7 +53,7 @@ export default function CaseProposals({ caseId, version, state, user, onChange }
     const feeCents = Number(reais) * 100 + Number(centavos.padEnd(2, "0"));
     const date = new Date(String(data.get("validUntil")));
     if (!Number.isFinite(date.getTime()) || date.getTime() <= Date.now()) { setError("Informe uma validade futura."); return; }
-    void mutate(`cases/${caseId}/proposals`, { version, scope: data.get("scope"), feeCents, expenses: data.get("expenses"), paymentTerms: data.get("paymentTerms"), validUntil: date.toISOString() }, form);
+    void mutate(`cases/${caseId}/proposals`, { version, scope: String(data.get("scope")), feeCents, expenses: String(data.get("expenses")), paymentTerms: String(data.get("paymentTerms")), validUntil: date.toISOString() }, form);
   }
   async function more() {
     if (!page.nextCursor || pending.current) return;
