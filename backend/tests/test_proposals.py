@@ -84,3 +84,52 @@ class ProposalTests(TestCase):
         p.refresh_from_db()
         self.assertEqual(p.status, "OPEN")
         self.assertEqual(ServiceProposal.objects.count(), 1)
+
+
+from .test_cases import CaseTests
+
+
+class ProposalAPITests(TestCase):
+    browser = CaseTests.browser
+    post = CaseTests.post
+    user = CaseTests.user
+    login = CaseTests.login
+    team_login = CaseTests.team_login
+    setUp = CaseTests.setUp
+
+    def prepare(self):
+        case = Case.objects.create(owner=self.client_user, lawyer=self.lawyer_user, state=Case.State.TRIAGE)
+        path = f"cases/{case.pk}/proposals"
+        data = dict(version=case.version, scope="Defense preparation", feeCents=50000,
+                    expenses="Court costs excluded", paymentTerms="As agreed separately",
+                    validUntil=(timezone.now()+timedelta(days=7)).isoformat())
+        return case, path, data
+
+    def test_http_publish_list_accept_and_retry(self):
+        case, path, data = self.prepare()
+        result = self.post(self.lawyer, path, data)
+        self.assertEqual(result.status_code, 201, result.content)
+        item = result.json()
+        response = self.browser_client.get("/api/v1/"+path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["results"][0]["feeCents"], 50000)
+        decision = path+"/"+item["proposal"]["id"]+"/decision"
+        body = {"version": item["version"], "accepted": True}
+        for _ in range(2):
+            response = self.post(self.browser_client, decision, body)
+            self.assertEqual(response.status_code, 200, response.content)
+            self.assertEqual(response.json()["proposal"]["status"], "ACCEPTED")
+        self.assertEqual(CaseEvent.objects.filter(case=case, action="PROPOSAL_ACCEPTED").count(), 1)
+
+    def test_http_permissions_csrf_and_strict_contract(self):
+        case, path, data = self.prepare()
+        self.assertEqual(self.browser().get("/api/v1/"+path).status_code, 403)
+        self.assertEqual(self.post(self.lawyer, path, data, csrf=False).status_code, 403)
+        self.assertEqual(self.post(self.browser_client, path, data).status_code, 403)
+        self.assertEqual(self.admin.get("/api/v1/"+path).status_code, 404)
+        self.assertEqual(self.post(self.lawyer, path, {**data, "status": "ACCEPTED"}).status_code, 400)
+        self.assertFalse(ServiceProposal.objects.exists())
+        result = self.post(self.lawyer, path, data).json()
+        other = Case.objects.create(owner=self.client_user, lawyer=self.lawyer_user, state=Case.State.TRIAGE)
+        wrong_path = f"cases/{other.pk}/proposals/{result['proposal']['id']}/decision"
+        self.assertEqual(self.post(self.browser_client, wrong_path, {"version": 1, "accepted": True}).status_code, 404)

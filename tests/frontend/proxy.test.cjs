@@ -61,3 +61,14 @@ test('proxy preserves authorized binary downloads', async () => {
   assert.equal(result.status, 200);
   assert.equal(await result.text(), '%PDF-synthetic');
 });
+
+
+test('proxy permits only explicit proposal routes', async () => {
+  const id = '00000000-0000-0000-0000-000000000001';
+  for (const suffix of ['proposals', `proposals/${id}/decision`]) {
+    assert.equal((await call(Response.json({}), `cases/${id}/${suffix}`)).status, 200);
+  }
+  for (const suffix of ['proposals/delete', `proposals/${id}/charge`, 'proposals/invalid/decision']) {
+    assert.equal((await call(Response.json({}), `cases/${id}/${suffix}`)).status, 404);
+  }
+});

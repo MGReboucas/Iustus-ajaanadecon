@@ -2,7 +2,10 @@ from django.urls import path
 from .views import WorkflowView
 from .mandates import TemplatesView, GenerateMandateView
 from .exports import ExportsView, ExportContentView
+from .proposal_views import ProposalsView, ProposalDecisionView
 urlpatterns = [
+    path("cases/<uuid:case_id>/proposals", ProposalsView.as_view()),
+    path("cases/<uuid:case_id>/proposals/<uuid:proposal_id>/decision", ProposalDecisionView.as_view()),
     path("cases/<uuid:case_id>/workflow", WorkflowView.as_view()),
     path("legal/mandate-templates", TemplatesView.as_view()),
     path("cases/<uuid:case_id>/mandates", GenerateMandateView.as_view()),

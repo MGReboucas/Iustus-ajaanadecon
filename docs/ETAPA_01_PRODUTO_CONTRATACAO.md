@@ -117,3 +117,19 @@ Atualizar o fluxo de atendimento das etapas 8 e 9 e as telas web/mobile para inc
 - Este segundo incremento ainda não possui endpoints ou telas; não inicia trabalho jurídico nem cobrança. Propostas complementares ainda exigem definição da relação entre seus escopos. Não substitui contrato publicado ou aceite do novo plano anual.
 - Próximas entregas: contratos HTTP, telas profissionais e do cliente, notificações, integração das pré-condições de atendimento e modalidade de pagamento confirmada pelo usuário. Perguntas sobre triagem e pagamento enviadas; respostas pendentes.
 - Título sugerido para o segundo commit: `feat(legal): add versioned service proposal domain`. Ainda não enviado ao GitHub.
+
+### API de propostas — incremento seguinte
+
+Commit local `8d45c10`: base de propostas versionadas. O usuário autorizou o commit; não houve novo push neste turno.
+
+Endpoints implementados para sessão web com CSRF nas mutações:
+
+- `GET /api/v1/cases/{caseId}/proposals`: lista paginada com `results` e `nextCursor`. Cada proposta contém identificação, número, escopo, honorários em centavos BRL, despesas, condições de pagamento, validade, estado, autor e decisão.
+- `POST /api/v1/cases/{caseId}/proposals`: advogado atribuído envia `version`, `scope`, `feeCents`, `expenses`, `paymentTerms`, `validUntil`. Retorna 201 com `proposal` e a nova `version` do caso.
+- `POST /api/v1/cases/{caseId}/proposals/{proposalId}/decision`: titular envia `version` e `accepted`; retorna `proposal` e `version`. Repetição da mesma decisão retorna sucesso sem novo evento. Decisão conflitante, expirada ou substituída é rejeitada.
+
+Campos desconhecidos são rejeitados; respostas não incluem dados de cartão. Consulta respeita titularidade/atribuição, administrador não recebe acesso ao conteúdo. Mutação mantém limite de requisições e controle transacional existentes. A versão do caso pode ser obtida no detalhe do caso antes da ação. A API não cobra honorários e não muda automaticamente a fase jurídica.
+
+Verificação: 19 testes aprovados no módulo `test_proposals` (inclui testes importados da infraestrutura existente); 7 testes do proxy aprovados. Novos cenários HTTP cobrem publicação, consulta, aceite repetido, CSRF, perfil, campos extras e proposta de outro caso. Testes de domínio anteriores cobrem isolamento entre clientes e advogados. Acesso nativo mobile e telas ainda pendentes.
+
+Próximo incremento: telas de proposta e decisão no portal web; notificações e integração ao fluxo após definição sobre triagem e pagamento. Regras pendentes não foram presumidas. Título sugerido: `feat(legal): expose authenticated proposal API`.
