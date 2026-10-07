@@ -57,6 +57,7 @@ class CheckoutView(PublicView):
         # Persistir referência e sessão antes da chamada externa, inclusive em timeouts.
         order, _ = Order.objects.get_or_create(request_key=digest(session_digest + key), defaults={
             "session_digest": session_digest, "amount": settings.MEMBERSHIP_PRICE_CENTS,
+            "installments": settings.MEMBERSHIP_INSTALLMENTS, "plan_version": settings.MEMBERSHIP_PLAN_VERSION,
             "environment": settings.PAGBANK_ENVIRONMENT, "policy_version": settings.REGISTRATION_POLICY_VERSION,
             "encrypted_customer": encrypt(canonical(customer)), "payload_digest": payload_digest})
         if order.payload_digest != payload_digest or order.environment != settings.PAGBANK_ENVIRONMENT:

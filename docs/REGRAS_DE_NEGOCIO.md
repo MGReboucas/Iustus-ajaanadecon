@@ -6,9 +6,9 @@
 
 ## RN-001 — Preço base
 
-A oferta existente é R$ 547 por ano; alterações exigem nova versão de plano e não alteram pedidos anteriores.
+Código conferido em 07/10/2026: R$ 958,80 por ano em 12 parcelas de R$ 79,90. Nova oferta aprovada em 07/10/2026: R$ 699,90 anuais em 10 parcelas de R$ 69,99 com renovação automática; implementação em andamento conforme docs/ETAPA_01_PRODUTO_CONTRATACAO.md. Alterações exigem versão de plano e preservam pedidos anteriores.
 
-**Situação:** Confirmado no código.
+**Situação:** Nova condição comercial aprovada; implementação pendente.
 
 ## RN-002 — Confirmação financeira
 
@@ -24,9 +24,9 @@ Pagamento parcelado de contratação anual não representa assinatura mensal; pa
 
 ## RN-004 — Período anual
 
-Proposta: 12 meses de calendário a partir da confirmação, fim exclusivo; 29/02 ajusta para último dia de fevereiro no ano seguinte; renovar é nova contratação, sem débito automático.
+Associação anual com renovação automática no mesmo parcelamento e possibilidade de cancelar a próxima renovação antes da cobrança, aprovada em 07/10/2026. Implementação e detalhes de calendário e falha de cobrança pendentes; preservar contratos anteriores sem consentimento recorrente.
 
-**Situação:** Hipótese H-01.
+**Situação:** Regra aprovada; integração pendente.
 
 ## RN-005 — Uso ilimitado
 
@@ -36,9 +36,9 @@ Não impor limite comercial de quantidade de casos na vigência; limites técnic
 
 ## RN-006 — Expiração e casos existentes
 
-Proposta: impedir novas submissões após vencimento, preservar consulta e trabalho de casos já aceitos; estorno e contestação geram revisão humana dos casos em curso.
+Preservar casos existentes após expiração, conforme confirmação de 07/10/2026. Novas submissões dependem de associação ativa; envio não equivale a aceite. Detalhar estorno e contestação sem encerrar trabalho automaticamente.
 
-**Situação:** Hipótese H-02.
+**Situação:** Preservação confirmada; detalhes financeiros pendentes.
 
 ## RN-007 — Propriedade do caso
 

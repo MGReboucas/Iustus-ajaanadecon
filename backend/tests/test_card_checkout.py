@@ -36,7 +36,7 @@ class CardCheckoutTests(TestCase):
             "items": [{"reference_id": "iustus-associacao-anual", "quantity": 1, "unit_amount": order.amount}],
             "charges": [{"status": status, "paid_at": timezone.now().isoformat(),
                 "amount": {"value": order.amount, "currency": "BRL", "summary": {"paid": order.amount if status == "PAID" else 0, "refunded": 0}},
-                "payment_method": {"type": "CREDIT_CARD", "installments": 12}}]}
+                "payment_method": {"type": "CREDIT_CARD", "installments": order.installments}}]}
 
     def create(self):
         browser = self.browser()
@@ -171,3 +171,41 @@ class CardCheckoutTests(TestCase):
             result = self.browser().post("/api/v1/billing/checkout", payment_body(), content_type="application/json", HTTP_IDEMPOTENCY_KEY="synthetic-card-checkout-001")
             self.assertEqual(result.status_code, 403)
             provider.assert_not_called()
+
+    def test_pending_order_keeps_original_terms_after_offer_change(self):
+        browser = self.browser()
+        with patch("apps.billing.views.create_card_order", side_effect=IdentityError("PROVIDER", "Timeout", 503)):
+            self.assertEqual(self.submit(browser).status_code, 503)
+        original = Order.objects.get()
+        with override_settings(MEMBERSHIP_PRICE_CENTS=69990, MEMBERSHIP_INSTALLMENTS=10,
+                               MEMBERSHIP_PLAN_VERSION="annual-2026-v2"):
+            with patch("apps.billing.views.create_card_order", return_value="ORDE_synthetic") as provider:
+                self.assertEqual(self.submit(browser).status_code, 201)
+                retry_order = provider.call_args.args[0]
+                self.assertEqual((retry_order.amount, retry_order.installments, retry_order.plan_version),
+                                 (original.amount, 12, "annual-legacy-v1"))
+            with patch("apps.billing.services.request_api", return_value=self.snapshot(original)):
+                reconcile(original.pk, "ORDE_synthetic")
+        self.assertEqual(Membership.objects.count(), 1)
+
+    @override_settings(MEMBERSHIP_PRICE_CENTS=69990, MEMBERSHIP_INSTALLMENTS=10,
+                       MEMBERSHIP_PLAN_VERSION="annual-2026-v2")
+    def test_new_order_snapshots_terms_and_provider_must_match_them(self):
+        _, order = self.create()
+        self.assertEqual((order.amount, order.installments, order.plan_version),
+                         (69990, 10, "annual-2026-v2"))
+        body = payment_body()
+        with patch("integrations.pagbank.client.request_api", return_value={"id": "ORDE_test", "reference_id": str(order.pk)}) as provider:
+            create_card_order(order, body["customer"], body["card"])
+        charge = provider.call_args.args[1]["charges"][0]
+        self.assertEqual(charge["amount"]["value"], 69990)
+        self.assertEqual(charge["payment_method"]["installments"], 10)
+        invalid = self.snapshot(order)
+        invalid["charges"][0]["payment_method"]["installments"] = 12
+        with patch("apps.billing.services.request_api", return_value=invalid), self.assertRaises(IdentityError):
+            reconcile(order.pk, "ORDE_synthetic")
+        self.assertFalse(Membership.objects.exists())
+        with override_settings(MEMBERSHIP_INSTALLMENTS=12, MEMBERSHIP_PRICE_CENTS=95880):
+            with patch("apps.billing.services.request_api", return_value=self.snapshot(order)):
+                reconcile(order.pk, "ORDE_synthetic")
+        self.assertEqual(Membership.objects.count(), 1)

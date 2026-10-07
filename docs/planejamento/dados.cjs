@@ -113,12 +113,12 @@ Retenção verificável|Política aprovada por classe de dado, bloqueio de elimi
 Tarefas assíncronas|Worker com tentativas limitadas, backoff e fila de falhas; reprocessamento auditado não duplica efeitos; jobs não dependem de requisição aberta
 `).map((r,i)=>({id:prefix('RNF',i+1),title:r[0],acceptance:r[1]}));
 const rules = parse(`
-Preço base|A oferta existente é R$ 547 por ano; alterações exigem nova versão de plano e não alteram pedidos anteriores|Confirmado no código
+Preço base|Código conferido em 07/10/2026: R$ 958,80 por ano em 12 parcelas de R$ 79,90. Nova oferta aprovada em 07/10/2026: R$ 699,90 anuais em 10 parcelas de R$ 69,99 com renovação automática; implementação em andamento conforme docs/ETAPA_01_PRODUTO_CONTRATACAO.md. Alterações exigem versão de plano e preservam pedidos anteriores|Nova condição comercial aprovada; implementação pendente
 Confirmação financeira|Acesso contratado só é ativado após confirmação confiável de pagamento pelo provedor; token ou código de transação isolado não basta|Proposto
 Parcelamento|Pagamento parcelado de contratação anual não representa assinatura mensal; parcelas e juros devem coincidir com a cotação validada|Confirmado parcialmente; validar oferta
-Período anual|Proposta: 12 meses de calendário a partir da confirmação, fim exclusivo; 29/02 ajusta para último dia de fevereiro no ano seguinte; renovar é nova contratação, sem débito automático|Hipótese H-01
+Período anual|Associação anual com renovação automática no mesmo parcelamento e possibilidade de cancelar a próxima renovação antes da cobrança, aprovada em 07/10/2026. Implementação e detalhes de calendário e falha de cobrança pendentes; preservar contratos anteriores sem consentimento recorrente|Regra aprovada; integração pendente
 Uso ilimitado|Não impor limite comercial de quantidade de casos na vigência; limites técnicos de arquivo e antiabuso não alteram a promessa de uso|Confirmado na oferta; validar elegibilidade
-Expiração e casos existentes|Proposta: impedir novas submissões após vencimento, preservar consulta e trabalho de casos já aceitos; estorno e contestação geram revisão humana dos casos em curso|Hipótese H-02
+Expiração e casos existentes|Preservar casos existentes após expiração, conforme confirmação de 07/10/2026. Novas submissões dependem de associação ativa; envio não equivale a aceite. Detalhar estorno e contestação sem encerrar trabalho automaticamente|Preservação confirmada; detalhes financeiros pendentes
 Propriedade do caso|Cliente só lê e altera recursos do próprio caso dentro das ações permitidas; cliente não edita histórico nem decisões profissionais|Proposto
 Acesso profissional|Advogado só acessa casos atribuídos; triagem exige atribuição prévia por administrador; visão de fila não expõe casos de colegas|Proposto
 Responsável único|Cada caso tem no máximo um advogado responsável ativo; troca de responsável e justificativa são auditadas|Proposto

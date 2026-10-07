@@ -38,8 +38,8 @@ Registrar decisão final, data, responsável, alternativa descartada e impacto n
 
 | ID | Hipótese usada no planejamento | Quem valida | Antes de |
 | --- | --- | --- | --- |
-| H-01 | Plano dura 12 meses de calendário desde a confirmação; renovação manual | Produto + operação | DEV-016 |
-| H-02 | Expiração impede novos casos; casos aceitos continuam e histórico fica acessível; estorno/contestação exige decisão humana sobre casos ativos | Produto + responsável jurídico | DEV-016 |
+| H-01 | Atualização de 07/10/2026: anual com renovação automática no mesmo parcelamento e cancelamento da próxima renovação confirmado; detalhes operacionais pendentes | Produto confirmou; operação detalha | DEV-016 |
+| H-02 | Preservação dos casos existentes confirmada em 07/10/2026. Associação ativa para novas submissões; detalhar estorno e contestação | Produto confirmou preservação; responsável jurídico detalha | DEV-016 |
 | H-03 | Advogado responsável pode revisar e publicar sua própria peça; etapa de revisão é obrigatória e explícita | Responsável jurídico | DEV-034 |
 | H-04 | Atuação civil completa pelo escritório confirmada; assinatura externa e registro manual dos atos praticados nos sistemas oficiais permanecem como desenho técnico proposto, sem integração automática | Produto + responsável jurídico | Fechamento de escopo DEV-002 |
 | H-05 | Oferta permite 1, 6 ou 12 parcelas quando disponibilizadas pelo provedor; outras parcelas não entram sem mudança de comunicação | Produto + financeiro | DEV-013 |

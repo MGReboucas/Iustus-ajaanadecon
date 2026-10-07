@@ -66,7 +66,7 @@ def reconcile(order_id, provider_id):
                 raise IdentityError("BUYER_MISMATCH", "E-mail ou CPF do pagamento não corresponde ao associado.", 422)
             # O preço integral e o parcelamento são fixos no checkout integrado.
             method = paid[0].get("payment_method", {})
-            if paid[0]["amount"]["value"] != candidate.amount or method.get("type") != "CREDIT_CARD" or method.get("installments") != 12:
+            if paid[0]["amount"]["value"] != candidate.amount or method.get("type") != "CREDIT_CARD" or method.get("installments") != candidate.installments:
                 raise IdentityError("PAYMENT_AMOUNT_MISMATCH", "Condições do pagamento não correspondem à adesão.", 422)
     with transaction.atomic():
         order = Order.objects.select_for_update().get(pk=order_id)

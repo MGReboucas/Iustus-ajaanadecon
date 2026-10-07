@@ -4,6 +4,10 @@
 
 Esta documentação descreve o código encontrado e propõe o MVP da plataforma de defesa jurídica por assinatura. Os documentos de planejamento não certificam operação em produção. A implantação, o aceite humano e as verificações de segurança ainda precisam ocorrer.
 
+## Desenvolvimento atual
+
+Acompanhar a [Etapa 1 — Produto e contratação](ETAPA_01_PRODUTO_CONTRATACAO.md): decisões, pendências, commits e critérios de encerramento.
+
 ## Comece por aqui
 
 1. [Resumo executivo](RESUMO_EXECUTIVO.md): escopo, quantidade de requisitos e previsão calculada.

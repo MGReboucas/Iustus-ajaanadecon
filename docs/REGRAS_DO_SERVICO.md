@@ -2,6 +2,10 @@
 
 > Áreas e exclusões confirmadas pelo usuário. Organização do catálogo, cobertura financeira e prazos operacionais ainda precisam de detalhamento; não publicar como condições comerciais integralmente aprovadas.
 
+## Atualização comercial de 07/10/2026
+
+Assinatura aprovada de R$ 699,90 anuais em 10 parcelas de R$ 69,99, com renovação automática anual no mesmo parcelamento e opção de cancelar a próxima renovação antes da cobrança. Casos existentes são preservados. O valor remunera a utilização dos recursos da plataforma; custas, audiências e demais despesas ficam à parte. Honorários por análise, elaboração de peças, protocolo e acompanhamento também são definidos separadamente por caso, conforme confirmação do usuário. A assinatura não inclui esses honorários. A execução desses valores e da recorrência ainda não foi liberada no checkout. Acompanhar critérios e decisões na [etapa 1](ETAPA_01_PRODUTO_CONTRATACAO.md).
+
 ## Confirmado
 
 - Atuação em multas de trânsito e direito civil em geral, excluindo apenas direito de família e sucessões do escopo civil.

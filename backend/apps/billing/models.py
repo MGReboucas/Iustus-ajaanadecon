@@ -8,6 +8,8 @@ class Order(models.Model):
     request_key = models.CharField(max_length=64, unique=True)
     session_digest = models.CharField(max_length=64)
     amount = models.PositiveIntegerField()
+    installments = models.PositiveSmallIntegerField(default=12)
+    plan_version = models.CharField(max_length=80, default="annual-legacy-v1")
     environment = models.CharField(max_length=12)
     policy_version = models.CharField(max_length=80)
     status = models.CharField(max_length=24, default="CREATING")

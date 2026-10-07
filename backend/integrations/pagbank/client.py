@@ -51,7 +51,7 @@ def create_checkout(order):
         "reference_id": str(order.pk), "customer_modifiable": True,
         "items": [{"reference_id": "iustus-associacao-anual", "name": "Adesão anual à associação Iustus", "quantity": 1, "unit_amount": order.amount}],
         "payment_methods": [{"type": "CREDIT_CARD"}, {"type": "PIX"}],
-        "payment_methods_configs": [{"type": "CREDIT_CARD", "config_options": [{"option": "INSTALLMENTS_LIMIT", "value": "12"}, {"option": "INTEREST_FREE_INSTALLMENTS", "value": "12"}]}],
+        "payment_methods_configs": [{"type": "CREDIT_CARD", "config_options": [{"option": "INSTALLMENTS_LIMIT", "value": str(order.installments)}, {"option": "INTEREST_FREE_INSTALLMENTS", "value": str(order.installments)}]}],
         "redirect_url": origin + "/checkout?retorno=1", "return_url": origin + "/checkout?retorno=1",
         "notification_urls": [webhook], "payment_notification_urls": [webhook],
     }, order.pk)
@@ -81,7 +81,7 @@ def create_card_order(order, customer, card):
         "notification_urls": [settings.PORTAL_ORIGINS["client"] + "/api/v1/billing/webhook"],
         "charges": [{"reference_id": str(order.pk), "description": "Adesão anual Iustus",
             "amount": {"value": order.amount, "currency": "BRL"},
-            "payment_method": {"type": "CREDIT_CARD", "installments": 12, "capture": True,
+            "payment_method": {"type": "CREDIT_CARD", "installments": order.installments, "capture": True,
                 "card": {"encrypted": card["encrypted"], "store": False},
                 "holder": {"name": card["holderName"], "tax_id": card["holderCpf"]}}}],
     }, order.pk)
