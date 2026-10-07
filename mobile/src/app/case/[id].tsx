@@ -1,3 +1,4 @@
+import { CaseProposals } from '../../components/CaseProposals';
 import { useCallback, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -7,7 +8,7 @@ import type { Case, CaseEvent, Page } from '../../lib/types';
 import { errorMessage } from '../../lib/api';
 import { Badge, Body, Button, Card, date, Empty, ErrorNotice, Label, Loading, Screen, Title, s } from '../../components/ui';
 
-const events: Record<string, string> = { DRAFT_CREATED: 'Rascunho criado', DRAFT_UPDATED: 'Rascunho atualizado', SUBMITTED: 'Ocorrência enviada', TRIAGE_STARTED: 'Análise iniciada', TRIAGE_DECISION: 'Análise atualizada', INFORMATION_REQUESTED: 'Complemento solicitado', INFORMATION_RESPONDED: 'Complemento enviado', INFORMATION_RESOLVED: 'Complemento analisado', MANDATE_REQUESTED: 'Procuração solicitada', MANDATE_SIGNED: 'Procuração assinada' };
+const events: Record<string, string> = { PROPOSAL_PUBLISHED: 'Proposta apresentada', PROPOSAL_ACCEPTED: 'Proposta aceita', PROPOSAL_DECLINED: 'Proposta recusada', DRAFT_CREATED: 'Rascunho criado', DRAFT_UPDATED: 'Rascunho atualizado', SUBMITTED: 'Ocorrência enviada', TRIAGE_STARTED: 'Análise iniciada', TRIAGE_DECISION: 'Análise atualizada', INFORMATION_REQUESTED: 'Complemento solicitado', INFORMATION_RESPONDED: 'Complemento enviado', INFORMATION_RESOLVED: 'Complemento analisado', MANDATE_REQUESTED: 'Procuração solicitada', MANDATE_SIGNED: 'Procuração assinada' };
 
 export default function Detail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -42,6 +43,7 @@ export default function Detail() {
     <View><Label>CASO #{item.reference}</Label><Title>{item.title || 'Rascunho sem título'}</Title></View><Badge>{item.stateLabel}</Badge>
     <Card><Label>INFORMAÇÕES DO CASO</Label><Body>{item.categoryLabel || 'Categoria não definida'}</Body><Body>Cadastrado em {date(item.createdAt)}</Body>{item.occurredOn && <Body>Data do ocorrido: {date(item.occurredOn)}</Body>}</Card>
     <Card><Text style={s.cardTitle}>Seu relato</Text><Body>{item.description || 'O relato ainda não foi preenchido.'}</Body></Card>
+    <CaseProposals key={`proposals-${id}`} caseId={id} onChange={() => load()} />
     <CaseConversation key={id} caseId={id} canMessage={item.canMessage === true} />
     <Text style={s.section} accessibilityRole="header">Histórico do atendimento</Text>
     {timeline.length ? timeline.map(event => <Card key={event.id}><Text style={s.caption}>{date(event.createdAt)}</Text><Text style={s.cardTitle}>{events[event.action] || 'Atualização do atendimento'}</Text>{!!event.reason && <Body>{event.reason}</Body>}</Card>) : <Empty title="Aguardando movimentações" message="As atualizações do atendimento aparecerão aqui." />}

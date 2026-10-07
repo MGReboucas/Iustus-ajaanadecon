@@ -7,6 +7,8 @@ urlpatterns = [
     path("mobile/auth/recovery", mobile.MobileRecoveryView.as_view()),
     path("mobile/auth/logout", mobile.MobileLogoutView.as_view()),
     path("mobile/dashboard", mobile.MobileDashboardView.as_view()),
+    path("mobile/cases/<uuid:case_id>/proposals", mobile.MobileProposalsView.as_view()),
+    path("mobile/cases/<uuid:case_id>/proposals/<uuid:proposal_id>/decision", mobile.MobileProposalDecisionView.as_view()),
     path("mobile/cases", mobile.MobileCasesView.as_view()),
     path("mobile/cases/<uuid:case_id>", mobile.MobileCaseView.as_view()),
     path("mobile/cases/<uuid:case_id>/timeline", mobile.MobileTimelineView.as_view()),

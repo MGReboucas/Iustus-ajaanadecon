@@ -2,12 +2,13 @@ import { expect, test, type Page } from '@playwright/test';
 
 const id = '00000000-0000-0000-0000-000000000001';
 const user = { id, name: 'Pessoa Teste', email: 'mobile@example.test', role: 'CLIENT', caseEmailEnabled: true };
-const item = { id, reference: '00000000', title: 'Revisão de cobrança', categoryLabel: 'Relações de consumo', state: 'EM_TRIAGEM', stateLabel: 'Em triagem', createdAt: '2026-10-06T12:00:00Z', description: 'Cobrança apresentada para análise do advogado.', occurredOn: '2026-10-01' };
+const item = { id, version: 2, reference: '00000000', title: 'Revisão de cobrança', categoryLabel: 'Relações de consumo', state: 'EM_TRIAGEM', stateLabel: 'Em triagem', createdAt: '2026-10-06T12:00:00Z', description: 'Cobrança apresentada para análise do advogado.', occurredOn: '2026-10-01' };
 const dashboard = { user, totalCases: 1, attentionCount: 0, unreadCount: 0, states: [], attentionCases: [], recentActivity: [], membership: { active: true, expiresAt: '2027-10-06T12:00:00Z' }, submission: { canSubmit: true, mode: 'MEMBERSHIP', message: 'Associação ativa.' } };
 
 async function mockApi(page: Page, options: { expired?: boolean; offline?: boolean } = {}) {
   let previousMessage: Record<string, unknown> | undefined;
   let firstSend = true;
+  let proposal = { id, number: 1, scope: 'Defesa', feeCents: 120000, expenses: 'Custas separadas', paymentTerms: 'Conforme proposta', validUntil: '2099-01-01T00:00:00Z', status: 'OPEN', decidedAt: null as string | null };
   await page.route('https://mobile-api.example.test/api/v1/mobile/**', async route => {
     const request = route.request();
     const path = new URL(request.url()).pathname.split('/mobile/')[1];
@@ -24,6 +25,12 @@ async function mockApi(page: Page, options: { expired?: boolean; offline?: boole
     if (path === 'auth/logout') { await route.fulfill({ status: 204, headers }); return; }
     if (options.expired) { await route.fulfill({ status: 401, headers, json: { error: { code: 'AUTH_REQUIRED', message: 'Entre novamente.' } } }); return; }
     if (options.offline) { await route.abort(); return; }
+    if (path.endsWith('/proposals')) { await route.fulfill({ headers, json: { results: [proposal], nextCursor: null } }); return; }
+    if (path.endsWith('/decision')) {
+      expect(request.postDataJSON()).toEqual({ version: 2, accepted: true });
+      proposal = { ...proposal, status: 'ACCEPTED', decidedAt: new Date().toISOString() };
+      await route.fulfill({ headers, json: { proposal, version: 3 } }); return;
+    }
     if (path.endsWith('/messages')) {
       if (request.method() === 'POST') {
         const body = request.postDataJSON();
@@ -70,6 +77,10 @@ test('login, dashboard, case history and logout', async ({ page }, testInfo) => 
   await page.getByRole('button', { name: 'Enviar mensagem', exact: true }).click();
   await expect(page.getByLabel('Sua mensagem', { exact: true })).toHaveValue('');
   await expect(page.getByText('Tenho uma atualização sobre o caso.', { exact: true })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Aceitar proposta 1', exact: true })).toBeDisabled();
+  await page.getByRole('switch', { name: 'Confirmar leitura da proposta 1' }).check();
+  await page.getByRole('button', { name: 'Aceitar proposta 1', exact: true }).click();
+  await expect(page.getByText('Proposta 1 \u00b7 Aceita', { exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('case.png'), fullPage: true, scale: 'css' });
   await page.goBack();
   await page.getByRole('tab', { name: /Minha conta/ }).click();

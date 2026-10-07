@@ -147,3 +147,14 @@ Próximo incremento: telas de proposta e decisão no portal web; notificações 
 - Unidade de commit pronta: `feat(web): add case proposals and decision notifications`. Alterações locais ainda não commitadas.
 
 Próxima integração: definir as pré-condições de contratação e início do atendimento e expor a consulta/decisão no aplicativo. Etapa 1 permanece em andamento.
+
+### Propostas no aplicativo — 07/10/2026
+
+- Commit local `7efb5eb`: telas web de propostas e avisos. Não houve novo push neste turno.
+- Aplicativo agora consulta propostas paginadas e permite ao titular confirmar leitura, aceitar ou recusar. Exibe escopo, honorários, despesas, pagamento, validade e decisão. Histórico recebeu rótulos de proposta.
+- Novas rotas nativas: `GET mobile/cases/{id}/proposals` e `POST mobile/cases/{id}/proposals/{proposalId}/decision`. Reutilizam regras do serviço web, com bearer e sem cookies. Publicação de proposta não é exposta ao cliente mobile.
+- Detalhe do caso tipado com versão para controle de concorrência. Atualização manual recarrega proposta e versão; decisões preservam a idempotência do backend.
+- Verificações: 32 testes backend; 7 testes do proxy; tipos, lint e 4 testes mobile; 3 testes UI em Edge/viewport móvel com API simulada, incluindo confirmação de leitura e aceite; exportações Android, iOS e web aprovadas.
+- Não houve teste em aparelho físico, assinatura de build, cobrança, deploy ou envio ao GitHub deste incremento.
+- Próximo commit sugerido: `feat(mobile): add service proposal review and decisions`.
+- Etapa 1 permanece aberta pelas regras de triagem, pagamento de honorários e demais condições operacionais, além da implementação/homologação da renovação automática. A decisão de proposta não inicia automaticamente cobrança ou atendimento.

@@ -13,7 +13,7 @@ const routes = new Set([
   "admin/users", "privacy/requests", "cases", "cases/catalog", "cases/lawyers", "dashboard/overview", "notifications", "admin/service-access", "legal/mandate-templates",
 ]);
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-const mobileCaseRoute = new RegExp(`^mobile/cases/${uuid}(?:/(?:timeline|messages))?$`, "i");
+const mobileCaseRoute = new RegExp(`^mobile/cases/${uuid}(?:/(?:timeline|messages|proposals)|/proposals/${uuid}/decision)?$`, "i");
 const caseRoute = new RegExp(`^cases/${uuid}(?:/(?:submit|assignment|transitions|requests|timeline|messages|summary|workflow|mandates|exports|proposals)|/proposals/${uuid}/decision|/requests/${uuid}/(?:response|resolve))?$`, "i");
 const managementRoute = new RegExp(`^(?:admin/users/${uuid}/access|privacy/requests/${uuid}/resolve)$`, "i");
 const notificationRoute = new RegExp(`^notifications/${uuid}/read$`, "i");

@@ -168,3 +168,24 @@ class MobileTests(TestCase):
             self.headers()
         self.assertEqual(MobileSession.objects.filter(user=self.user).count(), 5)
         self.assertEqual(self.client.get("/api/v1/mobile/dashboard", **first).status_code, 401)
+
+    def test_proposal_mobile_decision_uses_same_rules_without_exposing_publish(self):
+        from apps.legal.proposals import publish_proposal
+        from apps.legal.models import ServiceProposal
+        lawyer = User.objects.create_user("proposal-lawyer@example.test", None, role="LAWYER")
+        case = Case.objects.create(owner=self.user, lawyer=lawyer, state=Case.State.TRIAGE)
+        proposal = publish_proposal(lawyer, case.pk, 1, scope="Defense", fee_cents=120000,
+            expenses="Excluded costs", payment_terms="Agreed separately", valid_until=timezone.now()+timedelta(days=7))
+        path = f"/api/v1/mobile/cases/{case.pk}/proposals"
+        self.assertEqual(self.client.get(path).status_code, 401)
+        headers = self.headers()
+        self.assertEqual(self.client.get(path, **headers).json()["results"][0]["id"], str(proposal.pk))
+        self.assertEqual(self.client.post(path, {}, content_type="application/json", **headers).status_code, 405)
+        for _ in range(2):
+            response = self.client.post(path+f"/{proposal.pk}/decision", {"version": 2, "accepted": True}, content_type="application/json", **headers)
+            self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(ServiceProposal.objects.get().status, "ACCEPTED")
+        self.assertEqual(CaseEvent.objects.filter(case=case, action="PROPOSAL_ACCEPTED").count(), 1)
+        other = User.objects.create_user("other-proposal@example.test", None)
+        Case.objects.filter(pk=case.pk).update(owner=other)
+        self.assertEqual(self.client.get(path, **headers).status_code, 404)

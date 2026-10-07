@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.billing.services import membership_data
+from apps.legal.proposal_views import ProposalsView, ProposalDecisionView
 from apps.cases.models import Case
 from apps.cases.services import accessible, case_data, get_case
 from apps.cases.views import CaseView, TimelineView
@@ -157,3 +158,15 @@ class MobileMessagesView(MobileView):
     data = MobileView.validated
     get = MessagesView.get
     post = MessagesView.post
+
+
+
+
+class MobileProposalsView(MobileView):
+    get = ProposalsView.get
+
+
+class MobileProposalDecisionView(MobileView):
+    limited = CaseView.limited
+    data = MobileView.validated
+    post = ProposalDecisionView.post
