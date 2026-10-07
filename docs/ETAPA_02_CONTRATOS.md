@@ -1,6 +1,6 @@
 # Etapa 2 — Contratos entre site, aplicativo e backend
 
-Iniciada em 07/10/2026. Status: EM ANDAMENTO. Etapa 1 segue com regras comerciais pendentes; avançar nesta etapa não aprova essas pendências nem ativa cobrança recorrente.
+Iniciada em 07/10/2026. Status: CONCLUÍDA em 07/10/2026. Etapa 1 segue com regras comerciais pendentes; avançar nesta etapa não aprova essas pendências nem ativa cobrança recorrente.
 
 ## Entrega inicial
 
@@ -10,7 +10,7 @@ Iniciada em 07/10/2026. Status: EM ANDAMENTO. Etapa 1 segue com regras comerciai
 - Backend validado por testes HTTP que conferem conjunto de campos, moeda, centavos, versão, ausência inicial da decisão e autoria após aceite.
 - Guia [API](API.md) atualizado: rotas PagBank antigas retornam 410; identidade mobile não exige CSRF de navegador.
 
-## Próximas entregas e critérios de conclusão
+## Critérios de conclusão
 
 - [x] Unificar DTO de propostas sem dependências de execução compartilhadas.
 - [x] Conferir resposta HTTP de propostas com testes.
@@ -18,14 +18,14 @@ Iniciada em 07/10/2026. Status: EM ANDAMENTO. Etapa 1 segue com regras comerciai
 - [x] Compartilhar tipos usados nas telas de documentos, notificações, identidade e associação (tipos não substituem validação em execução).
 - [x] Corrigir estado histórico das atividades recentes e tipar estados dos casos.
 - [x] Completar padronização dos nomes e rótulos de eventos.
-- [ ] Revisar campos de cliente/advogado necessários às telas, preservando autorização.
+- [x] Revisar campos de cliente/advogado necessários às telas, preservando autorização.
 - [x] Conferir todos os endpoints documentados e remover descrições obsoletas.
 - [x] Definir validação em tempo de execução nos pontos em que respostas inválidas possam comprometer o fluxo.
-- [ ] Completar testes de compatibilidade entre canais e registrar evidências finais.
+- [x] Completar testes de compatibilidade entre canais e registrar evidências finais.
 
 Os tipos TypeScript não substituem os serializers do Django e não constituem validação de runtime. Não houve mudança de payload ou regra de cobrança neste incremento.
 
-Título sugerido do próximo commit: `refactor(api): share proposal contracts across web and mobile`.
+Os registros abaixo preservam o histórico dos incrementos. O encerramento ao final deste documento substitui as indicações anteriores de trabalho pendente nesta etapa.
 
 ## Evidências do incremento inicial
 
@@ -64,3 +64,26 @@ Restam revisão integral de rotas documentadas, nomes/rótulos de eventos, valid
 - A validação em execução foi priorizada para oferta e criação de sessão; demais respostas ainda dependem de tipos estáticos, tratamento de erro e verificações do backend. Não afirmar cobertura universal de payloads.
 
 Restam a revisão final dos campos necessários de cliente/advogado e a consolidação das evidências de compatibilidade para encerrar a etapa. Nenhuma mudança de pagamento real, migração de banco ou deploy produtivo neste incremento.
+## Encerramento técnico — 07/10/2026
+
+Revisão concluída dos campos consumidos pelas telas atuais e da compatibilidade dos canais. Não foi necessário ampliar os dados pessoais expostos pela API.
+
+| Uso nas telas | Campos e regra conferidos |
+| --- | --- |
+| Identificação da sessão | Perfil próprio com id, nome, e-mail, papel e preferência de comunicação. Mobile aceita somente cliente; web inclui o contexto do portal. |
+| Responsável e distribuição | `lawyerId` identifica a atribuição. Lista de profissionais com nome/e-mail permanece administrativa; cliente não recebe esse diretório. |
+| Casos e histórico | Cliente acessa seus casos; advogado, os atribuídos fora de rascunho. Administração recebe metadados sem título/relato; detalhe permanece restrito. Eventos internos não chegam ao cliente. |
+| Conversas | `authorId` e `authorName` atendem à identificação visual. Notas internas ficam com o advogado responsável; outro advogado e administrador não acessam a conversa. |
+| Propostas | Termos, valor em centavos, autoria, decisão, datas e versão atendem às telas. Aceite repetido entre canais mantém uma única decisão/evento. |
+| Documentos e avisos | `uploadedById` atende ao filtro de anexos próprios; versão/status orientam disponibilidade. Notificações são do destinatário e não carregam o relato do caso. |
+| Associação e oferta | Validade, acesso ao envio e plano compartilham tipos. Oferta inválida bloqueia preparação de pagamento. Renovação automática não foi implementada nesta etapa. |
+
+### Evidências finais
+
+- Suíte backend completa, executada na pasta `backend`: **177 testes encontrados, 171 aprovados e 6 ignorados pela configuração local**. Não equivale à execução PostgreSQL da CI.
+- Três novas regressões em `backend/tests/test_channel_contracts.py`: igualdade de listagem/detalhe/timeline/mensagens/propostas/painel entre web e mobile; aceite idempotente entre canais; revogação de acesso nos dois canais após mudança de titularidade. As diferenças intencionais são `canMessage` no detalhe mobile e `user`/`membership` no painel mobile.
+- 12 testes frontend aprovados (contratos, proxy e documentos); TypeScript web aprovado; TypeScript, lint e 4 testes mobile aprovados.
+- Inventário de rotas e geração documental conferidos sem divergências. Exportações mobile e testes de interface do incremento anterior estão registrados acima; não foram executados novamente neste fechamento, que altera testes e documentação.
+- Permanece a pendência documental preexistente do link para `frontend/.env.example`, excluído localmente. Essa exclusão não faz parte desta entrega.
+
+A etapa 2 está encerrada no escopo de contratos das telas existentes. Isso não representa homologação em aparelho físico, deploy produtivo, ativação de recorrência nem auditoria integral de todos os fluxos jurídicos. As demais etapas do produto continuam separadas.
