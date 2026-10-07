@@ -149,3 +149,33 @@ class CommunicationTests(TestCase):
         second = self.client.get("/api/v1/notifications", {"cursor": first["nextCursor"]}).json()
         self.assertEqual(len({row["id"] for row in first["results"] + second["results"]}), 25)
         self.assertEqual(self.notices(self.other), [])
+
+    def test_recent_activity_keeps_state_at_time_of_event(self):
+        event = CaseEvent.objects.create(case=self.case, actor=self.lawyer_user,
+            action="TRIAGE_STARTED", state=Case.State.TRIAGE, version=1)
+        Case.objects.filter(pk=self.case.pk).update(state=Case.State.CLOSED, version=2)
+        rows = self.overview()["recentActivity"]
+        historical = next(row for row in rows if row["id"] == str(event.pk))
+        self.assertEqual(historical["stateLabel"], Case.State.TRIAGE.label)
+        self.assertNotEqual(historical["stateLabel"], Case.State.CLOSED.label)
+        self.assertEqual(self.overview(self.other)["recentActivity"], [])
+
+    def test_case_timeline_and_message_wire_contracts(self):
+        detail = self.client.get(f"/api/v1/cases/{self.case.pk}").json()
+        self.assertEqual(set(detail), {"id", "reference", "category", "categoryLabel", "state", "stateLabel",
+            "version", "lawyerId", "createdAt", "submittedAt", "title", "description", "scopeAcknowledged", "occurredOn"})
+        self.assertIsInstance(detail["version"], int)
+        self.assertIsNone(detail["submittedAt"])
+        self.assertIsNone(detail["occurredOn"])
+        self.assertEqual(detail["lawyerId"], str(self.lawyer_user.pk))
+        admin_rows = self.admin.get("/api/v1/cases").json()["results"]
+        self.assertNotIn("title", admin_rows[0])
+        self.assertNotIn("description", admin_rows[0])
+        message = self.send().json()
+        self.assertEqual(set(message), {"id", "text", "visibility", "authorId", "authorName", "createdAt"})
+        self.assertEqual(message["visibility"], "PUBLIC")
+        CaseEvent.objects.create(case=self.case, actor=self.lawyer_user, action="TRIAGE_STARTED",
+            state=Case.State.TRIAGE, version=1)
+        timeline = self.client.get(f"/api/v1/cases/{self.case.pk}/timeline").json()
+        self.assertEqual(set(timeline), {"results", "nextCursor"})
+        self.assertEqual(set(timeline["results"][0]), {"id", "action", "state", "reason", "createdAt"})

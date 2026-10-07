@@ -173,3 +173,11 @@ Transformar estes contratos em serializers DRF e OpenAPI versionado em DEV-059/0
 Liberação administrativa e fluxo jurídico: [contratos, estados e permissões](FLUXO_ATENDIMENTO.md).
 
 Modelos de procuração, emissão PDF e exportação privada: [contratos](PROCURACOES_EXPORTACAO.md).
+
+## Casos, timeline e mensagens — contratos compartilhados
+
+`contracts/api.ts` define os tipos consumidos pelos clientes. `CaseItem` representa lista/detalhe, com título e relato omitidos no acesso administrativo; o detalhe mobile acrescenta `canMessage`. Datas sem valor são `null`, versão é inteiro e `lawyerId` pode ser `null`.
+
+Timeline retorna `Page<CaseEvent>` com estado registrado no evento. Mensagens retornam `Page<Message>` e visibilidade `PUBLIC` ou `INTERNAL`; a API filtra conteúdo interno antes de responder ao cliente. Compartilhar o tipo não concede permissão de leitura.
+
+No resumo, `recentActivity.stateLabel` descreve o estado na data do evento; `attentionCases[].stateLabel` descreve o estado atual do caso. Essa distinção é testada para não reescrever o significado de movimentações antigas.

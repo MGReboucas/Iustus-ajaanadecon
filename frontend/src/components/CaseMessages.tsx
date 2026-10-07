@@ -3,8 +3,8 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { api, ApiError, Profile } from "@/lib/api/client";
 
-type Message = { id: string; text: string; visibility: "PUBLIC" | "INTERNAL"; authorId: string; authorName: string; createdAt: string };
-type Page = { results: Message[]; nextCursor: string | null };
+import type { Message, Page as ApiPage } from "../../../contracts/api";
+type Page = ApiPage<Message>;
 
 export default function CaseMessages({ caseId, user, available, onChange }: { caseId: string; user: Profile; available: boolean; onChange: () => void }) {
   const [page, setPage] = useState<Page>({ results: [], nextCursor: null });

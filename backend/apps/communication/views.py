@@ -98,7 +98,7 @@ class OverviewView(CaseView):
             "attentionCases": [case_data(item, administrative=admin) for item in attention.order_by("updated_at", "id")[:5]],
             "recentActivity": [] if admin else [{"id": str(event.pk), "caseId": str(event.case_id),
                 "reference": str(event.case_id)[:8].upper(), "title": event.case.title,
-                "action": event.action, "stateLabel": event.case.get_state_display(), "createdAt": event.created_at.isoformat()}
+                "action": event.action, "stateLabel": dict(Case.State.choices).get(event.state, event.state), "createdAt": event.created_at.isoformat()}
                 for event in events[:5]],
             "submission": submission_access(user) if user.role == "CLIENT" else None,
         })

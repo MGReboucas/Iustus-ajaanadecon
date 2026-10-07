@@ -10,11 +10,9 @@ import LegalWorkflow from "./LegalWorkflow";
 import CaseExport from "./CaseExport";
 import "./cases.css";
 
-type CaseItem = { id: string; reference: string; title?: string; description?: string; occurredOn?: string | null; category: string; categoryLabel: string; state: string; stateLabel: string; version: number; lawyerId: string | null; scopeAcknowledged?: boolean };
-type Page<T> = { results: T[]; nextCursor: string | null };
+import type { CaseItem, CaseEvent as Event, Page } from "../../../contracts/api";
 type Catalog = { documentsAvailable: boolean; intakeRequired: boolean; categories: { id: string; label: string }[]; states: { id: string; label: string }[]; submission: { canSubmit: boolean; message: string } | null };
 type Pending = { id: string; description: string; response: string; resolution: string; resolved: boolean; responded: boolean; attachments: DocumentVersion[] };
-type Event = { id: string; action: string; state: string; reason: string; createdAt: string };
 type Lawyer = { id: string; name: string; email: string };
 const labels: Record<string, string> = { PROPOSAL_PUBLISHED: "Proposta apresentada", PROPOSAL_ACCEPTED: "Proposta aceita", PROPOSAL_DECLINED: "Proposta recusada", MANDATE_GENERATED: "Procuração gerada", LEGAL_START: "Procuração solicitada", LEGAL_SIGN: "Procuração devolvida", LEGAL_VERIFY: "Procuração conferida", LEGAL_RETURN_MANDATE: "Correção da procuração solicitada", LEGAL_DRAFT: "Minuta interna atualizada", LEGAL_PUBLISH: "Peça publicada", LEGAL_FILE: "Protocolo registrado", LEGAL_UPDATE: "Movimentação publicada", LEGAL_TASK: "Compromisso agendado", LEGAL_RESCHEDULE: "Compromisso remarcado", LEGAL_COMPLETE: "Compromisso concluído", LEGAL_CLOSE: "Atendimento encerrado", DRAFT_CREATED: "Rascunho criado", DRAFT_UPDATED: "Rascunho atualizado", SUBMITTED: "Caso enviado", ASSIGNED: "Responsável atribuído", TRIAGE_STARTED: "Triagem iniciada", TRIAGE_DECISION: "Decisão de triagem", INFORMATION_REQUESTED: "Complemento solicitado", INFORMATION_RESPONDED: "Complemento recebido", INFORMATION_RESOLVED: "Complemento conferido" };
 
