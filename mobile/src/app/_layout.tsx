@@ -11,11 +11,17 @@ function Navigation() {
     <Stack.Protected guard={!signedIn}>
       <Stack.Screen name="sign-in" options={{ headerShown: false }} />
       <Stack.Screen name="recovery" options={{ title: 'Recuperar acesso' }} />
+      <Stack.Screen name="register" options={{ title: 'Primeiro acesso' }} />
+      <Stack.Screen name="access" options={{ title: 'Concluir acesso' }} />
     </Stack.Protected>
     <Stack.Protected guard={signedIn}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="case/[id]" options={{ title: 'Meu caso' }} />
+      <Stack.Screen name="new-case" options={{ title: 'Nova ocorrência' }} />
+      <Stack.Screen name="privacy" options={{ title: 'Privacidade' }} />
     </Stack.Protected>
+    <Stack.Screen name="open-case/[id]" options={{ title: 'Abrir caso' }} />
+    <Stack.Screen name="membership" options={{ title: 'Associação' }} />
   </Stack>;
 }
 

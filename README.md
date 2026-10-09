@@ -115,7 +115,7 @@ Use `npm run typecheck` para verificar TypeScript. O backend tem instalação e 
 
 A rota `/checkout` usa layout próprio e o SDK de Checkout Transparente presente no código. A biblioteca cria sessão, identifica bandeira, consulta parcelas e tokeniza o cartão. Parcelas, juros e total dependem da conta e do provedor; não devem ser fixados arbitrariamente no frontend. O backend ainda precisa validar a cotação e o estado financeiro.
 
-Copie `frontend/.env.example` para `frontend/.env.local` e preencha as credenciais da conta de teste:
+Crie `frontend/.env.local` com as variáveis abaixo e preencha as credenciais da conta de teste. Para o proxy, siga a [configuração de acesso](docs/ACESSO.md#configuração):
 
 ```dotenv
 PAGBANK_EMAIL=seu-email-de-vendedor
@@ -132,7 +132,6 @@ frontend/
 ├── app/                              # Páginas, CSS e rotas PagBank preservados
 ├── src/lib/api/                      # Base para integração HTTP TypeScript
 ├── index.html                        # Referência estática preservada
-├── .env.example                      # Configuração do frontend/checkout legado
 ├── tsconfig.json
 └── package.json / package-lock.json   # Dependências do frontend
 backend/

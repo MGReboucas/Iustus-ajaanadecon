@@ -102,7 +102,7 @@ class MobileTests(TestCase):
         self.assertEqual(detail["description"], "Descrição pessoal")
         events = self.client.get(f"/api/v1/mobile/cases/{own.pk}/timeline", **headers).json()["results"]
         self.assertEqual([row["reason"] for row in events], ["Visível"])
-        self.assertEqual(self.client.post("/api/v1/mobile/cases", {}, content_type="application/json", **headers).status_code, 405)
+        self.assertEqual(self.client.post("/api/v1/mobile/cases", {}, content_type="application/json", **headers).status_code, 201)
 
     def test_case_cursor_pagination(self):
         Case.objects.bulk_create([Case(owner=self.user, title=f"Caso {i}") for i in range(23)])

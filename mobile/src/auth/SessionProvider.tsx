@@ -1,6 +1,6 @@
 import { isMobileLogin } from "../../../contracts/validation";
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { ApiError, apiOrigin, request } from '../lib/api';
+import { ApiError, apiOrigin, request, RequestOptions } from '../lib/api';
 import type { Profile, Session } from '../lib/types';
 import { readSession, saveSession } from './storage';
 
@@ -8,7 +8,7 @@ type Auth = {
   ready: boolean; signedIn: boolean; storageError: string;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  api: <T>(path: string, body?: object) => Promise<T>;
+  api: <T>(path: string, body?: object, options?: RequestOptions) => Promise<T>;
 };
 const Context = createContext<Auth | null>(null);
 
@@ -46,14 +46,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
     return () => { mounted = false; };
   }, [persist]);
 
-  const api = useCallback(async <T,>(path: string, body?: object) => {
+  const api = useCallback(async <T,>(path: string, body?: object, options?: RequestOptions) => {
     const active = current.current;
     if (!active) throw new ApiError('AUTH_REQUIRED', 'Entre novamente para continuar.', 401);
     if (Date.parse(active.expiresAt) <= Date.now()) {
       await clear(); throw new ApiError('AUTH_REQUIRED', 'Sua sessão expirou. Entre novamente.', 401);
     }
     try {
-      const result = await request<T>(path, active.token, body);
+      const result = await request<T>(path, active.token, body, options);
       if (current.current !== active) throw new ApiError('AUTH_REQUIRED', 'Sua sessão foi encerrada.', 401);
       return result;
     } catch (error) {

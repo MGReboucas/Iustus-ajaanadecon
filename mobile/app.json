@@ -19,7 +19,9 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      "expo-sharing",
+      ["expo-image-picker", { "cameraPermission": "Permitir que o Íustus fotografe documentos que você deseja anexar ao caso.", "microphonePermission": false, "photosPermission": "Permitir selecionar imagens para anexar ao seu caso." }]
     ],
     "web": {
       "bundler": "metro",

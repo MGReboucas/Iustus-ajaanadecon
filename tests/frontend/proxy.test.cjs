@@ -72,3 +72,21 @@ test('proxy permits only explicit proposal routes', async () => {
     assert.equal((await call(Response.json({}), `cases/${id}/${suffix}`)).status, 404);
   }
 });
+
+test('native documents preserve binary content and remove upstream cookies', async () => {
+  const id = '00000000-0000-0000-0000-000000000001';
+  const path = `mobile/uploads/${id}/content`;
+  const request = new Request('https://app.example.test/api/v1/' + path, { method: 'POST', body: '%PDF-synthetic', headers: {
+    host: 'app.example.test', 'content-type': 'application/octet-stream', authorization: 'Bearer synthetic', cookie: 'web=secret',
+  } });
+  request.nextUrl = new URL(request.url);
+  let observed;
+  const result = await handler(new Response(null, { status: 204, headers: { 'set-cookie': 'unwanted=value' } }), (_, options) => { observed = options; })(request, { params: Promise.resolve({ path: path.split('/') }) });
+  assert.equal(result.status, 204);
+  assert.equal(new TextDecoder().decode(observed.body), '%PDF-synthetic');
+  assert.equal(observed.headers.get('cookie'), null);
+  assert.equal(observed.headers.get('authorization'), 'Bearer synthetic');
+  assert.equal(result.headers.get('set-cookie'), null);
+  const download = await call(new Response('%PDF-test', { headers: { 'content-type': 'application/octet-stream' } }), `mobile/documents/${id}/versions/${id}/content`);
+  assert.equal(download.status, 200); assert.equal(await download.text(), '%PDF-test');
+});

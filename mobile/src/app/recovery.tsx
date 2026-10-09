@@ -17,10 +17,10 @@ export default function Recovery() {
     finally { setBusy(false); }
   }
   return <Screen><Label>ACESSO À SUA CONTA</Label><Title>Vamos recuperar seu acesso.</Title>
-    <Body>Você receberá um link para definir uma nova senha. Depois, volte ao aplicativo para entrar.</Body>
+    <Body>Você receberá um link para definir uma nova senha. Você pode abri-lo no portal ou colá-lo no aplicativo em “Usar link recebido por e-mail”.</Body>
     <Card>{message ? <><Body>{message}</Body><Button title="Voltar para entrar" onPress={() => router.dismissTo('/sign-in')} /></> : <>
       <Field label="E-mail da sua conta" value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" autoComplete="email" editable={!busy} />
       <ErrorNotice message={error} /><Button title="Enviar instruções" onPress={() => void submit()} busy={busy} />
-    </>}</Card>
+    </>}</Card><Button title="Usar link recebido por e-mail" secondary onPress={() => router.push('/access')} />
   </Screen>;
 }

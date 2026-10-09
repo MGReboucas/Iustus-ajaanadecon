@@ -18,7 +18,7 @@ from apps.billing.services import membership_data
 from apps.legal.proposal_views import ProposalsView, ProposalDecisionView
 from apps.cases.models import Case
 from apps.cases.services import accessible, case_data, get_case
-from apps.cases.views import CaseView, TimelineView
+from apps.cases.views import CaseView, TimelineView, CasesView, DetailView
 from apps.communication.views import MessagesView, OverviewView
 from .models import ActionToken, MobileSession, User
 from .security import IdentityError, digest, throttle
@@ -57,6 +57,8 @@ class MobileView(APIView):
     authentication_classes = [MobileAuthentication]
     permission_classes = [IsAuthenticated]
     listed = CaseView.listed
+    role = CaseView.role
+    limited = CaseView.limited
 
     @method_decorator(sensitive_post_parameters())
     def dispatch(self, request, *args, **kwargs):
@@ -73,6 +75,8 @@ class MobileView(APIView):
         value = serializer(data=request.data)
         value.is_valid(raise_exception=True)
         return value.validated_data
+
+    data = validated
 
     def limit(self, scope, identity, limit):
         # Compartilha os limites por conta com o login e recuperação da web.
@@ -136,11 +140,13 @@ class MobileDashboardView(MobileView):
 
 
 class MobileCasesView(MobileView):
+    post = CasesView.post
     def get(self, request):
         return self.listed(request, accessible(request.user), case_data)
 
 
 class MobileCaseView(MobileView):
+    patch = DetailView.patch
     def get(self, request, case_id):
         item = get_case(request.user, case_id)
         return Response({**case_data(item, detail=True), "canMessage": bool(item.lawyer_id)

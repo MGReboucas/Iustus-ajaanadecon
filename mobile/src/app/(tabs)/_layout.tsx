@@ -10,5 +10,6 @@ export default function TabsLayout() {
     <Tabs.Screen name="index" options={{ title: 'Início', tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" color={color} size={size} /> }} />
     <Tabs.Screen name="cases" options={{ title: 'Meus casos', tabBarIcon: ({ color, size }) => <Ionicons name="folder-open-outline" color={color} size={size} /> }} />
     <Tabs.Screen name="account" options={{ title: 'Minha conta', tabBarIcon: ({ color, size }) => <Ionicons name="person-circle-outline" color={color} size={size} /> }} />
+    <Tabs.Screen name="notifications" options={{ title: 'Avisos', tabBarIcon: ({ color, size }) => <Ionicons name="notifications-outline" color={color} size={size} /> }} />
   </Tabs>;
 }

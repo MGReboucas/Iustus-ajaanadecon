@@ -1,8 +1,32 @@
 from django.urls import path
 
-from . import mobile, views
+from . import mobile, mobile_flows as flows, views
 
 urlpatterns = [
+    path("mobile/auth/context", flows.ContextView.as_view()),
+    path("mobile/auth/register", flows.RegisterView.as_view()),
+    path("mobile/auth/verify", flows.VerifyView.as_view()),
+    path("mobile/auth/resend", flows.ResendView.as_view()),
+    path("mobile/auth/reset", flows.ResetView.as_view()),
+    path("mobile/billing/activate", flows.MemberActivateView.as_view()),
+    path("mobile/billing/resend", flows.MemberResendView.as_view()),
+    path("mobile/billing/plan", flows.MobilePlanView.as_view()),
+    path("mobile/me", flows.ProfileView.as_view()),
+    path("mobile/cases/catalog", flows.CatalogView.as_view()),
+    path("mobile/cases/<uuid:case_id>/submit", flows.SubmitView.as_view()),
+    path("mobile/cases/<uuid:case_id>/requests", flows.RequestsView.as_view()),
+    path("mobile/cases/<uuid:case_id>/requests/<uuid:request_id>/response", flows.RespondView.as_view()),
+    path("mobile/cases/<uuid:case_id>/workflow", flows.WorkView.as_view()),
+    path("mobile/cases/<uuid:case_id>/documents", flows.DocumentsView.as_view()),
+    path("mobile/cases/<uuid:case_id>/documents/uploads", flows.DocumentsView.as_view()),
+    path("mobile/documents/<uuid:document_id>/versions", flows.VersionsView.as_view()),
+    path("mobile/documents/<uuid:document_id>/versions/<uuid:version_id>/content", flows.DownloadView.as_view()),
+    path("mobile/uploads/<uuid:upload_id>/content", flows.UploadContentView.as_view()),
+    path("mobile/uploads/<uuid:upload_id>/authorize", flows.AuthorizeView.as_view()),
+    path("mobile/uploads/<uuid:upload_id>/complete", flows.CompleteView.as_view()),
+    path("mobile/privacy/requests", flows.PrivacyRequestsView.as_view()),
+    path("mobile/notifications", flows.NoticesView.as_view()),
+    path("mobile/notifications/<uuid:notification_id>/read", flows.ReadNoticeView.as_view()),
     path("mobile/auth/login", mobile.MobileLoginView.as_view()),
     path("mobile/auth/recovery", mobile.MobileRecoveryView.as_view()),
     path("mobile/auth/logout", mobile.MobileLogoutView.as_view()),

@@ -4,6 +4,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const routes = new Set([
+  "mobile/auth/context", "mobile/auth/register", "mobile/auth/verify", "mobile/auth/resend", "mobile/auth/reset",
+  "mobile/billing/activate", "mobile/billing/resend", "mobile/billing/plan", "mobile/me", "mobile/cases/catalog", "mobile/privacy/requests", "mobile/notifications",
   "mobile/auth/login", "mobile/auth/logout", "mobile/auth/recovery", "mobile/dashboard", "mobile/cases",
   "billing/plan", "billing/card-key", "billing/checkout", "billing/activate", "billing/resend", "billing/webhook",
   "ready",
@@ -13,13 +15,14 @@ const routes = new Set([
   "admin/users", "privacy/requests", "cases", "cases/catalog", "cases/lawyers", "dashboard/overview", "notifications", "admin/service-access", "legal/mandate-templates",
 ]);
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-const mobileCaseRoute = new RegExp(`^mobile/cases/${uuid}(?:/(?:timeline|messages|proposals)|/proposals/${uuid}/decision)?$`, "i");
+const mobileCaseRoute = new RegExp(`^mobile/cases/${uuid}(?:/(?:timeline|messages|proposals|submit|requests|workflow)|/proposals/${uuid}/decision|/requests/${uuid}/response)?$`, "i");
+const mobileDocumentRoute = new RegExp(`^mobile/(?:cases/${uuid}/documents(?:/uploads)?|documents/${uuid}/versions(?:/${uuid}/content)?|uploads/${uuid}/(?:content|complete|authorize))$`, "i");
 const caseRoute = new RegExp(`^cases/${uuid}(?:/(?:submit|assignment|transitions|requests|timeline|messages|summary|workflow|mandates|exports|proposals)|/proposals/${uuid}/decision|/requests/${uuid}/(?:response|resolve))?$`, "i");
 const managementRoute = new RegExp(`^(?:admin/users/${uuid}/access|privacy/requests/${uuid}/resolve)$`, "i");
-const notificationRoute = new RegExp(`^notifications/${uuid}/read$`, "i");
+const notificationRoute = new RegExp(`^(?:mobile/)?notifications/${uuid}/read$`, "i");
 const documentRoute = new RegExp(`^(?:cases/${uuid}/documents(?:/uploads)?|documents/${uuid}/versions(?:/${uuid}/(?:download|content))?|uploads/${uuid}/(?:content|complete|authorize))$`, "i");
-const uploadRoute = new RegExp(`^uploads/${uuid}/content$`, "i");
-const downloadRoute = new RegExp(`^(?:documents/${uuid}/versions/${uuid}/content|exports/${uuid}/content)$`, "i");
+const uploadRoute = new RegExp(`^(?:mobile/)?uploads/${uuid}/content$`, "i");
+const downloadRoute = new RegExp(`^(?:(?:mobile/)?documents/${uuid}/versions/${uuid}/content|exports/${uuid}/content)$`, "i");
 const exportRoute = new RegExp(`^(?:cases/${uuid}/exports|exports/${uuid}/content)$`, "i");
 
 function failure(code: string, message: string, status: number) {
@@ -30,7 +33,7 @@ function failure(code: string, message: string, status: number) {
 
 async function forward(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const path = (await context.params).path.join("/");
-  if (!managementRoute.test(path) && !routes.has(path) && !caseRoute.test(path) && !mobileCaseRoute.test(path) && !documentRoute.test(path) && !notificationRoute.test(path) && !exportRoute.test(path)) return failure("NOT_FOUND", "Recurso não encontrado.", 404);
+  if (!managementRoute.test(path) && !routes.has(path) && !caseRoute.test(path) && !mobileCaseRoute.test(path) && !mobileDocumentRoute.test(path) && !documentRoute.test(path) && !notificationRoute.test(path) && !exportRoute.test(path)) return failure("NOT_FOUND", "Recurso não encontrado.", 404);
   const origin = process.env.DJANGO_API_ORIGIN;
   const key = process.env.IUSTUS_PROXY_SECRET;
   const publicOrigin = process.env.IUSTUS_PUBLIC_ORIGIN || (process.env.NODE_ENV === "development" ? "http://localhost:3000" : "");
@@ -88,7 +91,7 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
     }
     const upstream = await fetch(url, {
       method: request.method, headers, body: body as BodyInit | undefined,
-      cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(documentRoute.test(path) || exportRoute.test(path) ? 60000 : 15000),
+      cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(documentRoute.test(path) || mobileDocumentRoute.test(path) || exportRoute.test(path) ? 60000 : 15000),
     });
     if (upstream.status >= 300 && upstream.status < 400) return failure("UPSTREAM_ERROR", "Serviço indisponível.", 502);
     // Nunca retransmitir páginas DEBUG/HTML ou stack trace do backend.
@@ -103,7 +106,7 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
       const value = upstream.headers.get(name);
       if (value) outgoing.set(name, value);
     }
-    for (const cookie of upstream.headers.getSetCookie()) outgoing.append("set-cookie", cookie);
+    if (!path.startsWith("mobile/")) for (const cookie of upstream.headers.getSetCookie()) outgoing.append("set-cookie", cookie);
     return new Response(upstream.status === 204 ? null : upstream.body, { status: upstream.status, headers: outgoing });
   } catch {
     return failure("SERVICE_UNAVAILABLE", "O serviço de acesso está temporariamente indisponível.", 503);

@@ -27,6 +27,8 @@ export default function SignIn() {
         <ErrorNotice message={error || storageError} />
         <Button title="Entrar na minha conta" onPress={() => void submit()} busy={busy} />
         <Button title="Esqueci minha senha" secondary disabled={busy} onPress={() => router.push('/recovery')} />
+        <Button title="Primeiro acesso" secondary disabled={busy} onPress={() => router.push('/register')} />
+        <Button title="Usar link recebido por e-mail" secondary disabled={busy} onPress={() => router.push('/access')} />
       </Card>
       <Body>Se você já aderiu, conclua seu cadastro pelo link recebido por e-mail antes do primeiro acesso.</Body><Institution />
     </Screen>

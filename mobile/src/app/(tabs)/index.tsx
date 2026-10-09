@@ -20,6 +20,8 @@ export default function Home() {
       <Text style={s.section} accessibilityRole="header">Sua próxima etapa</Text>
       {data.attentionCases.length ? data.attentionCases.map(item => <CaseCard key={item.id} item={item} />) : <Empty title="Tudo acompanhado" message="Não há casos precisando da sua atenção neste momento." />}
       <Button title="Ver todos os meus casos" onPress={() => router.navigate('/cases')} />
+      <Button title="Nova ocorrência" onPress={() => router.push('/new-case')} />
+      <Button title={`Avisos (${data.unreadCount} não lidos)`} secondary onPress={() => router.navigate('/notifications')} />
       {!!data.recentActivity.length && <><Text style={s.section} accessibilityRole="header">Últimas movimentações</Text>{data.recentActivity.map(item => <Card key={item.id}>
         <Text style={s.caption}>{date(item.createdAt)} · #{item.reference}</Text><Text style={s.cardTitle}>{item.title}</Text><Body>{item.stateLabel}</Body><Button secondary title="Acompanhar caso" onPress={() => router.push({ pathname: '/case/[id]', params: { id: item.caseId } })} />
       </Card>)}</>}

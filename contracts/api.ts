@@ -81,3 +81,12 @@ export type DocumentVersion = {
 export type DocumentUpload = { uploadId: string; uploadUrl: string; expiresAt: string; directUpload: boolean; version: DocumentVersion };
 export type DirectUpload = { url: string; method: 'PUT'; headers: Record<string, string>; expiresIn: number };
 export type BillingPlan = { amount: number; installments: number; planVersion: string; available: boolean; sandbox: boolean; policyVersion: string };
+export type CaseCatalog = { categories: { id: string; label: string }[]; documentsAvailable: boolean; intakeRequired: boolean; submission: SubmissionAccess };
+export type InformationRequest = { id: string; description: string; response: string; resolution: string; resolved: boolean; responded: boolean; attachments: DocumentVersion[] };
+export type LegalWorkflow = {
+  version: number; state: CaseState; scope: string; position: string; processNumber: string; authority: string;
+  publishedText: string; protocol: string; mandate: DocumentVersion | null; signedMandate: DocumentVersion | null; receipt: DocumentVersion | null;
+  tasks: { id: string; kind: string; title: string; dueAt: string; completedAt: string | null; outcome: string }[];
+};
+export type PrivacyRequest = { id: string; kind: 'ACCESS' | 'CORRECTION' | 'DELETION' | 'OTHER'; description: string; status: string; response: string; createdAt: string };
+export type MobileContext = { policyVersion: string; registrationAvailable: boolean; billingAvailable: boolean; checkoutAvailable: boolean };

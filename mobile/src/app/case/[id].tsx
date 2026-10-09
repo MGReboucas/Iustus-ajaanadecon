@@ -1,5 +1,8 @@
 import eventLabels from "../../../../contracts/events.json";
 import { CaseProposals } from '../../components/CaseProposals';
+import { CaseDraft } from '../../components/CaseDraft';
+import { CaseDocuments } from '../../components/CaseDocuments';
+import { CaseWork } from '../../components/CaseWork';
 import { useCallback, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -44,6 +47,9 @@ export default function Detail() {
     <View><Label>CASO #{item.reference}</Label><Title>{item.title || 'Rascunho sem título'}</Title></View><Badge>{item.stateLabel}</Badge>
     <Card><Label>INFORMAÇÕES DO CASO</Label><Body>{item.categoryLabel || 'Categoria não definida'}</Body><Body>Cadastrado em {date(item.createdAt)}</Body>{item.occurredOn && <Body>Data do ocorrido: {date(item.occurredOn)}</Body>}</Card>
     <Card><Text style={s.cardTitle}>Seu relato</Text><Body>{item.description || 'O relato ainda não foi preenchido.'}</Body></Card>
+    {item.state === 'RASCUNHO' && <CaseDraft key={`draft-${item.id}`} item={item} onSaved={async () => { await load(); }} />}
+    <CaseDocuments key={`documents-${id}`} caseId={id} closed={['RECUSADO', 'ENCERRADO'].includes(item.state)} onChange={() => load()} />
+    {item.state !== 'RASCUNHO' && <CaseWork key={`work-${id}-${item.version}`} item={item} onChange={() => load()} />}
     <CaseProposals key={`proposals-${id}`} caseId={id} onChange={() => load()} />
     <CaseConversation key={id} caseId={id} canMessage={item.canMessage === true} />
     <Text style={s.section} accessibilityRole="header">Histórico do atendimento</Text>

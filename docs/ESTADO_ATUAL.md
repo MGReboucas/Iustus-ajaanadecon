@@ -32,7 +32,7 @@ A organização anterior preservou os 14 arquivos originais por SHA-256 e o hist
 | Checkout | [checkout/page.js](../frontend/app/checkout/page.js), [PagBankTransparentForm.js](../frontend/app/checkout/PagBankTransparentForm.js) | Formulário, SDK, cotação e requisição ao backend; homologação não demonstrada |
 | Sessão PagBank | [session/route.js](../frontend/app/api/pagbank/session/route.js) | GET interno inicia sessão externa via POST; depende de credenciais |
 | Cobrança PagBank | [payment/route.js](../frontend/app/api/pagbank/payment/route.js) | POST de transação XML; validação mínima; retorna código |
-| Configuração | [.env.example](../frontend/.env.example), [.gitignore](../.gitignore) | Nomes de variáveis e exclusão de arquivos locais; nenhum segredo copiado para os documentos |
+| Configuração | [configuração de acesso](ACESSO.md#configuração), [.gitignore](../.gitignore) | Nomes de variáveis e exclusão de arquivos locais; nenhum segredo copiado para os documentos |
 | Referência estática | [index.html](../frontend/index.html) | Página HTML com Tailwind por CDN; não é a rota raiz do App Router |
 | Dependências | [package-lock.json](../frontend/package-lock.json) | Lockfile existente; ausência de auditoria de vulnerabilidades nesta entrega |
 

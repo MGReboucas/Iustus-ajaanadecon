@@ -111,3 +111,6 @@ MEMBERSHIP_PLAN_VERSION = "annual-2026-v2"
 MEMBERSHIP_REQUIRED = True
 CASE_AUTO_ASSIGN = True
 CASE_INTAKE_REQUIRED = True
+
+# External checkout remains opt-in per distribution channel.
+MOBILE_EXTERNAL_CHECKOUT_ENABLED = env.bool("MOBILE_EXTERNAL_CHECKOUT_ENABLED", default=False)

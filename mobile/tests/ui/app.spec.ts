@@ -25,6 +25,8 @@ async function mockApi(page: Page, options: { expired?: boolean; offline?: boole
     if (path === 'auth/logout') { await route.fulfill({ status: 204, headers }); return; }
     if (options.expired) { await route.fulfill({ status: 401, headers, json: { error: { code: 'AUTH_REQUIRED', message: 'Entre novamente.' } } }); return; }
     if (options.offline) { await route.abort(); return; }
+    if (path.endsWith('/documents') || path.endsWith('/requests')) { await route.fulfill({ headers, json: { results: [], nextCursor: null } }); return; }
+    if (path.endsWith('/workflow')) { await route.fulfill({ headers, json: { version: 2, state: item.state, scope: '', tasks: [] } }); return; }
     if (path.endsWith('/proposals')) { await route.fulfill({ headers, json: { results: [proposal], nextCursor: null } }); return; }
     if (path.endsWith('/decision')) {
       expect(request.postDataJSON()).toEqual({ version: 2, accepted: true });
@@ -112,4 +114,44 @@ test('offline dashboard can retry without losing the session', async ({ page }) 
   options.offline = false;
   await page.getByRole('button', { name: 'Tentar novamente' }).click();
   await expect(page.getByText('Olá, Pessoa.')).toBeVisible();
+});
+
+test('case deep link retains its destination through login', async ({ page }) => {
+  await mockApi(page);
+  await page.goto('/open-case/' + id);
+  await signIn(page);
+  await expect(page.getByText(item.description)).toBeVisible();
+  await expect(page).toHaveURL(new RegExp('/case/' + id + '$'));
+});
+
+test('first access registers and confirms an email link inside the app', async ({ page }) => {
+  let registered = false;
+  await page.route('https://mobile-api.example.test/api/v1/mobile/**', async route => {
+    const req = route.request(); const path = new URL(req.url()).pathname.split('/mobile/')[1];
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type', 'access-control-allow-methods': 'GET,POST,OPTIONS' };
+    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers });
+    if (path === 'auth/context') return route.fulfill({ headers, json: { policyVersion: 'synthetic-v1', registrationAvailable: true, billingAvailable: false, checkoutAvailable: false } });
+    if (path === 'auth/register') {
+      expect(req.postDataJSON()).toEqual({ name: 'Novo associado', email: 'new@example.test', password: 'Synthetic-938!', policyVersion: 'synthetic-v1' });
+      registered = true; return route.fulfill({ headers, status: 202, json: { message: 'Confirme o cadastro pelo e-mail.' } });
+    }
+    if (path === 'auth/verify') {
+      expect(registered).toBe(true); expect(req.postDataJSON()).toEqual({ token: 'a'.repeat(43) });
+      return route.fulfill({ headers, status: 204 });
+    }
+    throw new Error('Unexpected public route ' + path);
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Primeiro acesso', exact: true }).click();
+  await page.getByLabel('Nome completo').fill('Novo associado');
+  await page.getByLabel('E-mail de cadastro').fill('new@example.test');
+  await page.getByLabel('Criar senha').fill('Synthetic-938!');
+  await expect(page.getByRole('button', { name: 'Criar minha conta' })).toBeDisabled();
+  await page.getByRole('switch', { name: 'Aceitar termos e privacidade' }).check();
+  await page.getByRole('button', { name: 'Criar minha conta' }).click();
+  await expect(page.getByText('Confirme o cadastro pelo e-mail.')).toBeVisible();
+  await page.getByRole('button', { name: 'Já tenho o link do e-mail' }).click();
+  await page.getByLabel('Link recebido por e-mail').fill('https://mobile-api.example.test/acessar#verify=' + 'a'.repeat(43));
+  await page.getByRole('button', { name: 'Confirmar acesso' }).click();
+  await expect(page.getByText('Acesso atualizado. Entre com seu e-mail e senha.')).toBeVisible();
 });

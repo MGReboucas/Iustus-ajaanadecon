@@ -22,6 +22,28 @@ test('credentials require HTTPS outside local development', () => {
   assert.throws(() => resolveOrigin('http://public.example.test', true));
 });
 
+test('intake uses PATCH, idempotency and binary transport without changing credential boundary', async () => {
+  const id = '00000000-0000-0000-0000-000000000001';
+  const calls = [];
+  const { request, validRoute } = load(async (url, options) => {
+    calls.push({ url, options });
+    return options.method === 'GET' ? new Response('%PDF-test') : Response.json({ ok: true });
+  });
+  await request(`cases/${id}`, 'token', { version: 2 }, { method: 'PATCH' });
+  await request(`cases/${id}/submit`, 'token', { version: 3 }, { idempotencyKey: 'synthetic-retry-001' });
+  const bytes = new TextEncoder().encode('binary-content').buffer;
+  await request(`uploads/${id}/content`, 'token', bytes, { binary: true });
+  const downloaded = await request(`documents/${id}/versions/${id}/content`, 'token', undefined, { download: true });
+  assert.equal(calls[0].options.method, 'PATCH');
+  assert.equal(calls[1].options.headers['Idempotency-Key'], 'synthetic-retry-001');
+  assert.equal(calls[2].options.headers['Content-Type'], 'application/octet-stream');
+  assert.equal(calls[2].options.body, bytes);
+  assert.equal(new TextDecoder().decode(downloaded), '%PDF-test');
+  for (const call of calls) { assert.equal(call.options.credentials, 'omit'); assert.equal(call.options.headers.Authorization, 'Bearer token'); }
+  for (const path of ['cases/catalog', `cases/${id}/requests/${id}/response`, 'privacy/requests', `notifications/${id}/read`]) assert.equal(validRoute(path), true);
+  for (const path of ['cases/not-a-uuid', `cases/${id}/assignment`, 'billing/checkout', 'https://evil.test', `cases/${id}/../admin`, 'auth/mfa/enroll']) assert.equal(validRoute(path), false);
+});
+
 test('native requests send bearer without cookies, only to mobile routes', async () => {
   let actual;
   const { request } = load(async (url, options) => { actual = { url, options }; return Response.json({ totalCases: 2 }); });
