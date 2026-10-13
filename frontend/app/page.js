@@ -49,7 +49,7 @@ export default function Home() {
 
       <section className="hero container">
         <div className="hero-copy">
-          <p className="institutional-credit"><AssociationLogo /><span>ÍUSTUS · Um projeto da<br /><strong>Aja Anadecon</strong></span></p>
+          <p className="institutional-credit"><AssociationLogo /><span>ÍUSTUS · Um projeto da<br /><a href="https://ajaanadecon.org"><strong>Aja Anadecon</strong></a></span></p>
           <div className="eyebrow"><span className="pulse"></span> Atendimento online, do seu lado</div>
           <h1>Quando a vida exige uma defesa ou promover uma ação, <span>você não enfrentará sozinho.</span></h1>
           <p className="hero-text">Associe-se ao Iustus e receba defesa ou ajuíze uma ação. Um projeto da Aja Anadecon, com atendimento online ou presencial. O aplicativo terá todas as opções de agendamento para você escolher como e quando ser atendido.</p>
@@ -103,7 +103,7 @@ export default function Home() {
 
       <section className="final-cta"><div className="cta-light"></div><div className="container cta-content"><Mark /><div><div className="eyebrow">SEU PRÓXIMO PASSO COMEÇA AQUI</div><h2>Associe-se e acompanhe<br /><span>sempre que precisar.</span></h2></div><Link className="button primary" href="/checkout">Associar-me por 10x de R$ 69,99 <Arrow /></Link></div></section>
 
-      <footer><div className="container footer-inner"><Logo /><p className="institutional-credit footer-credit"><AssociationLogo /><span>© 2026 ÍUSTUS. Um projeto da <strong>Aja Anadecon</strong>.<br />Atendimento online, com clareza e segurança.</span></p><div><a href="#privacidade">Privacidade</a><a href="#termos">Termos de uso</a></div></div></footer>
+      <footer><div className="container footer-inner"><Logo /><p className="institutional-credit footer-credit"><AssociationLogo /><span>© 2026 ÍUSTUS. Um projeto da <a href="https://ajaanadecon.org"><strong>Aja Anadecon</strong></a>.<br />Atendimento online, com clareza e segurança.</span></p><div><a href="#privacidade">Privacidade</a><a href="#termos">Termos de uso</a></div></div></footer>
       <div className="mobile-purchase"><div><small>Plano anual</small><b>10x de R$ 69,99</b></div><Link href="/checkout">Associar-me <Arrow /></Link></div>
     </main>
   );
