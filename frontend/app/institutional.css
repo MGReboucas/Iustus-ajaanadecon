@@ -3,7 +3,13 @@
   align-items: center;
   gap: 16px;
   margin: 0 0 20px;
-  color: var(--muted);
+  width: fit-content;
+  max-width: 100%;
+  padding: 12px 20px 12px 12px;
+  border-radius: 18px;
+  background: #fff;
+  color: #172748;
+  text-decoration: none;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -20,7 +26,7 @@
 }
 
 .institutional-credit strong {
-  color: var(--gold-light);
+  color: #172748;
   font-weight: 700;
 }
 
@@ -35,7 +41,12 @@
 }
 
 .footer-credit strong {
-  color: var(--muted);
+  color: #172748;
+}
+
+.institutional-credit:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 4px;
 }
 
 @media (max-width: 480px) {
