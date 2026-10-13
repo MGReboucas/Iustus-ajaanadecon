@@ -52,7 +52,7 @@ export default function Home() {
           <p className="institutional-credit"><AssociationLogo /><span>ÍUSTUS · Um projeto da<br /><strong>Aja Anadecon</strong></span></p>
           <div className="eyebrow"><span className="pulse"></span> Atendimento online, do seu lado</div>
           <h1>Quando a vida exige uma defesa ou promover uma ação, <span>você não enfrentará sozinho.</span></h1>
-          <p className="hero-text">Associe-se ao Iustus e receba defesa ou ajuíze uma ação, tudo online. Um projeto da Aja Anadecon, com atendimento online ou presencial. O aplicativo terá todas as opções de agendamento para você escolher como e quando ser atendido.</p>
+          <p className="hero-text">Associe-se ao Iustus e receba defesa ou ajuíze uma ação. Um projeto da Aja Anadecon, com atendimento online ou presencial. O aplicativo terá todas as opções de agendamento para você escolher como e quando ser atendido.</p>
           <div className="hero-actions">
             <Link className="button primary" href="/checkout">Associe-se por 10x de R$ 69,99 <Arrow /></Link>
             <a className="button ghost" href="#como-funciona">Entenda como funciona <span className="play">▶</span></a>
