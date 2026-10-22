@@ -4,6 +4,8 @@
   "private": true,
   "description": "Repositório único do frontend, backend e infraestrutura Iustus",
   "scripts": {
+    "local:start": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File infra/start-local.ps1",
+    "local:stop": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File infra/stop-local.ps1",
     "mobile:start": "npm --prefix mobile start",
     "mobile:check": "npm --prefix mobile run typecheck && npm --prefix mobile run lint && npm --prefix mobile test",
     "dev": "npm --prefix frontend run dev",
