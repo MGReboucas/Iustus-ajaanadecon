@@ -4,7 +4,7 @@ import Link from "next/link";
 import Script from "next/script";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { isBillingPlan } from "../../../contracts/validation";
-import Brand from "./Brand";
+
 import { api, ApiError } from "@/lib/api/client";
 
 import type { BillingPlan as Plan } from "../../../contracts/api";
@@ -141,12 +141,11 @@ export default function AssociationCheckout() {
     payment.current = null; setStatus(""); setError(""); setAccepted(false);
   }
 
-  return <main className="checkout-page">
+  return <section id="checkout" className="checkout-page" aria-labelledby="checkout-title">
     <Script src="https://assets.pagseguro.com.br/checkout-sdk-js/rc/dist/browser/pagseguro.min.js" strategy="afterInteractive" onReady={() => setSdkReady(Boolean(window.PagSeguro))} onError={() => setError("Não foi possível carregar o pagamento seguro. Atualize a página para tentar novamente.")} />
-    <header className="checkout-header"><div className="checkout-container"><Link href="/" className="checkout-logo" aria-label="Voltar para a Iustus"><Brand decorative /></Link><Link href="/acessar" className="back-link">Já sou associado</Link></div></header>
     <div className="checkout-container checkout-layout">
       <section className="checkout-form-wrap" aria-labelledby="checkout-title">
-        <div className="checkout-heading"><span className="checkout-kicker">IUSTUS · UM PROJETO AJA ANADECON</span><h1 id="checkout-title">Faça sua adesão.</h1><p>Preencha seu cadastro e pague aqui com cartão. Seu e-mail e CPF identificam sua associação. Após a confirmação, enviaremos o acesso ao painel por e-mail.</p></div>
+        <div className="checkout-heading"><span className="checkout-kicker">IUSTUS · UM PROJETO AJA ANADECON</span><h2 id="checkout-title">Faça sua adesão.</h2><p>Preencha seu cadastro e pague aqui com cartão. Seu e-mail e CPF identificam sua associação. Após a confirmação, enviaremos o acesso ao painel por e-mail.</p></div>
         {error && <p className="mp-error" role="alert">{error}</p>}
         {status ? <div className="checkout-success" role="status"><h2>{status === "PAID" ? "Sua associação está ativa" : "Seu pagamento"}</h2><p>{statuses[status] || "Consultando seu pagamento…"}</p><Link className="back-home" href="/acessar">Entrar ou reenviar acesso</Link>{terminal.includes(status) && <button className="checkout-submit" onClick={retry}>Tentar novamente</button>}{status === "CREATING" && payment.current && <button className="checkout-submit" disabled={busy} onClick={submitPayment}>{busy ? "Conferindo…" : "Reenviar a mesma tentativa"}</button>}{status === "CREATING" && !payment.current && <p>Se a confirmação não chegar, entre em contato com a associação para conferir esta tentativa.</p>}</div>
           : <form className="pagbank-form" onSubmit={pay}>
@@ -174,5 +173,5 @@ export default function AssociationCheckout() {
       </section>
       <aside className="order-summary" aria-label="Resumo da adesão"><div className="summary-top"><span>ASSOCIAÇÃO ANUAL</span><b>Acompanhamento online</b></div><h2>Iustus</h2><div className="summary-price"><small>{installments} parcelas sem juros de</small><strong>{money(amount / installments)}</strong><p>Total: {money(amount)} no cartão de crédito.</p></div><ul><li>Cadastro de ocorrências durante a vigência</li><li>Análise individual por advogado</li><li>Procuração específica após o aceite de cada caso</li><li>Documentos, histórico e acompanhamento no painel</li><li>Avisos por e-mail sobre o atendimento</li></ul><p className="summary-description">Multas de trânsito e direito civil, exceto família e sucessões. O envio de uma ocorrência não garante seu aceite.</p><div className="summary-security"><p><b>Um projeto AJA ANADECON</b>Associação vinculada ao e-mail e CPF informados no cadastro.</p></div></aside>
     </div>
-  </main>;
+  </section>;
 }

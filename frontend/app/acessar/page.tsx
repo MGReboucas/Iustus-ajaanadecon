@@ -106,7 +106,7 @@ export default function Access() {
           </fieldset>
         </form>
         <div className="auth-links">
-          {mode === "login" && <><a href="/checkout">Quero me associar</a><button disabled={!context || busy} onClick={() => change("memberResend")}>Já paguei: reenviar acesso</button></>}
+          {mode === "login" && <><a href="/#checkout">Quero me associar</a><button disabled={!context || busy} onClick={() => change("memberResend")}>Já paguei: reenviar acesso</button></>}
           {mode === "login" && <button disabled={!context || busy} onClick={() => change("recovery")}>Esqueci minha senha</button>}
           {mode === "login" && context?.registrationAvailable && <>
             <button disabled={busy} onClick={() => change("register")}>Criar conta de cliente</button>

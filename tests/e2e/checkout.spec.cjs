@@ -41,7 +41,7 @@ async function fill(page) {
 
 test('preço e formulário aparecem mesmo com API indisponível', async ({ page }) => {
   await setup(page, { offline: true });
-  await page.goto('/checkout');
+  await page.goto('/#checkout');
   await expect(page.locator('.summary-price strong')).toHaveText(/69,99/);
   await expect(page.getByLabel('E-mail do associado', { exact: true })).toBeVisible();
   await expect(page.getByLabel('CPF do associado', { exact: true })).toBeVisible();
@@ -53,14 +53,14 @@ test('preço e formulário aparecem mesmo com API indisponível', async ({ page 
 
 test('cadastro e cartão de terceiro são enviados separadamente e sem dados abertos do cartão', async ({ page }) => {
   const requests = await setup(page);
-  await page.goto('/checkout');
+  await page.goto('/#checkout');
   await fill(page);
   await page.getByLabel('O cartão está no nome do associado.').uncheck();
   await page.getByLabel('Nome do titular do cartão').fill('Titular Teste');
   await page.getByLabel('CPF do titular do cartão').fill('52998224725');
   await page.getByRole('button', { name: /Pagar · 10x de/ }).click();
   await expect(page.getByRole('heading', { name: 'Sua associação está ativa' })).toBeVisible();
-  expect(new URL(page.url()).pathname).toBe('/checkout');
+  expect(new URL(page.url()).pathname).toBe('/');
   expect(requests).toHaveLength(1);
   expect(requests[0].body).toEqual({ accepted: true, customer: { name: 'Associado Teste', email: 'buyer@example.test', cpf: '12345678909', phone: '11999999999' }, card: { encrypted: 'A'.repeat(344), holderName: 'Titular Teste', holderCpf: '52998224725' } });
   expect(JSON.stringify(requests)).not.toContain('4111111111111111');
@@ -71,7 +71,7 @@ test('cadastro e cartão de terceiro são enviados separadamente e sem dados abe
 
 test('CPF inválido e confirmação de e-mail divergente impedem cobrança', async ({ page }) => {
   const requests = await setup(page);
-  await page.goto('/checkout'); await fill(page);
+  await page.goto('/#checkout'); await fill(page);
   await page.getByLabel('CPF do associado', { exact: true }).fill('11111111111');
   await page.getByRole('button', { name: /Pagar · 10x de/ }).click();
   await expect(page.locator('.mp-error[role=alert]')).toHaveText('Informe um CPF válido para o associado.');
@@ -84,7 +84,7 @@ test('CPF inválido e confirmação de e-mail divergente impedem cobrança', asy
 
 test('falha de comunicação repete a mesma referência e o mesmo cartão criptografado', async ({ page }) => {
   const requests = await setup(page, { uncertain: true });
-  await page.goto('/checkout'); await fill(page);
+  await page.goto('/#checkout'); await fill(page);
   await page.getByRole('button', { name: /Pagar · 10x de/ }).click();
   await expect(page.getByRole('button', { name: 'Reenviar a mesma tentativa' })).toBeVisible();
   await page.getByRole('button', { name: 'Reenviar a mesma tentativa' }).click();
@@ -95,7 +95,7 @@ test('falha de comunicação repete a mesma referência e o mesmo cartão cripto
 
 test('cartão recusado permite outra tentativa com nova referência', async ({ page }) => {
   const requests = await setup(page, { declined: true });
-  await page.goto('/checkout'); await fill(page);
+  await page.goto('/#checkout'); await fill(page);
   await page.getByRole('button', { name: /Pagar · 10x de/ }).click();
   await expect(page.getByText(/O cartão não foi aprovado/)).toBeVisible();
   await page.getByRole('button', { name: 'Tentar novamente' }).click();
@@ -108,7 +108,7 @@ test('cartão recusado permite outra tentativa com nova referência', async ({ p
 
 test('falha na chave pública bloqueia envio do cartão', async ({ page }) => {
   const requests = await setup(page, { keyFailure: true });
-  await page.goto('/checkout'); await fill(page);
+  await page.goto('/#checkout'); await fill(page);
   await expect(page.getByRole('button', { name: /Pagar · 10x de/ })).toBeDisabled();
   await expect(page.locator('.mp-error[role=alert]')).toBeVisible();
   expect(requests).toHaveLength(0);
@@ -117,7 +117,7 @@ test('falha na chave pública bloqueia envio do cartão', async ({ page }) => {
 test('checkout cabe na tela do celular e mantém preço e cadastro visíveis', async ({ page }) => {
   await setup(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/checkout');
+  await page.goto('/#checkout');
   await expect(page.locator('.summary-price strong')).toHaveText(/69,99/);
   await expect(page.getByLabel('Nome completo', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -129,7 +129,7 @@ test('checkout cabe na tela do celular e mantém preço e cadastro visíveis', a
 test('resposta de plano inválida bloqueia pagamento', async ({ page }) => {
   await setup(page);
   await page.route('**/api/v1/billing/plan', route => route.fulfill({ json: { amount: 69990, installments: 0, planVersion: 'v2', policyVersion: 'test', available: true, sandbox: true } }));
-  await page.goto('/checkout');
+  await page.goto('/#checkout');
   await expect(page.getByRole('main').getByRole('alert')).toContainText('Não foi possível preparar o pagamento');
   await expect(page.getByRole('button', { name: /Pagar/ })).toBeDisabled();
 });
@@ -137,7 +137,19 @@ test('resposta de plano inválida bloqueia pagamento', async ({ page }) => {
 test('pagamento concluído permanece confirmado ao reabrir o checkout', async ({ page }) => {
   await page.route('**/api/v1/billing/plan', route => route.fulfill({ json: { amount: 69990, installments: 10, planVersion: "annual-2026-v2", policyVersion: "test-v1", available: false, sandbox: true } }));
   await page.route('**/api/v1/billing/checkout', route => route.fulfill({ json: { status: 'PAID' } }));
-  await page.goto('/checkout');
+  await page.goto('/#checkout');
   await expect(page.getByRole('heading', { name: 'Sua associação está ativa' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Pagar/ })).toHaveCount(0);
+});
+
+test('checkout na landing e redirecionamento legado', async ({ page }) => {
+  await setup(page);
+  await page.goto('/');
+  await expect(page.locator('.trust-bar, .final-cta')).toHaveCount(0);
+  await page.locator('.hero-actions a[href="#checkout"]').click();
+  await expect(page).toHaveURL(/\/#checkout$/);
+  await expect(page.getByLabel('Nome completo', { exact: true })).toBeVisible();
+  await page.goto('/checkout');
+  await expect(page).toHaveURL(/\/#checkout$/);
+  await expect(page.getByRole('main')).toHaveCount(1);
 });

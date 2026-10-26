@@ -4,6 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Brand from '@/components/Brand';
+import AssociationCheckout from '@/components/AssociationCheckout';
+import './checkout/checkout.css';
+import './checkout/pagbank.css';
 import './testimonials.css';
 import './home-nav.css';
 import './pricing.css';
@@ -42,7 +45,7 @@ export default function Home() {
             <a href="#beneficios" onClick={closeMenu}>Benefícios</a>
             <a href="#plano" onClick={closeMenu}>Plano</a>
             <Link className="account-cta" href="/acessar" onClick={closeMenu}>Área do associado</Link>
-            <Link className="nav-cta" href="/checkout" onClick={closeMenu}>Associar-me <Arrow /></Link>
+            <Link className="nav-cta" href="#checkout" onClick={closeMenu}>Associar-me <Arrow /></Link>
           </div>
         </nav>
       </header>
@@ -54,7 +57,7 @@ export default function Home() {
           <h1>Quando a vida exige uma defesa ou promover uma ação, <span>você não enfrentará sozinho.</span></h1>
           <p className="hero-text">Associe-se ao Iustus e receba defesa ou ajuíze uma ação. Um projeto da Aja Anadecon, com atendimento online ou presencial. O aplicativo terá todas as opções de agendamento para você escolher como e quando ser atendido.</p>
           <div className="hero-actions">
-            <Link className="button primary" href="/checkout">Associe-se por 10x de R$ 69,99 <Arrow /></Link>
+            <Link className="button primary" href="#checkout">Associe-se por 10x de R$ 69,99 <Arrow /></Link>
             <a className="button ghost" href="#como-funciona">Entenda como funciona <span className="play">▶</span></a>
           </div>
           <ul className="hero-assurances" aria-label="Destaques da associação"><li>Uso ilimitado</li><li>10x de R$ 69,99</li><li>Dashboard seguro</li></ul>
@@ -81,7 +84,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="trust-bar"><div className="container trust-inner"><span>ACOMPANHAMENTO QUANDO VOCÊ PRECISAR</span><div><b>100%</b><small>digital</small></div><i></i><div><b>1 associação</b><small>por ano</small></div><i></i><div><b>Uso ilimitado</b><small>durante a vigência</small></div></div></section>
 
       <section id="como-funciona" className="section container how">
         <div className="section-intro"><div className="eyebrow">SIMPLICIDADE EM CADA ETAPA</div><h2>Da preocupação à defesa,<br /><span>em três passos.</span></h2></div>
@@ -96,15 +98,16 @@ export default function Home() {
 
       <section id="plano" className="section pricing container">
         <div className="pricing-intro"><div className="eyebrow">ASSOCIAÇÃO ANUAL</div><h2>Defesas quando precisar,<br />em um único plano.</h2><p>Associe-se uma vez ao ano e use a plataforma quantas vezes precisar durante a vigência da sua associação.</p></div>
-        <article className="price-card"><div className="price-top"><div><span className="plan-label">PLANO ÍUSTUS ANUAL</span><h3>Atendimento disponível o ano todo.</h3></div><span className="best">USO ILIMITADO</span></div><div className="price price-installments"><span className="installment-count">10x de</span><strong>R$ 69,99</strong></div><p className="price-equivalent">Associação anual · 10 parcelas de R$ 69,99. Total de R$ 699,90.</p><ul><li><Check /> Uso ilimitado da plataforma durante a associação</li><li><Check /> Envio de ocorrências e documentos online</li><li><Check /> Acompanhamento de cada solicitação pelo painel</li><li><Check /> Procuração por caso e acompanhamento jurídico</li></ul><Link className="button primary price-button" href="/checkout">Quero me associar à ÍUSTUS <Arrow /></Link><small className="secure-line">⌁ Pagamento seguro · 10x de R$ 69,99</small></article>
+        <article className="price-card"><div className="price-top"><div><span className="plan-label">PLANO ÍUSTUS ANUAL</span><h3>Atendimento disponível o ano todo.</h3></div><span className="best">USO ILIMITADO</span></div><div className="price price-installments"><span className="installment-count">10x de</span><strong>R$ 69,99</strong></div><p className="price-equivalent">Associação anual · 10 parcelas de R$ 69,99. Total de R$ 699,90.</p><ul><li><Check /> Uso ilimitado da plataforma durante a associação</li><li><Check /> Envio de ocorrências e documentos online</li><li><Check /> Acompanhamento de cada solicitação pelo painel</li><li><Check /> Procuração por caso e acompanhamento jurídico</li></ul><Link className="button primary price-button" href="#checkout">Quero me associar à ÍUSTUS <Arrow /></Link><small className="secure-line">⌁ Pagamento seguro · 10x de R$ 69,99</small></article>
       </section>
+
+      <AssociationCheckout />
 
       <section className="faq container"><div><div className="eyebrow">DÚVIDAS FREQUENTES</div><h2>Clareza antes<br />de começar.</h2></div><div className="faq-list"><details><summary>A quem pertence o projeto Íustus?<span>+</span></summary><p>A Íustus é um projeto que pertence à Aja Anadecon. A plataforma permite cadastrar ocorrências e acompanhar o atendimento jurídico online.</p></details><details open><summary>Posso usar a plataforma mais de uma vez?<span>+</span></summary><p>Sim. Sua associação dá acesso ilimitado à plataforma durante o período anual de vigência.</p></details><details><summary>Como funciona o pagamento?<span>+</span></summary><p>A associação anual é paga em 10 parcelas de R$ 69,99, totalizando R$ 699,90, com acesso à plataforma durante o período anual de vigência.</p></details><details><summary>O que preciso enviar para iniciar um caso?<span>+</span></summary><p>Envie a descrição do fato, a data do ocorrido e os documentos comprobatórios. A procuração é enviada pela associação somente depois que nosso time da Aja Anadecon aprovar o caso, e vale para aquele caso específico.</p></details><details><summary>Como acompanho meu caso?<span>+</span></summary><p>O painel mostra o gráfico das solicitações, o andamento e as pendências de cada caso. Você também recebe avisos por e-mail quando houver novidades no atendimento.</p></details></div></section>
 
-      <section className="final-cta"><div className="cta-light"></div><div className="container cta-content"><Mark /><div><div className="eyebrow">SEU PRÓXIMO PASSO COMEÇA AQUI</div><h2>Associe-se e acompanhe<br /><span>sempre que precisar.</span></h2></div><Link className="button primary" href="/checkout">Associar-me por 10x de R$ 69,99 <Arrow /></Link></div></section>
 
       <footer><div className="container footer-inner"><Logo /><a className="institutional-credit footer-credit" href="https://ajaanadecon.org" target="_blank" rel="noopener noreferrer"><AssociationLogo /><span>© 2026 ÍUSTUS. Um projeto da <strong>Aja Anadecon</strong>.<br />Atendimento online, com clareza e segurança.</span></a><div><a href="#privacidade">Privacidade</a><a href="#termos">Termos de uso</a></div></div></footer>
-      <div className="mobile-purchase"><div><small>Plano anual</small><b>10x de R$ 69,99</b></div><Link href="/checkout">Associar-me <Arrow /></Link></div>
+      <div className="mobile-purchase"><div><small>Plano anual</small><b>10x de R$ 69,99</b></div><Link href="#checkout">Associar-me <Arrow /></Link></div>
     </main>
   );
 }
