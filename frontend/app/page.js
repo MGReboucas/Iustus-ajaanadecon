@@ -55,7 +55,6 @@ export default function Home() {
           <p className="hero-text">Associe-se ao Iustus e receba defesa ou ajuíze uma ação. Um projeto da Aja Anadecon, com atendimento online ou presencial. O aplicativo terá todas as opções de agendamento para você escolher como e quando ser atendido.</p>
           <div className="hero-actions">
             <Link className="button primary" href="#checkout">Associe-se por 10x de R$ 69,99 <Arrow /></Link>
-            <a className="button ghost" href="#como-funciona">Entenda como funciona <span className="play">▶</span></a>
           </div>
           <ul className="hero-assurances" aria-label="Destaques da associação"><li>Uso ilimitado</li><li>10x de R$ 69,99</li><li>Dashboard seguro</li></ul>
           <div className="hero-proof">
