@@ -73,7 +73,7 @@ export type Notice = {
   id: string; caseId: string; reference: string; kind: string; title: string;
   createdAt: string; readAt: string | null;
 };
-export type DocumentStatus = 'UPLOADING' | 'QUARANTINED' | 'SCANNING' | 'AVAILABLE' | 'REJECTED' | 'ERROR';
+export type DocumentStatus = 'DEMO_UNVERIFIED' | 'UPLOADING' | 'QUARANTINED' | 'SCANNING' | 'AVAILABLE' | 'REJECTED' | 'ERROR';
 export type DocumentVersion = {
   id: string; documentId: string; uploadedById: string; number: number; filename: string;
   sizeBytes: number; status: DocumentStatus; statusLabel: string; createdAt: string;
@@ -81,7 +81,7 @@ export type DocumentVersion = {
 export type DocumentUpload = { uploadId: string; uploadUrl: string; expiresAt: string; directUpload: boolean; version: DocumentVersion };
 export type DirectUpload = { url: string; method: 'PUT'; headers: Record<string, string>; expiresIn: number };
 export type BillingPlan = { amount: number; installments: number; planVersion: string; available: boolean; sandbox: boolean; policyVersion: string };
-export type CaseCatalog = { categories: { id: string; label: string }[]; documentsAvailable: boolean; intakeRequired: boolean; submission: SubmissionAccess };
+export type CaseCatalog = { categories: { id: string; label: string }[]; documentsAvailable: boolean; documentDemo?: boolean; intakeRequired: boolean; submission: SubmissionAccess };
 export type InformationRequest = { id: string; description: string; response: string; resolution: string; resolved: boolean; responded: boolean; attachments: DocumentVersion[] };
 export type LegalWorkflow = {
   version: number; state: CaseState; scope: string; position: string; processNumber: string; authority: string;

@@ -11,6 +11,7 @@ from apps.identity.security import IdentityError, digest
 from apps.identity.services import audit
 from integrations.storage.private import InvalidFile, inspect_file, open_object, write_stream, presign_upload
 from . import serializers as inputs
+from .demo import guard_demo, require_demo_access
 from .models import Document, DocumentVersion
 from .services import check_upload, create_upload, get_version, version_data
 
@@ -18,6 +19,7 @@ from .services import check_upload, create_upload, get_version, version_data
 class DocumentsView(CaseView):
     def get(self, request, case_id):
         case = get_case(request.user, case_id)
+        guard_demo(request.user, case)
         return self.listed(request, DocumentVersion.objects.filter(document__case=case), version_data)
 
     def post(self, request, case_id):
@@ -53,7 +55,7 @@ class ContentView(CaseView):
             if item.uploaded_at:
                 raise IdentityError("UPLOAD_CLOSED", "O conteúdo desta versão já foi recebido.", 409)
             try:
-                write_stream(item.object_key, request.stream, item.size_bytes)
+                write_stream(item.object_key, request.stream, item.size_bytes, demo_upload=settings.DOCUMENT_DEMO_ENABLED)
             except InvalidFile as exc:
                 raise IdentityError("INVALID_FILE", "O tamanho recebido não confere ou o envio já existe.", 422) from exc
             item.uploaded_at = timezone.now()
@@ -107,9 +109,10 @@ class CompleteView(CaseView):
                 return Response({"error": {"code": "INVALID_FILE", "message": "Formato, tamanho ou integridade incompatível. Envie uma nova versão.", "fields": {}}}, status=422)
             item.uploaded_at = item.uploaded_at or timezone.now()
             item.sha256, item.detected_mime = checksum, mime
-            item.status = DocumentVersion.Status.QUARANTINED
+            item.status = DocumentVersion.Status.DEMO_UNVERIFIED if settings.DOCUMENT_DEMO_ENABLED else DocumentVersion.Status.QUARANTINED
             item.save(update_fields=["sha256", "detected_mime", "status", "uploaded_at"])
-            changed(case, request.user, "DOCUMENT_QUARANTINED", "Documento recebido e aguardando verificação.", versionId=str(item.pk))
+            changed(case, request.user, "DOCUMENT_DEMO_RECEIVED" if settings.DOCUMENT_DEMO_ENABLED else "DOCUMENT_QUARANTINED",
+                    "Demonstração: arquivo fictício recebido sem antivírus." if settings.DOCUMENT_DEMO_ENABLED else "Documento recebido e aguardando verificação.", versionId=str(item.pk))
         return Response(version_data(item), status=202)
 
 
@@ -117,6 +120,9 @@ def downloadable(request, document_id, version_id):
     case, item = get_version(request.user, version_id)
     if item.document_id != document_id:
         raise Http404
+    if item.status == DocumentVersion.Status.DEMO_UNVERIFIED:
+        require_demo_access(request.user, case)
+        return item
     if item.status != DocumentVersion.Status.AVAILABLE:
         raise IdentityError("DOCUMENT_UNAVAILABLE", "O arquivo ainda não foi liberado para download.", 409)
     return item

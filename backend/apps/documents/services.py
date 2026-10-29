@@ -11,6 +11,7 @@ from apps.cases.models import Case
 from apps.cases.services import changed, expect_state, get_case
 from apps.identity.security import IdentityError
 from .models import Document, DocumentVersion
+from .demo import guard_demo
 from integrations.storage.private import storage_configured
 
 
@@ -26,6 +27,7 @@ def get_version(user, version_id, *, locked=False):
     if not item:
         raise Http404
     case = get_case(user, item.document.case_id, locked=locked)
+    guard_demo(user, case, item)
     if locked:
         item = DocumentVersion.objects.select_for_update().get(pk=version_id)
     return case, item
@@ -40,6 +42,9 @@ def check_upload(case, item, user):
 
 
 def create_upload(case, user, data, document=None):
+    guard_demo(user, case)
+    if settings.DOCUMENT_DEMO_ENABLED and data["sizeBytes"] > 3 * 1024 * 1024:
+        raise IdentityError("INVALID_FILE", "Na demonstração, use arquivos de até 3 MiB.", 422)
     expect_state(case, *[value for value in Case.State.values if value not in (Case.State.REJECTED, Case.State.CLOSED)])
     if not storage_configured():
         raise IdentityError("DOCUMENT_STORAGE_UNAVAILABLE", "O envio de documentos ainda não está disponível neste ambiente.", 503)

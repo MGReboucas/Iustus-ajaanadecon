@@ -89,8 +89,8 @@ DOCUMENT_LOCAL_STORAGE_ENABLED = False
 
 # Ativação explícita; nenhuma credencial ou URL pública é enviada ao navegador.
 DOCUMENT_STORAGE_BACKEND = env("DOCUMENT_STORAGE_BACKEND", default="disabled")
-if DOCUMENT_STORAGE_BACKEND not in ("disabled", "s3"):
-    raise ImproperlyConfigured("Produção aceita armazenamento S3 privado ou desabilitado.")
+if DOCUMENT_STORAGE_BACKEND not in ("disabled", "s3", "supabase"):
+    raise ImproperlyConfigured("Use S3 privado, Supabase de demonstração ou armazenamento desabilitado.")
 if DOCUMENT_STORAGE_BACKEND == "s3":
     DOCUMENT_S3_BUCKET = env("DOCUMENT_S3_BUCKET")
     DOCUMENT_S3_ENDPOINT = env("DOCUMENT_S3_ENDPOINT", default="")
@@ -115,3 +115,20 @@ if DOCUMENT_STORAGE_BACKEND == "s3":
 DOCUMENT_DIRECT_UPLOAD_ENABLED = env.bool("DOCUMENT_DIRECT_UPLOAD_ENABLED", default=False)
 if DOCUMENT_DIRECT_UPLOAD_ENABLED and DOCUMENT_STORAGE_BACKEND != "s3":
     raise ImproperlyConfigured("Envio direto exige armazenamento S3 privado.")
+
+# Supabase is restricted to synthetic demonstration files until scanner integration.
+DOCUMENT_DEMO_ENABLED = env.bool("DOCUMENT_DEMO_ENABLED", default=False)
+DOCUMENT_DEMO_EMAILS = [email.strip().lower() for email in env.list("DOCUMENT_DEMO_EMAILS", default=[]) if email.strip()]
+if DOCUMENT_STORAGE_BACKEND == "supabase":
+    import re
+    DOCUMENT_SUPABASE_URL = env("DOCUMENT_SUPABASE_URL", default="").rstrip("/")
+    DOCUMENT_SUPABASE_BUCKET = env("DOCUMENT_SUPABASE_BUCKET", default="")
+    DOCUMENT_SUPABASE_SERVICE_KEY = env("DOCUMENT_SUPABASE_SERVICE_KEY", default="")
+    if not DOCUMENT_DEMO_ENABLED or not DOCUMENT_DEMO_EMAILS:
+        raise ImproperlyConfigured("Supabase exige demonstração explícita e contas autorizadas.")
+    if not re.fullmatch(r"https://[a-z0-9-]+\.supabase\.co", DOCUMENT_SUPABASE_URL):
+        raise ImproperlyConfigured("Configure a URL HTTPS do projeto Supabase.")
+    if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{2,62}", DOCUMENT_SUPABASE_BUCKET) or not DOCUMENT_SUPABASE_SERVICE_KEY:
+        raise ImproperlyConfigured("Configure bucket privado e chave de serviço do Supabase.")
+if DOCUMENT_DEMO_ENABLED and DOCUMENT_STORAGE_BACKEND != "supabase":
+    raise ImproperlyConfigured("Demonstração exige armazenamento Supabase separado.")

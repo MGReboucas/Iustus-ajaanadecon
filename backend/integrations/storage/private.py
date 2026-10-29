@@ -79,7 +79,8 @@ def inspect_file(key, expected_size):
 
 def storage_configured():
     backend = settings.DOCUMENT_STORAGE_BACKEND
-    return bool((backend == "s3" and settings.DOCUMENT_S3_BUCKET) or
+    return bool((backend == "supabase" and settings.DOCUMENT_DEMO_ENABLED and settings.DOCUMENT_SUPABASE_BUCKET and settings.DOCUMENT_SUPABASE_URL and settings.DOCUMENT_SUPABASE_SERVICE_KEY) or
+                (backend == "s3" and settings.DOCUMENT_S3_BUCKET) or
                 (backend == "local" and settings.DOCUMENT_LOCAL_STORAGE_ENABLED and settings.DOCUMENT_STORAGE_ROOT))
 
 
@@ -104,6 +105,9 @@ def s3_client():
 
 
 def open_object(key):
+    if settings.DOCUMENT_STORAGE_BACKEND == "supabase":
+        from .supabase import read
+        return read(key)
     if settings.DOCUMENT_STORAGE_BACKEND != "s3":
         return object_path(key).open("rb")
     from botocore.exceptions import ClientError
@@ -116,17 +120,26 @@ def open_object(key):
 
 
 def delete_object(key):
+    if settings.DOCUMENT_STORAGE_BACKEND == "supabase":
+        from .supabase import delete
+        return delete(key)
     if settings.DOCUMENT_STORAGE_BACKEND != "s3":
         object_path(key).unlink(missing_ok=True)
     else:
         s3_client().delete_object(Bucket=settings.DOCUMENT_S3_BUCKET, Key=remote_key(key))
 
 
-def write_stream(key, stream, expected_size):
+def write_stream(key, stream, expected_size, *, demo_upload=False):
     if not storage_configured():
         raise ImproperlyConfigured("Private document storage is not configured")
     if expected_size < 1 or expected_size > 200 * 1024 * 1024:
         raise InvalidFile("size")
+    if settings.DOCUMENT_STORAGE_BACKEND == "supabase":
+        if not demo_upload:
+            from apps.identity.security import IdentityError
+            raise IdentityError("DEMO_RESTRICTED", "A demonstração permite apenas anexos fictícios; geração de documentos e exportações indisponível.", 403)
+        from .supabase import write
+        return write(key, stream, expected_size)
     if settings.DOCUMENT_STORAGE_BACKEND != "s3":
         return _write_local(key, stream, expected_size)
     from botocore.exceptions import ClientError

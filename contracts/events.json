@@ -27,6 +27,7 @@
     "ASSIGNED":  "Responsável atribuído",
     "DOCUMENT_ERROR":  "Falha na verificação do documento",
     "DOCUMENT_QUARANTINED":  "Documento aguardando verificação",
+    "DOCUMENT_DEMO_RECEIVED": "Arquivo de demonstração recebido — não verificado",
     "DOCUMENT_UPLOAD_STARTED":  "Envio de documento iniciado",
     "DOCUMENT_AVAILABLE":  "Documento disponível",
     "DOCUMENT_REJECTED":  "Documento recusado"

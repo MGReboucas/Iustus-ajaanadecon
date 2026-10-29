@@ -13,6 +13,7 @@ from apps.identity.security import IdentityError, digest, throttle
 from apps.identity.views import IdentityView
 from apps.documents.models import DocumentVersion, RequestAttachment
 from apps.documents.services import version_data
+from apps.documents.demo import demo_user
 from . import serializers as inputs
 from .models import Case, InformationRequest
 from .services import (accessible, case_data, changed, edit_draft, expect_state, expect_version,
@@ -44,7 +45,7 @@ class CaseView(IdentityView):
 
 class CatalogView(CaseView):
     def get(self, request):
-        return Response({"documentsAvailable": settings.DOCUMENT_STORAGE_BACKEND != "disabled", "intakeRequired": settings.CASE_INTAKE_REQUIRED, "categories": [{"id": key, "label": label} for key, label in Case.Category.choices],
+        return Response({"documentsAvailable": settings.DOCUMENT_STORAGE_BACKEND != "disabled" and (not settings.DOCUMENT_DEMO_ENABLED or demo_user(request.user)), "documentDemo": settings.DOCUMENT_DEMO_ENABLED, "intakeRequired": settings.CASE_INTAKE_REQUIRED, "categories": [{"id": key, "label": label} for key, label in Case.Category.choices],
                          "states": [{"id": key, "label": label} for key, label in Case.State.choices],
                          "submission": submission_access(request.user) if request.user.role == "CLIENT" else None})
 

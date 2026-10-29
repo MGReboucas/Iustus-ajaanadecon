@@ -12,7 +12,7 @@ import CaseExport from "./CaseExport";
 import "./cases.css";
 
 import type { CaseItem, CaseEvent as Event, Page } from "../../../contracts/api";
-type Catalog = { documentsAvailable: boolean; intakeRequired: boolean; categories: { id: string; label: string }[]; states: { id: string; label: string }[]; submission: { canSubmit: boolean; message: string } | null };
+type Catalog = { documentDemo?: boolean; documentsAvailable: boolean; intakeRequired: boolean; categories: { id: string; label: string }[]; states: { id: string; label: string }[]; submission: { canSubmit: boolean; message: string } | null };
 type Pending = { id: string; description: string; response: string; resolution: string; resolved: boolean; responded: boolean; attachments: DocumentVersion[] };
 type Lawyer = { id: string; name: string; email: string };
 const labels: Record<string, string> = eventLabels;
@@ -156,7 +156,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
         {["ACEITO", "AGUARDANDO_PROCURACAO", "EM_PREPARACAO", "EM_ACOMPANHAMENTO", "ENCERRADO"].includes(selected.state) && <LegalWorkflow key={`workflow-${selected.id}`} caseId={selected.id} version={selected.version} user={user} documents={documents.results} onChange={async () => {onChange(); await list(); await load(selected);}} />}
         <CaseProposals key={`proposals-${selected.id}`} caseId={selected.id} version={selected.version} state={selected.state} user={user} onChange={async () => {onChange(); await list(); await load(selected);}} />
         <CaseMessages key={`messages-${selected.id}`} caseId={selected.id} user={user} available={!!selected.lawyerId && !["RASCUNHO", "RECUSADO", "ENCERRADO"].includes(selected.state)} onChange={onChange} />
-        <CaseDocuments available={catalog?.documentsAvailable ?? false} key={selected.id} caseId={selected.id} versions={documents.results} busy={busy} readOnly={["RECUSADO", "ENCERRADO"].includes(selected.state)} run={run} refresh={refreshDocuments} hasMore={!!documents.nextCursor} more={async () => {
+        <CaseDocuments demo={catalog?.documentDemo ?? false} available={catalog?.documentsAvailable ?? false} key={selected.id} caseId={selected.id} versions={documents.results} busy={busy} readOnly={["RECUSADO", "ENCERRADO"].includes(selected.state)} run={run} refresh={refreshDocuments} hasMore={!!documents.nextCursor} more={async () => {
           const result = await api<Page<DocumentVersion>>(`cases/${selected.id}/documents?cursor=${encodeURIComponent(documents.nextCursor!)}`);
           setDocuments(old => ({ results: [...old.results, ...result.results], nextCursor: result.nextCursor }));
         }} />
@@ -168,7 +168,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
           {!row.resolved && row.responded && <p>Aguardando conferência pelo responsável.</p>}
           {!row.resolved && row.responded && user.role === "LAWYER" && <form onSubmit={e => { e.preventDefault(); void run(() => change(`cases/${selected.id}/requests/${row.id}/resolve`, { version: selected.version, reason })); }}><fieldset disabled={busy}><label>Resultado da conferência<textarea required minLength={5} maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} /></label><button>Conferir e retomar triagem</button></fieldset></form>}
         </div>)}{requests.nextCursor && <button disabled={busy} onClick={() => void run(async () => { const result = await api<Page<Pending>>(`cases/${selected.id}/requests?cursor=${encodeURIComponent(requests.nextCursor!)}`); setRequests({ results: [...requests.results, ...result.results], nextCursor: result.nextCursor }); })}>Mais complementos</button>}</section>}
-        {catalog?.documentsAvailable && <CaseExport key={`export-${selected.id}`} caseId={selected.id} version={selected.version} />}
+        {catalog?.documentsAvailable && !catalog?.documentDemo && <CaseExport key={`export-${selected.id}`} caseId={selected.id} version={selected.version} />}
         <section><h4>Histórico</h4><ol className="case-history">{events.results.map(row => <li key={row.id}><strong>{labels[row.action] || "Atualização do caso"}</strong><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString("pt-BR")}</time>{row.reason && <p className="case-narrative">{row.reason}</p>}</li>)}</ol>
           {events.nextCursor && <button disabled={busy} onClick={() => void run(async () => { const result = await api<Page<Event>>(`cases/${selected.id}/timeline?cursor=${encodeURIComponent(events.nextCursor!)}`); setEvents({ results: [...events.results, ...result.results], nextCursor: result.nextCursor }); })}>Mais eventos</button>}
         </section>

@@ -47,6 +47,19 @@ class ProductionSettingsTests(SimpleTestCase):
         self.assertNotEqual(self.run_settings(DOCUMENT_STORAGE_BACKEND="disabled",
                                              DOCUMENT_DIRECT_UPLOAD_ENABLED="true").returncode, 0)
 
+    def test_supabase_requires_explicit_demo_allowlist_and_https(self):
+        values = dict(DOCUMENT_STORAGE_BACKEND="supabase", DOCUMENT_DEMO_ENABLED="true",
+                      DOCUMENT_DEMO_EMAILS="tester@example.test", DOCUMENT_DIRECT_UPLOAD_ENABLED="false",
+                      DOCUMENT_SUPABASE_URL="https://synthetic.supabase.co",
+                      DOCUMENT_SUPABASE_BUCKET="demo-private", DOCUMENT_SUPABASE_SERVICE_KEY="synthetic")
+        result = self.run_settings(**values)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for changes in ({"DOCUMENT_DEMO_ENABLED": "false"}, {"DOCUMENT_DEMO_EMAILS": ""},
+                        {"DOCUMENT_SUPABASE_URL": "http://synthetic.supabase.co"},
+                        {"DOCUMENT_DIRECT_UPLOAD_ENABLED": "true"}):
+            with self.subTest(changes=changes):
+                self.assertNotEqual(self.run_settings(**{**values, **changes}).returncode, 0)
+
     def test_s3_direct_configuration_passes_without_contacting_external_services(self):
         result = self.run_settings(DOCUMENT_STORAGE_BACKEND="s3", DOCUMENT_S3_BUCKET="synthetic-private",
             DOCUMENT_SCANNER_HOST="scanner.internal", DOCUMENT_DIRECT_UPLOAD_ENABLED="true")

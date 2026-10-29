@@ -16,6 +16,7 @@ class Document(models.Model):
 
 class DocumentVersion(models.Model):
     class Status(models.TextChoices):
+        DEMO_UNVERIFIED = "DEMO_UNVERIFIED", "Demonstração — não verificado"
         UPLOADING = "UPLOADING", "Aguardando envio"
         QUARANTINED = "QUARANTINED", "Aguardando verificação"
         SCANNING = "SCANNING", "Em verificação"
