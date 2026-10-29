@@ -42,7 +42,6 @@ export default function Home() {
           </button>
           <div className={`nav-links ${open ? 'is-open' : ''}`}>
             <Link className="account-cta" href="/acessar" onClick={closeMenu}>Área do associado</Link>
-            <Link className="nav-cta" href="#checkout" onClick={closeMenu}>Associar-me <Arrow /></Link>
           </div>
         </nav>
       </header>
