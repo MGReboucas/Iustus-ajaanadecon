@@ -113,25 +113,19 @@ npm start
 
 Use `npm run typecheck` para verificar TypeScript. O backend tem instalação e comandos próprios em [backend/README.md](backend/README.md); o PostgreSQL local opcional está em [infra/README.md](infra/README.md). Instruções do frontend: [frontend/README.md](frontend/README.md). Passar no build não comprova autenticação, segurança financeira ou homologação.
 
-## Configuração PagBank
+## Configuração Mercado Pago
 
-A rota `/checkout` usa layout próprio e o SDK de Checkout Transparente presente no código. A biblioteca cria sessão, identifica bandeira, consulta parcelas e tokeniza o cartão. Parcelas, juros e total dependem da conta e do provedor; não devem ser fixados arbitrariamente no frontend. O backend ainda precisa validar a cotação e o estado financeiro.
+Use as variáveis do [modelo Mercado Pago](infra/deploy/mercadopago.env.example) no `backend/.env` local ou no ambiente do backend e worker. Mantenha `BILLING_PROVIDER=mercadopago` e `BILLING_ENABLED=false` durante a preparação. O frontend recebe a chave pública pela API; o Access Token permanece no backend.
 
-Crie `frontend/.env.local` com as variáveis abaixo e preencha as credenciais da conta de teste. Para o proxy, siga a [configuração de acesso](docs/ACESSO.md#configuração):
+A implementação atual ainda usa Payments API. A migração para Orders e sua homologação estão pendentes; credenciais de teste não tornam o checkout pronto para produção. Consulte [o estado da integração](docs/MERCADO_PAGO.md).
 
-```dotenv
-PAGBANK_EMAIL=seu-email-de-vendedor
-PAGBANK_TOKEN=seu-token-de-integracao
-NEXT_PUBLIC_PAGBANK_SANDBOX=true
-```
-
-`PAGBANK_EMAIL` e `PAGBANK_TOKEN` são privados e usados exclusivamente no servidor. Não versionar valores. `NEXT_PUBLIC_PAGBANK_SANDBOX` é público e afeta o build; definir `false` somente após correções, testes, homologação e configuração produtiva coerente. O produto/API habilitado precisa ser confirmado antes de consolidar a integração. [Contratos](docs/API.md) · [Operação](docs/OPERACAO.md).
+Variáveis `PAGBANK_*` não são necessárias para Mercado Pago. Ainda existe código legado PagBank no backend, testes e migrações para pedidos históricos; ele não foi convertido em Orders nem deve ser selecionado para novas vendas. Documentos antigos que mencionam PagBank descrevem etapas anteriores.
 
 ## Estrutura do repositório
 
 ```text
 frontend/
-├── app/                              # Páginas, CSS e rotas PagBank preservados
+├── app/                              # Páginas, CSS e proxy da API
 ├── src/lib/api/                      # Base para integração HTTP TypeScript
 ├── index.html                        # Referência estática preservada
 ├── tsconfig.json

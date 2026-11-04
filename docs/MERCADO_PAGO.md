@@ -1,5 +1,7 @@
 # Mercado Pago — checkout e renovação anual
 
+> Estado atual: o código ainda usa Payments API. A aplicação do painel foi criada como Orders; a migração e os testes de Orders estão pendentes. Não habilitar cobranças com base apenas nos testes descritos abaixo. Para Mercado Pago, as variáveis `PAGBANK_*` são dispensáveis; referências de backend/testes/migrações legadas permanecem no repositório.
+
 Atualização: 04/11/2026. Condição confirmada: R$ 699,90 por ano, em 10 parcelas de R$ 69,99, com renovação automática anual nas mesmas condições. Cada ciclo é uma compra anual parcelada; não são dez mensalidades independentes.
 
 ## Dependência externa obrigatória

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Brand from '@/components/Brand';
 import AssociationCheckout from '@/components/AssociationCheckout';
 import './checkout/checkout.css';
-import './checkout/pagbank.css';
+import './checkout/association.css';
 import './testimonials.css';
 import './home-nav.css';
 import './pricing.css';

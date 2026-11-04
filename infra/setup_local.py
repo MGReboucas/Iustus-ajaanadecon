@@ -38,8 +38,7 @@ def main():
         )
         frontend_env.write_text(
             f"IUSTUS_PROXY_SECRET={proxy}\nDJANGO_API_ORIGIN=http://127.0.0.1:8000\n"
-            "IUSTUS_PUBLIC_ORIGIN=http://localhost:3000\n"
-            "NEXT_PUBLIC_PAGBANK_SANDBOX=true\n", encoding="utf8",
+            "IUSTUS_PUBLIC_ORIGIN=http://localhost:3000\n", encoding="utf8",
         )
         print("Configuração local criada; segredos não foram exibidos.")
     elif not backend_env.exists() or not frontend_env.exists():
