@@ -1,5 +1,7 @@
 # IUSTUS — Defesa Jurídica Online
 
+**Mercado Pago — 04/11/2026:** implementação local de checkout e renovação anual em 10x, com configuração e liberação comercial pendentes. [Configuração, arquitetura e homologação](docs/MERCADO_PAGO.md). As referências PagBank abaixo são histórico.
+
 **Mobile — 06/10/2026:** primeira base do aplicativo do associado em `mobile/`, com Expo/React Native, login, recuperação, associação e consulta de casos pelo mesmo backend. [Execução, segurança e próximos passos](mobile/README.md). Pagamento dentro do app, envio de documentos, notificações e publicação nas lojas ainda não fazem parte desta entrega.
 
 **Atualização de 05/10/2026 — associação:** o fluxo comercial agora liga checkout hospedado, confirmação financeira, ativação de associado, ocorrência com data/documentos, distribuição automática e análise pelo advogado. Após o aceite, a associação envia a procuração específica do caso para assinatura e conferência. Consulte [Associação: implementação, testes e implantação](docs/ASSOCIACAO.md). A cobrança permanece condicionada à configuração e homologação do PagBank; esta atualização não representa implantação em produção. As descrições e estimativas antigas abaixo são histórico e devem ser lidas à luz desse fluxo atualizado (valor atual: R$ 797,99).

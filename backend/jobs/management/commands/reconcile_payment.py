@@ -6,7 +6,7 @@ from django.utils import timezone
 
 
 class Command(BaseCommand):
-    help = "Reconcilia um pedido com consulta autenticada ao PagBank; nunca aprova manualmente."
+    help = "Reconcilia um pedido com consulta autenticada ao provedor; nunca aprova manualmente."
 
     def add_arguments(self, parser):
         parser.add_argument("order_id")
@@ -14,8 +14,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         provider_id = options["provider_order_id"]
-        if not re.fullmatch(r"ORDE_[A-Za-z0-9-]+", provider_id):
-            raise CommandError("Informe o identificador ORDE_ do PagBank.")
+        if not re.fullmatch(r"(?:ORDE_[A-Za-z0-9-]+|[0-9]{1,30})", provider_id):
+            raise CommandError("Informe o ID numérico Mercado Pago ou ORDE_ PagBank.")
         try:
             order = Order.objects.get(pk=options["order_id"])
             order = reconcile(order.pk, provider_id)

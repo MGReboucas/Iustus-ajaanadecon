@@ -19,3 +19,6 @@
 .checkout-success .checkout-submit { margin-top: 20px; }
 .summary-price small, .summary-price p { font-size: 13px; }
 @media(max-width:800px) { .checkout-layout { padding-top: 28px; } .order-summary ul, .order-summary > .summary-description { display: none; } .summary-price { margin: 14px 0; } .summary-security { margin-top: 10px; padding-top: 10px; } .checkout-heading { margin-top: 0; } }
+
+.form-hint a { color: #f5d594; text-underline-offset: 3px; }
+.mobile-purchase[hidden] { display: none; }

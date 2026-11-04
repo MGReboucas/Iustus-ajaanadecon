@@ -12,32 +12,52 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.identity.models import User
-from apps.identity.views import PublicView
+from apps.identity.views import PublicView, IdentityView
+from apps.identity.mobile import MobileView
 from apps.identity.serializers import AcceptInviteSerializer, EmailSerializer
 from apps.identity.services import locked_token, consume, validate_new_password, audit
 from apps.identity.security import IdentityError, digest, encrypt
 from integrations.pagbank.client import create_card_order, card_public_key, verify_signature
 from .models import Order, PaymentEvent
 from .services import active_memberships, send_access, reconcile
-from .checkout import CheckoutInput, canonical, fingerprint, check_identity
+from .checkout import CheckoutInput, MercadoPagoCheckoutInput, canonical, fingerprint, check_identity
+from .provider import available, environment
+from . import mercadopago
 
 
 class CardKeyView(PublicView):
     def get(self, request):
         self.public_limit(request, "card-key", limit=30)
+        if settings.BILLING_PROVIDER == "mercadopago":
+            if not available():
+                raise IdentityError("BILLING_UNAVAILABLE", "Pagamento ainda indisponível.", 503)
+            return Response({"publicKey": settings.MERCADOPAGO_PUBLIC_KEY})
         return Response({"publicKey": card_public_key()})
 
 
 class PlanView(PublicView):
     def get(self, request):
         return Response({"amount": settings.MEMBERSHIP_PRICE_CENTS, "installments": settings.MEMBERSHIP_INSTALLMENTS,
-            "planVersion": settings.MEMBERSHIP_PLAN_VERSION, "available": settings.BILLING_ENABLED,
-            "sandbox": settings.PAGBANK_ENVIRONMENT == "sandbox", "policyVersion": settings.REGISTRATION_POLICY_VERSION})
+            "planVersion": settings.MEMBERSHIP_PLAN_VERSION, "available": available(), "provider": settings.BILLING_PROVIDER,
+            "automaticRenewal": settings.BILLING_PROVIDER == "mercadopago",
+            "sandbox": environment() == "sandbox", "policyVersion": settings.REGISTRATION_POLICY_VERSION})
 
 
 class CheckoutView(PublicView):
     def post(self, request):
         self.public_limit(request, "checkout", limit=20)
+        if settings.BILLING_PROVIDER == "mercadopago":
+            data = self.data(request, MercadoPagoCheckoutInput)
+            key = request.headers.get("Idempotency-Key", "")
+            if not re.fullmatch(r"[A-Za-z0-9_-]{16,100}", key):
+                raise IdentityError("IDEMPOTENCY_REQUIRED", "Atualize a página e tente novamente.")
+            if not request.session.session_key:
+                request.session.create()
+            order = mercadopago.start_order(data, digest(request.session.session_key), key)
+            request.session["checkout_order"] = str(order.pk)
+            request.session.save()
+            order = mercadopago.send_order(order.pk, data["card"])
+            return Response({"status": order.status}, status=201)
         data = self.data(request, CheckoutInput)
         if not data["accepted"]:
             raise IdentityError("ACCEPTANCE_REQUIRED", "Confirme as condições da adesão.", 422)
@@ -83,7 +103,8 @@ class CheckoutView(PublicView):
         if not order or order.session_digest != digest(request.session.session_key or ""):
             raise Http404
         # Uma consulta autenticada confirma o pagamento mesmo se o webhook atrasar.
-        if order.provider_order_id and order.status == "WAITING":
+        if (order.provider_order_id or order.provider == "mercadopago") and order.status in ("CREATING", "WAITING"):
+            self.public_limit(request, "checkout-status", limit=120)
             due = timezone.now() - timedelta(seconds=15)
             claimed = Order.objects.filter(pk=order.pk).filter(Q(checked_at__isnull=True) | Q(checked_at__lt=due)).update(checked_at=timezone.now())
             if claimed:
@@ -151,3 +172,48 @@ class WebhookView(APIView):
         elif identifier == order.checkout_id and payload.get("status") == "EXPIRED":
             Order.objects.filter(pk=order.pk, status="WAITING").update(status="EXPIRED")
         return Response(status=204)
+
+
+class MercadoPagoWebhookView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from integrations.mercadopago import client
+        identifier = request.query_params.get("data.id", "")
+        if not client.verify_signature(identifier, request.headers.get("x-request-id", ""), request.headers.get("x-signature", "")):
+            raise IdentityError("INVALID_SIGNATURE", "Notificação não autenticada.", 403)
+        payload = request.data
+        if not isinstance(payload, dict) or payload.get("type") != "payment" or not isinstance(payload.get("data"), dict) or str(payload["data"].get("id")) != identifier:
+            raise IdentityError("INVALID_EVENT", "Notificação inválida.")
+        snapshot = client.payment(identifier)
+        try:
+            reference = UUID(snapshot.get("external_reference", ""))
+        except (ValueError, TypeError, AttributeError):
+            return Response({"received": True})
+        order = Order.objects.filter(pk=reference, provider="mercadopago", environment=environment("mercadopago")).first()
+        if order:
+            client.validate_payment(order, snapshot, mercadopago.decode(order.subscription.encrypted_instrument))
+            PaymentEvent.objects.get_or_create(digest=digest("mp-webhook:" + identifier + ":" + request.headers["x-request-id"]),
+                defaults={"order": order, "provider_order_id": identifier, "available_at": timezone.now()})
+        return Response({"received": True})
+
+
+
+class SubscriptionView(IdentityView):
+    def get(self, request):
+        if request.user.role != "CLIENT":
+            raise IdentityError("FORBIDDEN", "Disponível para associados.", 403)
+        return Response(mercadopago.subscription_data(request.user))
+
+    def post(self, request):
+        if request.user.role != "CLIENT":
+            raise IdentityError("FORBIDDEN", "Disponível para associados.", 403)
+        if request.data != {"cancelRenewal": True}:
+            raise IdentityError("INVALID_INPUT", "Confirme o cancelamento da próxima renovação.", 422)
+        return Response(mercadopago.cancel_renewal(request.user))
+
+
+class MobileSubscriptionView(MobileView):
+    get = SubscriptionView.get
+    post = SubscriptionView.post

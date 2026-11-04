@@ -14,12 +14,13 @@ from apps.identity.services import issue_token, audit
 from integrations.pagbank.client import request_api
 from .models import Order, Membership, BillingIdentity
 from .checkout import check_identity
+from .provider import environment
 
 
 def active_memberships(user):
     now = timezone.now()
     return Membership.objects.filter(user=user, starts_at__lte=now, expires_at__gt=now,
-        revoked_at__isnull=True, order__environment=settings.PAGBANK_ENVIRONMENT, order__status="PAID")
+        revoked_at__isnull=True, order__environment=environment(), order__status="PAID")
 
 
 def membership_data(user):
@@ -36,6 +37,10 @@ def send_access(user):
 
 
 def reconcile(order_id, provider_id):
+    candidate = Order.objects.get(pk=order_id)
+    if candidate.provider == "mercadopago":
+        from .mercadopago import reconcile_payment
+        return reconcile_payment(order_id, provider_id)
     # Consultar estado atual autenticado evita replays de um webhook PAID após estorno.
     snapshot = request_api("/orders/" + provider_id)
     if snapshot.get("id") != provider_id or snapshot.get("reference_id") != str(order_id):

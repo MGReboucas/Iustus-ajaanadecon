@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from jobs.mail import deliver_one
 from jobs.communication import deliver_case_email, schedule_reminders
 from jobs.billing import process_payment
+from apps.billing.mercadopago import renew_due
 class Command(BaseCommand):
     help = "Executa e-mails, lembretes, scanner e limpeza de exportações; --once executa um ciclo limitado."
     def add_arguments(self, parser):
@@ -14,8 +15,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             while True:
+                for _ in range(100):
+                    if not renew_due(): break
                 close_old_connections()
-                if settings.BILLING_ENABLED:
+                if settings.BILLING_ENABLED or settings.MERCADOPAGO_ACCESS_TOKEN:
                     for _ in range(10):
                         if not process_payment(): break
                 schedule_reminders()

@@ -16,3 +16,7 @@ IDENTITY_RATE_LIMITS_ENABLED = False
 MEMBERSHIP_REQUIRED = False
 CASE_AUTO_ASSIGN = False
 CASE_INTAKE_REQUIRED = False
+
+BILLING_PROVIDER = "pagbank"  # Testes históricos; suíte Mercado Pago configura seu provedor.
+
+MEMBERSHIP_PLAN_VERSION = "annual-2026-v2"

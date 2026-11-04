@@ -80,7 +80,7 @@ export type DocumentVersion = {
 };
 export type DocumentUpload = { uploadId: string; uploadUrl: string; expiresAt: string; directUpload: boolean; version: DocumentVersion };
 export type DirectUpload = { url: string; method: 'PUT'; headers: Record<string, string>; expiresIn: number };
-export type BillingPlan = { amount: number; installments: number; planVersion: string; available: boolean; sandbox: boolean; policyVersion: string };
+export type BillingPlan = { provider?: "mercadopago" | "pagbank"; automaticRenewal?: boolean; amount: number; installments: number; planVersion: string; available: boolean; sandbox: boolean; policyVersion: string };
 export type CaseCatalog = { categories: { id: string; label: string }[]; documentsAvailable: boolean; documentDemo?: boolean; intakeRequired: boolean; submission: SubmissionAccess };
 export type InformationRequest = { id: string; description: string; response: string; resolution: string; resolved: boolean; responded: boolean; attachments: DocumentVersion[] };
 export type LegalWorkflow = {
@@ -90,3 +90,8 @@ export type LegalWorkflow = {
 };
 export type PrivacyRequest = { id: string; kind: 'ACCESS' | 'CORRECTION' | 'DELETION' | 'OTHER'; description: string; status: string; response: string; createdAt: string };
 export type MobileContext = { policyVersion: string; registrationAvailable: boolean; billingAvailable: boolean; checkoutAvailable: boolean };
+
+export type SubscriptionState = { subscription: null | {
+  status: string; automaticRenewal: boolean; nextChargeAt: string | null;
+  amount: number; installments: number; canceledAt: string | null;
+} };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Brand from '@/components/Brand';
@@ -31,6 +31,14 @@ function Logo() {
 export default function Home() {
   const [open, setOpen] = useState(false);
   const closeMenu = () => setOpen(false);
+  const [checkoutVisible, setCheckoutVisible] = useState(false);
+  useEffect(() => {
+    const checkout = document.getElementById('checkout');
+    if (!checkout) return;
+    const observer = new IntersectionObserver(([entry]) => setCheckoutVisible(entry.isIntersecting));
+    observer.observe(checkout);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <main id="inicio">
@@ -93,11 +101,11 @@ export default function Home() {
 
       <AssociationCheckout />
 
-      <section className="faq container"><div><div className="eyebrow">DÚVIDAS FREQUENTES</div><h2>Clareza antes<br />de começar.</h2></div><div className="faq-list"><details><summary>A quem pertence o projeto Íustus?<span>+</span></summary><p>A Íustus é um projeto que pertence à Aja Anadecon. A plataforma permite cadastrar ocorrências e acompanhar o atendimento jurídico online.</p></details><details open><summary>Posso usar a plataforma mais de uma vez?<span>+</span></summary><p>Sim. Sua associação dá acesso ilimitado à plataforma durante o período anual de vigência.</p></details><details><summary>Como funciona o pagamento?<span>+</span></summary><p>A associação anual é paga em 10 parcelas de R$ 69,99, totalizando R$ 699,90, com acesso à plataforma durante o período anual de vigência.</p></details><details><summary>O que preciso enviar para iniciar um caso?<span>+</span></summary><p>Envie a descrição do fato, a data do ocorrido e os documentos comprobatórios. A procuração é enviada pela associação somente depois que nosso time da Aja Anadecon aprovar o caso, e vale para aquele caso específico.</p></details><details><summary>Como acompanho meu caso?<span>+</span></summary><p>O painel mostra o gráfico das solicitações, o andamento e as pendências de cada caso. Você também recebe avisos por e-mail quando houver novidades no atendimento.</p></details></div></section>
+      <section className="faq container"><div><div className="eyebrow">DÚVIDAS FREQUENTES</div><h2>Clareza antes<br />de começar.</h2></div><div className="faq-list"><details><summary>A quem pertence o projeto Íustus?<span>+</span></summary><p>A Íustus é um projeto que pertence à Aja Anadecon. A plataforma permite cadastrar ocorrências e acompanhar o atendimento jurídico online.</p></details><details open><summary>Posso usar a plataforma mais de uma vez?<span>+</span></summary><p>Sim. Sua associação dá acesso ilimitado à plataforma durante o período anual de vigência.</p></details><details><summary>Como funciona o pagamento?<span>+</span></summary><p>A associação anual é paga em 10 parcelas de R$ 69,99, totalizando R$ 699,90, com renovação automática anual nas mesmas condições. Você pode cancelar a próxima renovação em Minha conta antes da cobrança.</p></details><details><summary>O que preciso enviar para iniciar um caso?<span>+</span></summary><p>Envie a descrição do fato, a data do ocorrido e os documentos comprobatórios. A procuração é enviada pela associação somente depois que nosso time da Aja Anadecon aprovar o caso, e vale para aquele caso específico.</p></details><details><summary>Como acompanho meu caso?<span>+</span></summary><p>O painel mostra o gráfico das solicitações, o andamento e as pendências de cada caso. Você também recebe avisos por e-mail quando houver novidades no atendimento.</p></details></div></section>
 
 
-      <footer><div className="container footer-inner"><Logo /><a className="institutional-credit footer-credit" href="https://ajaanadecon.org" target="_blank" rel="noopener noreferrer"><AssociationLogo /><span>© 2026 ÍUSTUS. Um projeto da <strong>Aja Anadecon</strong>.<br />Atendimento online, com clareza e segurança.</span></a><div><a href="#privacidade">Privacidade</a><a href="#termos">Termos de uso</a></div></div></footer>
-      <div className="mobile-purchase"><div><small>Plano anual</small><b>10x de R$ 69,99</b></div><Link href="#checkout">Associar-me <Arrow /></Link></div>
+      <footer><div className="container footer-inner"><Logo /><a className="institutional-credit footer-credit" href="https://ajaanadecon.org" target="_blank" rel="noopener noreferrer"><AssociationLogo /><span>© 2026 ÍUSTUS. Um projeto da <strong>Aja Anadecon</strong>.<br />Atendimento online, com clareza e segurança.</span></a><div><a href="/privacidade">Privacidade</a><a href="/termos">Termos de uso</a></div></div></footer>
+      <div className="mobile-purchase" hidden={checkoutVisible}><div><small>Plano anual</small><b>10x de R$ 69,99</b></div><Link href="#checkout">Associar-me <Arrow /></Link></div>
     </main>
   );
 }

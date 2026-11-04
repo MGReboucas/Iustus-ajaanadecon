@@ -10,6 +10,11 @@ class Order(models.Model):
     amount = models.PositiveIntegerField()
     installments = models.PositiveSmallIntegerField(default=12)
     plan_version = models.CharField(max_length=80, default="annual-legacy-v1")
+    provider = models.CharField(max_length=20, default="pagbank")
+    subscription = models.ForeignKey("Subscription", null=True, on_delete=models.PROTECT)
+    cycle = models.PositiveIntegerField(default=0)
+    encrypted_payment_payload = models.TextField(blank=True)
+    payment_started_at = models.DateTimeField(null=True)
     environment = models.CharField(max_length=12)
     policy_version = models.CharField(max_length=80)
     status = models.CharField(max_length=24, default="CREATING")
@@ -58,3 +63,27 @@ class PaymentEvent(models.Model):
     last_error = models.CharField(max_length=40, blank=True)
     lease_id = models.UUIDField(null=True)
     lease_until = models.DateTimeField(null=True)
+
+
+class Subscription(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT)
+    environment = models.CharField(max_length=12)
+    buyer_digest = models.CharField(max_length=64)
+    status = models.CharField(max_length=24, default="PENDING")
+    amount = models.PositiveIntegerField()
+    installments = models.PositiveSmallIntegerField()
+    plan_version = models.CharField(max_length=80)
+    policy_version = models.CharField(max_length=80)
+    accepted_at = models.DateTimeField(auto_now_add=True)
+    canceled_at = models.DateTimeField(null=True)
+    next_charge_at = models.DateTimeField(null=True)
+    encrypted_customer = models.TextField()
+    # Apenas referências do cofre MP; nunca PAN/CVV. Protegidas em repouso.
+    encrypted_instrument = models.TextField(blank=True)
+    last_cycle = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["environment", "buyer_digest"],
+            condition=models.Q(status__in=["PENDING", "ACTIVE", "PAST_DUE", "REVIEW"]),
+            name="billing_one_live_subscription")]

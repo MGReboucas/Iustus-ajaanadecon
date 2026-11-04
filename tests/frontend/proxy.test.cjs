@@ -90,3 +90,24 @@ test('native documents preserve binary content and remove upstream cookies', asy
   const download = await call(new Response('%PDF-test', { headers: { 'content-type': 'application/octet-stream' } }), `mobile/documents/${id}/versions/${id}/content`);
   assert.equal(download.status, 200); assert.equal(await download.text(), '%PDF-test');
 });
+
+
+test('Mercado Pago webhook preserves signature, request id and signed data.id only', async () => {
+  const path = 'billing/mercadopago/webhook';
+  const request = new Request('https://app.example.test/api/v1/' + path + '?data.id=987&type=payment&access_token=discard', {
+    method: 'POST', body: JSON.stringify({ type: 'payment', data: { id: '987' } }), headers: {
+      host: 'app.example.test', 'content-type': 'application/json', 'x-signature': 'ts=123,v1=signature',
+      'x-request-id': 'event-one', cookie: 'browser=private', authorization: 'Bearer discard',
+    },
+  });
+  request.nextUrl = new URL(request.url);
+  let observed;
+  const result = await handler(Response.json({ received: true }), (url, options) => { observed = { url, options }; })(request, { params: Promise.resolve({ path: path.split('/') }) });
+  assert.equal(result.status, 200);
+  assert.equal(observed.url.searchParams.get('data.id'), '987');
+  assert.equal(observed.url.searchParams.get('access_token'), null);
+  assert.equal(observed.options.headers.get('x-signature'), 'ts=123,v1=signature');
+  assert.equal(observed.options.headers.get('x-request-id'), 'event-one');
+  assert.equal(observed.options.headers.get('cookie'), null);
+  assert.equal(observed.options.headers.get('authorization'), null);
+});

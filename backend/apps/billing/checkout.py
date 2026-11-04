@@ -76,3 +76,19 @@ def check_identity(customer, environment):
     if user and (user.role != "CLIENT" or not user.is_active):
         raise IdentityError("BUYER_REVIEW_REQUIRED", "O cadastro precisa de conferência pela associação.", 422)
     return cpf_digest
+
+
+class MercadoPagoCardInput(StrictSerializer):
+    token = serializers.RegexField(r"^[A-Za-z0-9_-]{16,100}$", trim_whitespace=False)
+    paymentMethodId = serializers.RegexField(r"^[a-zA-Z0-9_-]{1,40}$")
+    issuerId = serializers.RegexField(r"^[0-9]{1,20}$")
+    installments = serializers.IntegerField(min_value=1, max_value=12)
+
+
+class MercadoPagoCheckoutInput(StrictSerializer):
+    accepted = serializers.BooleanField()
+    automaticRenewal = serializers.BooleanField()
+    planVersion = serializers.CharField(max_length=80)
+    policyVersion = serializers.CharField(max_length=80)
+    customer = CustomerInput()
+    card = MercadoPagoCardInput()

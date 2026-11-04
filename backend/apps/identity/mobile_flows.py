@@ -8,6 +8,7 @@ from apps.documents import views as documents
 from apps.legal.views import WorkflowView
 from apps.privacy.views import RequestsView as PrivacyView
 from apps.communication.views import NotificationsView, NotificationReadView
+from apps.billing.provider import available as billing_available
 from apps.billing.views import ActivateView, ResendAccessView, PlanView
 from integrations.storage.private import open_object
 from . import views as identity
@@ -27,7 +28,7 @@ class ContextView(PublicAdapter):
     def get(self, request):
         return Response({"policyVersion": settings.REGISTRATION_POLICY_VERSION,
                          "registrationAvailable": not settings.MEMBERSHIP_REQUIRED,
-                         "billingAvailable": settings.BILLING_ENABLED,
+                         "billingAvailable": billing_available(),
                          "checkoutAvailable": getattr(settings, "MOBILE_EXTERNAL_CHECKOUT_ENABLED", False)})
 
 

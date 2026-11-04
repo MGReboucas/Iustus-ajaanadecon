@@ -7,7 +7,7 @@ const routes = new Set([
   "mobile/auth/context", "mobile/auth/register", "mobile/auth/verify", "mobile/auth/resend", "mobile/auth/reset",
   "mobile/billing/activate", "mobile/billing/resend", "mobile/billing/plan", "mobile/me", "mobile/cases/catalog", "mobile/privacy/requests", "mobile/notifications",
   "mobile/auth/login", "mobile/auth/logout", "mobile/auth/recovery", "mobile/dashboard", "mobile/cases",
-  "billing/plan", "billing/card-key", "billing/checkout", "billing/activate", "billing/resend", "billing/webhook",
+  "billing/mercadopago/webhook", "billing/subscription", "mobile/billing/subscription", "billing/plan", "billing/card-key", "billing/checkout", "billing/activate", "billing/resend", "billing/webhook",
   "ready",
   "auth/csrf", "auth/register", "auth/verify", "auth/resend", "auth/login",
   "auth/logout", "auth/recovery", "auth/reset", "auth/mfa/enroll", "auth/mfa/verify",
@@ -55,7 +55,11 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
     const authorization = request.headers.get("authorization");
     if (authorization) headers.set("authorization", authorization);
   }
-  if (path === "billing/webhook") {
+  if (path === "billing/webhook" || path === "billing/mercadopago/webhook") {
+    for (const name of ["x-signature", "x-request-id"]) {
+      const value = request.headers.get(name);
+      if (value) headers.set(name, value);
+    }
     headers.delete("cookie");
     const signature = request.headers.get("x-payload-signature");
     if (signature) headers.set("x-payload-signature", signature);
@@ -85,13 +89,13 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
   }
   try {
     const url = new URL(`/api/v1/${path}`, origin);
-    for (const name of ["cursor", "state", ...(path === "notifications" ? ["unread"] : []), ...(downloadRoute.test(path) ? ["token"] : [])]) {
+    for (const name of [...(path === "billing/mercadopago/webhook" ? ["data.id", "type"] : []), "cursor", "state", ...(path === "notifications" ? ["unread"] : []), ...(downloadRoute.test(path) ? ["token"] : [])]) {
       const value = request.nextUrl.searchParams.get(name);
       if (value) url.searchParams.set(name, value);
     }
     const upstream = await fetch(url, {
       method: request.method, headers, body: body as BodyInit | undefined,
-      cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(documentRoute.test(path) || mobileDocumentRoute.test(path) || exportRoute.test(path) ? 60000 : 15000),
+      cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(documentRoute.test(path) || mobileDocumentRoute.test(path) || exportRoute.test(path) || path === "billing/checkout" ? 60000 : 15000),
     });
     if (upstream.status >= 300 && upstream.status < 400) return failure("UPSTREAM_ERROR", "Serviço indisponível.", 502);
     // Nunca retransmitir páginas DEBUG/HTML ou stack trace do backend.

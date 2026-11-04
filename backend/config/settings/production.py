@@ -7,10 +7,16 @@ from django.core.exceptions import ImproperlyConfigured
 from .base import *  # noqa: F403
 from .base import env
 
-if PAGBANK_ENVIRONMENT not in ("sandbox", "production"):
-    raise ImproperlyConfigured("PAGBANK_ENVIRONMENT deve ser sandbox ou production.")
-if BILLING_ENABLED and (not PAGBANK_API_TOKEN or not PAGBANK_WEBHOOK_PUBLIC_KEY):
-    raise ImproperlyConfigured("Configure token PagBank e chave pública de webhook antes de habilitar adesões.")
+if BILLING_PROVIDER not in ("mercadopago", "pagbank"):
+    raise ImproperlyConfigured("Provedor de pagamento inválido.")
+if BILLING_ENABLED:
+    if BILLING_PROVIDER == "mercadopago":
+        if not (MERCADOPAGO_ACCESS_TOKEN and MERCADOPAGO_PUBLIC_KEY and MERCADOPAGO_WEBHOOK_SECRET
+                and MERCADOPAGO_COLLECTOR_ID and MERCADOPAGO_AUTOMATIC_PAYMENTS_ENABLED
+                and MERCADOPAGO_INTEREST_FREE_CONFIRMED and MERCADOPAGO_ENVIRONMENT in ("sandbox", "production")):
+            raise ImproperlyConfigured("Configure as credenciais Mercado Pago, liberação de Pagamentos Automáticos e parcelamento sem juros.")
+    elif PAGBANK_ENVIRONMENT not in ("sandbox", "production") or not PAGBANK_API_TOKEN or not PAGBANK_WEBHOOK_PUBLIC_KEY:
+        raise ImproperlyConfigured("Configure as credenciais e o ambiente PagBank.")
 
 
 def required_secret(name, minimum=32):

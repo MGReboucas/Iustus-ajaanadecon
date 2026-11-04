@@ -21,7 +21,7 @@ export function apiOrigin() {
 export type RequestOptions = { method?: 'POST' | 'PATCH'; idempotencyKey?: string; binary?: boolean; download?: boolean };
 export function validRoute(path: string) {
   const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
-  return new RegExp(`^(?:auth/(?:login|logout|recovery|context|register|verify|resend|reset)|billing/(?:activate|resend|plan)|dashboard|me|privacy/requests|notifications(?:/${uuid}/read)?|cases(?:/catalog|/${uuid}(?:/(?:timeline|messages|submit|requests|workflow|documents(?:/uploads)?|proposals(?:/${uuid}/decision)?)|/requests/${uuid}/response)?)?|documents/${uuid}/versions(?:/${uuid}/content)?|uploads/${uuid}/(?:content|complete|authorize))(?:\\?cursor=[^#]*)?$`, 'i').test(path);
+  return new RegExp(`^(?:auth/(?:login|logout|recovery|context|register|verify|resend|reset)|billing/(?:activate|resend|plan|subscription)|dashboard|me|privacy/requests|notifications(?:/${uuid}/read)?|cases(?:/catalog|/${uuid}(?:/(?:timeline|messages|submit|requests|workflow|documents(?:/uploads)?|proposals(?:/${uuid}/decision)?)|/requests/${uuid}/response)?)?|documents/${uuid}/versions(?:/${uuid}/content)?|uploads/${uuid}/(?:content|complete|authorize))(?:\\?cursor=[^#]*)?$`, 'i').test(path);
 }
 export async function request<T>(path: string, token?: string, body?: object, options: RequestOptions = {}): Promise<T> {
   if (!validRoute(path)) {
