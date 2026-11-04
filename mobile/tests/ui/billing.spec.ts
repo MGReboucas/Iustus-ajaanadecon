@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 const user = { id: '00000000-0000-0000-0000-000000000101', name: 'Pessoa Teste', email: 'buyer@example.test', role: 'CLIENT', caseEmailEnabled: true };
 const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,OPTIONS' };
 
-test('app abre checkout no portal e permite cancelar a próxima renovação com bearer', async ({ page, context }) => {
+test('app abre checkout no portal com renovação manual', async ({ page, context }) => {
   let canceled = false;
   await context.route('https://mobile-api.example.test/checkout', route => route.fulfill({ contentType: 'text/html', body: '<h1>Checkout Mercado Pago</h1>' }));
   await page.route('https://mobile-api.example.test/api/v1/mobile/**', async route => {
@@ -13,7 +13,7 @@ test('app abre checkout no portal e permite cancelar a próxima renovação com 
     if (path === 'auth/login') return reply({ token: 'x'.repeat(43), expiresAt: new Date(Date.now() + 86400000).toISOString(), user });
     if (path === 'me') return reply({ user });
     if (path === 'auth/context') return reply({ policyVersion: 'test', registrationAvailable: false, billingAvailable: true, checkoutAvailable: true });
-    if (path === 'billing/plan') return reply({ provider: 'mercadopago', automaticRenewal: true, amount: 69990, installments: 10, available: true, sandbox: true, planVersion: 'v3', policyVersion: 'test' });
+    if (path === 'billing/plan') return reply({ provider: 'mercadopago', automaticRenewal: false, amount: 69990, installments: 10, available: true, sandbox: true, planVersion: 'v3', policyVersion: 'test' });
     if (path === 'billing/subscription') {
       expect(req.headers().authorization).toBe('Bearer ' + 'x'.repeat(43));
       if (req.method() === 'POST') { expect(req.postDataJSON()).toEqual({ cancelRenewal: true }); canceled = true; }
@@ -31,17 +31,14 @@ test('app abre checkout no portal e permite cancelar a próxima renovação com 
   await expect(page.getByText('Olá, Pessoa.')).toBeVisible();
   await page.getByRole('tab', { name: /Minha conta/ }).click();
   await page.getByRole('button', { name: 'Opções da associação' }).click();
-  await expect(page.getByText('Renovação automática ativa', { exact: true })).toBeVisible();
+  await expect(page.getByText('Sua adesão não tem renovação automática.', { exact: true })).toBeVisible();
   const popupPromise = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'Pagar com Mercado Pago no portal' }).click();
   const popup = await popupPromise;
   await expect(popup).toHaveURL('https://mobile-api.example.test/checkout');
   await popup.close();
-  await expect(page.getByRole('button', { name: 'Cancelar próxima renovação' })).toBeDisabled();
-  await page.getByRole('switch', { name: 'Confirmar cancelamento da renovação' }).check();
-  await page.getByRole('button', { name: 'Cancelar próxima renovação' }).click();
-  await expect(page.getByText('Próxima renovação cancelada', { exact: true })).toBeVisible();
-  expect(canceled).toBe(true);
+  await expect(page.getByRole('button', { name: 'Cancelar próxima renovação' })).toHaveCount(0);
+  expect(canceled).toBe(false);
 });
 
 test('app não oferece pagamento quando o provedor não está habilitado', async ({ page }) => {

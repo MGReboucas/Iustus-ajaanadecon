@@ -19,7 +19,7 @@ const statuses: Record<string, string> = {
   REVIEW: "Esta tentativa precisa de conferência pela associação. Entre em contato antes de pagar novamente.",
   CREATING: "Estamos conferindo sua tentativa. Aguarde antes de iniciar outro pagamento.",
   WAITING: "Pagamento enviado. Aguardando confirmação do Mercado Pago.",
-  PAID: "Pagamento confirmado! Enviamos por e-mail as instruções de acesso. Você pode gerenciar a renovação automática em Minha conta.",
+  PAID: "Pagamento confirmado! Enviamos por e-mail as instruções de acesso. Sua adesão vale por um ano, sem renovação automática.",
   DECLINED: "O cartão não foi aprovado. Confira os dados ou tente outro cartão.",
   CANCELED: "O pagamento foi cancelado.", EXPIRED: "O prazo deste pagamento terminou.",
   REVOKED: "O pagamento foi estornado ou contestado. Consulte sua conta.",
@@ -82,7 +82,7 @@ export default function AssociationCheckout() {
     } catch { requestKey.current = crypto.randomUUID(); }
     api<unknown>("billing/plan").then(async data => {
       if (!current) return;
-      if (!isBillingPlan(data) || data.provider !== "mercadopago" || !data.automaticRenewal) throw new Error("INVALID_PLAN_RESPONSE");
+      if (!isBillingPlan(data) || data.provider !== "mercadopago" || data.automaticRenewal !== false) throw new Error("INVALID_PLAN_RESPONSE");
       setPlan(data);
       if (data.available) {
         const key = await api<{ publicKey: string }>("billing/card-key");
@@ -143,7 +143,7 @@ export default function AssociationCheckout() {
   async function pay(card: CardData) {
     if (!customer || !plan || !accepted || submitting.current) return;
     if (Number(card.installments) !== plan.installments) { setError("Este plano exige 10 parcelas sem juros. Confira se o cartão oferece essa condição."); return; }
-    payment.current = { accepted: true, automaticRenewal: true, planVersion: plan.planVersion, policyVersion: plan.policyVersion, customer,
+    payment.current = { accepted: true, automaticRenewal: false, planVersion: plan.planVersion, policyVersion: plan.policyVersion, customer,
       card: { token: card.token, paymentMethodId: card.payment_method_id, issuerId: String(card.issuer_id), installments: Number(card.installments) } };
     await submitPayment();
   }
@@ -160,7 +160,7 @@ export default function AssociationCheckout() {
         <div className="checkout-heading"><span className="checkout-kicker">IUSTUS · UM PROJETO AJA ANADECON</span><h2 id="checkout-title">Faça sua adesão.</h2><p>Cadastre-se e pague com cartão pelo Mercado Pago. Após a confirmação, enviaremos o acesso por e-mail.</p></div>
         {error && <p className="mp-error" role="alert">{error}</p>}
         {status ? <div className="checkout-success" role="status"><h2>{status === "PAID" ? "Sua associação está ativa" : "Seu pagamento"}</h2><p>{statuses[status] || "Consultando seu pagamento…"}</p><Link className="back-home" href="/acessar">Entrar ou reenviar acesso</Link>{terminal.includes(status) && <button className="checkout-submit" onClick={retry}>Tentar novamente</button>}{status === "CREATING" && payment.current && <button className="checkout-submit" disabled={busy} onClick={submitPayment}>Reenviar a mesma tentativa</button>}{status === "CREATING" && !payment.current && <p>Aguarde a conferência desta tentativa. Se necessário, entre em contato com a associação.</p>}</div>
-        : customer && plan ? <div className="association-form"><p>Associado: {customer.name} · {customer.email}</p><p>{installments}x de {money(amount / installments)}, total de {money(amount)} por ano. Renovação automática anual nas mesmas condições, até cancelar.</p><CardPayment publicKey={publicKey} plan={plan} customer={customer} onSubmit={pay} onError={setError} /><p className="form-hint">Dados do cartão protegidos pelo Mercado Pago. O Iustus recebe apenas o token e mantém referências ao cofre para as renovações autorizadas.</p></div>
+        : customer && plan ? <div className="association-form"><p>Associado: {customer.name} · {customer.email}</p><p>{installments}x de {money(amount / installments)}, total de {money(amount)} por ano. Renovação manual: nenhuma nova cobrança será feita automaticamente.</p><CardPayment publicKey={publicKey} plan={plan} customer={customer} onSubmit={pay} onError={setError} /><p className="form-hint">Dados do cartão protegidos pelo Mercado Pago. O Iustus recebe apenas o token para esta compra.</p></div>
         : <form className="association-form" onSubmit={prepare}>
           <fieldset disabled={busy}><legend>Cadastro do associado</legend>
             <label>Nome completo<input name="name" autoComplete="name" required minLength={3} maxLength={120} /></label>
@@ -169,14 +169,14 @@ export default function AssociationCheckout() {
             <div className="form-grid"><label>CPF do associado<input name="cpf" inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" required maxLength={14} /></label><label>Celular com DDD<input name="phone" type="tel" autoComplete="tel-national" placeholder="11999999999" pattern="[0-9]{11}" required maxLength={11} /></label></div>
           </fieldset>
           <div className="checkout-total"><strong>{installments}x de {money(amount / installments)} sem juros</strong><span>Total anual: {money(amount)}</span></div>
-          <label className="checkout-acceptance"><input type="checkbox" required checked={accepted} onChange={e => setAccepted(e.target.checked)} />Autorizo a compra anual de {money(amount)} em {installments} parcelas e sua renovação automática anual nas mesmas condições. Posso cancelar a próxima renovação em Minha conta antes da cobrança. Honorários, custas e despesas são contratados separadamente por caso.</label>
+          <label className="checkout-acceptance"><input type="checkbox" required checked={accepted} onChange={e => setAccepted(e.target.checked)} />Autorizo a compra anual de {money(amount)} em {installments} parcelas sem renovação automática. Uma nova adesão depende de outro pagamento autorizado por mim. Honorários, custas e despesas são contratados separadamente por caso.</label>
           <p className="form-hint">Cada ocorrência passa por análise; a procuração específica é solicitada após o aceite. Leia os <Link href="/termos">termos</Link> e a <Link href="/privacidade">política de privacidade</Link>.</p>
           {plan?.sandbox && plan.available && <p className="checkout-notice">Ambiente de teste: utilize somente cartões e contas de teste do Mercado Pago.</p>}
           {plan && !plan.available && <p className="checkout-notice" role="status">O pagamento online ainda não está disponível. Associados podem entrar normalmente.</p>}
           <button className="checkout-submit" disabled={busy || !checkoutReady || !accepted || !plan?.available || !publicKey}>Continuar para pagamento seguro</button>
         </form>}
       </section>
-      <aside className="order-summary" aria-label="Resumo da adesão"><div className="summary-top"><span>ASSOCIAÇÃO ANUAL</span><b>Acompanhamento online</b></div><h2>Iustus</h2><div className="summary-price"><small>{installments} parcelas sem juros de</small><strong>{money(amount / installments)}</strong><p>Total: {money(amount)} por ano.</p></div><ul><li>Acesso aos recursos da plataforma</li><li>Cadastro e acompanhamento de ocorrências</li><li>Documentos e histórico no painel</li><li>Renovação automática anual em {installments} parcelas</li><li>Cancele a próxima renovação em Minha conta</li></ul><p className="summary-description">Honorários e despesas à parte. Multas de trânsito e direito civil, exceto família e sucessões. O envio não garante aceite do caso.</p></aside>
+      <aside className="order-summary" aria-label="Resumo da adesão"><div className="summary-top"><span>ASSOCIAÇÃO ANUAL</span><b>Acompanhamento online</b></div><h2>Iustus</h2><div className="summary-price"><small>{installments} parcelas sem juros de</small><strong>{money(amount / installments)}</strong><p>Total: {money(amount)} por ano.</p></div><ul><li>Acesso aos recursos da plataforma</li><li>Cadastro e acompanhamento de ocorrências</li><li>Documentos e histórico no painel</li><li>Vigência de um ano</li><li>Renovação manual, sem cobranças automáticas</li></ul><p className="summary-description">Honorários e despesas à parte. Multas de trânsito e direito civil, exceto família e sucessões. O envio não garante aceite do caso.</p></aside>
     </div>
   </section>;
 }

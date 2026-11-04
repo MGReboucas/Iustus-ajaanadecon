@@ -12,9 +12,9 @@ if BILLING_PROVIDER not in ("mercadopago", "pagbank"):
 if BILLING_ENABLED:
     if BILLING_PROVIDER == "mercadopago":
         if not (MERCADOPAGO_ACCESS_TOKEN and MERCADOPAGO_PUBLIC_KEY and MERCADOPAGO_WEBHOOK_SECRET
-                and MERCADOPAGO_COLLECTOR_ID and MERCADOPAGO_AUTOMATIC_PAYMENTS_ENABLED
+                and MERCADOPAGO_COLLECTOR_ID
                 and MERCADOPAGO_INTEREST_FREE_CONFIRMED and MERCADOPAGO_ENVIRONMENT in ("sandbox", "production")):
-            raise ImproperlyConfigured("Configure as credenciais Mercado Pago, liberação de Pagamentos Automáticos e parcelamento sem juros.")
+            raise ImproperlyConfigured("Configure as credenciais Mercado Pago, parcelamento sem juros.")
     elif PAGBANK_ENVIRONMENT not in ("sandbox", "production") or not PAGBANK_API_TOKEN or not PAGBANK_WEBHOOK_PUBLIC_KEY:
         raise ImproperlyConfigured("Configure as credenciais e o ambiente PagBank.")
 

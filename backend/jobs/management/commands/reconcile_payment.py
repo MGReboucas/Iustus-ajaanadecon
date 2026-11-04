@@ -14,8 +14,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         provider_id = options["provider_order_id"]
-        if not re.fullmatch(r"(?:ORDE_[A-Za-z0-9-]+|[0-9]{1,30})", provider_id):
-            raise CommandError("Informe o ID numérico Mercado Pago ou ORDE_ PagBank.")
+        if not re.fullmatch(r"(?:ORDE_[A-Za-z0-9-]+|ORD[A-Z0-9]{26}|[0-9]{1,30})", provider_id):
+            raise CommandError("Informe o ID ORD Mercado Pago (ou ID legado).")
         try:
             order = Order.objects.get(pk=options["order_id"])
             order = reconcile(order.pk, provider_id)

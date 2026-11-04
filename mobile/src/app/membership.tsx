@@ -18,7 +18,7 @@ export default function Membership() {
   return <Screen><Title>Minha associação</Title><ErrorNotice message={error} />{!data ? !error && <Loading /> : <Card>
     <Body>A associação dá acesso aos recursos da plataforma. Honorários, custas, audiências e despesas são contratados separadamente por caso.</Body>
     {data.context.checkoutAvailable && data.plan.available ? <>
-      <Body>Plano anual: {(data.plan.amount / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}, em {data.plan.installments} parcelas. Renovação automática anual nas mesmas condições, cancelável antes da próxima cobrança.</Body>
+      <Body>Plano anual: {(data.plan.amount / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}, em {data.plan.installments} parcelas. Vigência de um ano, sem renovação automática. Para renovar, faça uma nova compra.</Body>
       {data.plan.sandbox && <Body>Ambiente de testes: não representa uma cobrança de produção.</Body>}
       <Button title="Pagar com Mercado Pago no portal" busy={busy} onPress={() => void open()} />
       <Body>Depois da confirmação, volte ao aplicativo. Para uma nova conta, conclua a ativação com o link recebido por e-mail.</Body>

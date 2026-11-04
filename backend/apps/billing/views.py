@@ -39,7 +39,7 @@ class PlanView(PublicView):
     def get(self, request):
         return Response({"amount": settings.MEMBERSHIP_PRICE_CENTS, "installments": settings.MEMBERSHIP_INSTALLMENTS,
             "planVersion": settings.MEMBERSHIP_PLAN_VERSION, "available": available(), "provider": settings.BILLING_PROVIDER,
-            "automaticRenewal": settings.BILLING_PROVIDER == "mercadopago",
+            "automaticRenewal": False,
             "sandbox": environment() == "sandbox", "policyVersion": settings.REGISTRATION_POLICY_VERSION})
 
 
@@ -179,12 +179,12 @@ class MercadoPagoWebhookView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        from integrations.mercadopago import client
+        from integrations.mercadopago import orders as client
         identifier = request.query_params.get("data.id", "")
         if not client.verify_signature(identifier, request.headers.get("x-request-id", ""), request.headers.get("x-signature", "")):
             raise IdentityError("INVALID_SIGNATURE", "Notificação não autenticada.", 403)
         payload = request.data
-        if not isinstance(payload, dict) or payload.get("type") != "payment" or not isinstance(payload.get("data"), dict) or str(payload["data"].get("id")) != identifier:
+        if not isinstance(payload, dict) or payload.get("type") != ("order" if identifier.startswith("ORD") else "payment") or not isinstance(payload.get("data"), dict) or str(payload["data"].get("id")) != identifier:
             raise IdentityError("INVALID_EVENT", "Notificação inválida.")
         snapshot = client.payment(identifier)
         try:

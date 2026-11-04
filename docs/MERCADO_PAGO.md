@@ -1,45 +1,37 @@
-# Mercado Pago — checkout e renovação anual
+# Mercado Pago — compra anual sem renovação automática
 
-> Estado atual: o código ainda usa Payments API. A aplicação do painel foi criada como Orders; a migração e os testes de Orders estão pendentes. Não habilitar cobranças com base apenas nos testes descritos abaixo. Para Mercado Pago, as variáveis `PAGBANK_*` são dispensáveis; referências de backend/testes/migrações legadas permanecem no repositório.
+Decisão atual: R$ 699,90 em 10 parcelas de R$ 69,99, com vigência de um ano. Renovação somente por uma nova compra autorizada pelo associado. Não há cobrança automática no aniversário da adesão.
 
-Atualização: 04/11/2026. Condição confirmada: R$ 699,90 por ano, em 10 parcelas de R$ 69,99, com renovação automática anual nas mesmas condições. Cada ciclo é uma compra anual parcelada; não são dez mensalidades independentes.
+## Fluxo
 
-## Dependência externa obrigatória
+- Next usa Card Payment Brick; o app React Native abre o checkout no navegador externo.
+- O backend envia uma compra comum a `POST /v1/orders`, com e-mail do pagador, token temporário e dez parcelas. Não cria clientes/perfis, não solicita armazenamento de cartão nem envia `stored_credential` ou `automatic_payments`.
+- Não há dependência da habilitação comercial de Pagamentos Automáticos. `MERCADOPAGO_AUTOMATIC_PAYMENTS_ENABLED` foi removida e pode ser apagada da Render e do `.env`.
+- O scheduler não agenda renovações. Eventos antigos de renovação ainda não enviados são cancelados sem chamada de cobrança. Pagamentos já enviados continuam sendo conciliados para não perder confirmações e estornos.
+- Payloads pendentes da implementação recorrente não são enviados. O novo plano versionado exige atualizar o checkout antes de pagar.
+- Somente confirmação autenticada de order/transação processada e creditada libera acesso. Validações de valor, dez parcelas, conta, ambiente e total sem juros continuam ativas.
+- Duplicatas e timeouts preservam a mesma referência e chave de idempotência. Estornos e contestações revogam o acesso correspondente. O período pago e casos existentes não são cancelados pela remoção da recorrência.
+- O modelo interno Subscription permanece por compatibilidade de banco e histórico. Compras confirmadas ficam COMPLETED, sem próxima cobrança; isso não representa uma assinatura automática no Mercado Pago.
+- Pedidos numéricos antigos Payments e histórico PagBank mantêm conciliação compatível. Não se convertem em novas cobranças.
 
-O titular confirmou possuir apenas a conta aprovada. O produto [Pagamentos Automáticos exige habilitação comercial da aplicação para pagamentos sem CVV](https://www.mercadopago.com.br/developers/pt/docs/automatic-payments/prerequisites). A aprovação da conta não comprova essa habilitação, nem o suporte comercial ?s dez parcelas sem juros em cada cobrança anual iniciada pelo estabelecimento (MIT). Confirmar ambos com o Mercado Pago antes de habilitar produção.
+## Configurar backend e worker na Render
 
-A implementação usa [Payments API e cartão salvo](https://www.mercadopago.com.br/developers/pt/docs/automatic-payments/recurring-charges), com Card Payment Brick no navegador, e não o Checkout Pro ou uma assinatura mensal. Não há homologação real sem credenciais e liberação. Não mudar silenciosamente a oferta para cobrança anual à vista ou assinatura mensal.
+Use o [modelo de variáveis](../infra/deploy/mercadopago.env.example). O Access Token e o segredo de webhook nunca vão para variáveis públicas do frontend.
 
-## Fluxo implementado
+1. Publicar o código atualizado e aplicar migrações anteriores pendentes com `python manage.py migrate`. Esta alteração não exige novo esquema.
+2. Configurar `BILLING_PROVIDER=mercadopago`, `MERCADOPAGO_ENVIRONMENT=sandbox`, `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_PUBLIC_KEY` e `MERCADOPAGO_COLLECTOR_ID` da conta recebedora de teste, não o ID da aplicação. Manter `BILLING_ENABLED=false` enquanto prepara.
+3. Executar `python manage.py check_mercadopago --remote`. Consulta somente `/users/me`; não cobra e não imprime segredos.
+4. Configurar evento **order** para `https://SEU-DOMINIO-DO-PORTAL/api/v1/billing/mercadopago/webhook` e guardar a assinatura em `MERCADOPAGO_WEBHOOK_SECRET`. O Next encaminha ao Django preservando os campos de assinatura.
+5. Confirmar dez parcelas sem juros e configurar `MERCADOPAGO_INTEREST_FREE_CONFIRMED=true`. Depois, habilitar somente o ambiente de teste com `BILLING_ENABLED=true`. Não trocar para produção para tentar contornar recusas de autenticação.
+6. Manter `python manage.py run_operations` no worker para conciliação e e-mails, sem renovação automática. Para o app, configurar `MOBILE_EXTERNAL_CHECKOUT_ENABLED` conforme o canal de distribuição.
+7. Homologar com cartão fictício oficial: aprovação, recusa, webhook real, retorno ao app, dez parcelas, timeout, estorno e nova compra manual. Só depois configurar ambiente e credenciais produtivas.
 
-- Next: cadastro, validação de CPF/e-mail, aceite versionado da oferta e renovação, cartão em campos do SDK oficial e confirmação consultada no servidor.
-- React Native/Expo: checkout abre no navegador externo no portal; não coleta cartão em WebView. Consulta e cancelamento da renovação são nativos, autenticados por bearer. Ao voltar à tela/app, as consultas são atualizadas. Primeiro acesso é ativado pelo link de e-mail.
-- Django registra a identidade cifrada, consentimento e condições imutáveis por pedido/assinatura. Guarda referências cifradas ao cofre MP, nunca PAN/CVV.
-- Reenvio após timeout usa o mesmo pedido, chave de idempotência e payload cifrado. O token de pagamento temporário é apagado após obter o ID ou conciliar. Tentativas incertas antigas exigem conferência; não iniciar novo débito automaticamente.
-- Confirmação valida ID, referência, conta recebedora, ambiente, pagador do cofre, moeda, valor integral, total sem juros e dez parcelas. Redirect/query do navegador nunca ativa acesso.
-- Webhook HMAC é validado com `data.id`, `x-request-id` e `x-signature`; consulta autenticada precede a fila durável. Duplicatas não duplicam vigência nem e-mail. Estorno parcial/total e chargeback revogam acesso daquele pagamento e interrompem a renovação, preservando casos.
-- Worker agenda o próximo ciclo no vencimento da vigência confirmada. Bloqueia assinatura durante decisão de cancelamento/cobrança. Recusa definitiva não dispara novas tentativas de cobrança automática; fica em conferência para atendimento.
-- Cancelar a próxima renovação preserva a vigência paga. Uma operação já enviada ao provedor deve ser conciliada; cancelamento não representa estorno de cobrança já iniciada.
-- Pedidos históricos PagBank continuam com seu provedor e condições originais. Não são convertidos em autorizações recorrentes.
+Conciliação autenticada: `python manage.py reconcile_payment UUID_LOCAL ORD...`.
 
-## Configuração e publicação
+## Limitação atual
 
-Use [modelo de variáveis](../infra/deploy/mercadopago.env.example) no backend. Nenhum Access Token ou segredo de webhook pertence a `NEXT_PUBLIC_*` ou `EXPO_PUBLIC_*`. A public key é entregue pela API somente quando a configuração permite checkout.
+Após a revisão da credencial pelo titular, as consultas `/users/me` e `/v1/payment_methods` retornaram HTTP 200. A consulta a Orders com ID fictício retornou HTTP 404, como esperado. O collector ID da conta de teste foi preenchido no `.env` local. O erro anterior de autenticação não se repetiu. Ainda faltam configurar a assinatura do webhook, confirmar o parcelamento sem juros e homologar a compra completa. Nenhuma cobrança foi criada. As credenciais não foram expostas nem versionadas; a configuração local não é transferida automaticamente para a Render.
 
-1. Criar aplicação Mercado Pago e solicitar a habilitação de Pagamentos Automáticos, confirmando 10x sem juros em CIT e MIT anuais.
-2. Configurar credenciais do mesmo ambiente e `MERCADOPAGO_COLLECTOR_ID` da conta recebedora. `sandbox` usa conta/cartão de teste e exige pagamentos com `live_mode=false`.
-3. Configurar URL HTTPS pública em `IUSTUS_PUBLIC_ORIGIN`, proxy Next → Django, banco e chave de cifra persistente.
-4. Cadastrar webhook de pagamentos em `https://SEU-DOMINIO/api/v1/billing/mercadopago/webhook`; guardar sua assinatura secreta no backend. Usar notificações do tipo `payment`.
-5. Aplicar migrações: `python manage.py migrate`. Executar `python manage.py check_mercadopago --remote`. Essa checagem só consulta a conta; não certifica recorrência.
-6. Com liberação e condições confirmadas, habilitar os dois flags Mercado Pago e `BILLING_ENABLED=true` no ambiente de teste. Liberar `MOBILE_EXTERNAL_CHECKOUT_ENABLED` por canal de distribuição aplicável.
-7. Manter `python manage.py run_operations` ativo para conciliação, renovação e e-mails. Monitorar `PaymentEvent` não processados com dez tentativas e assinaturas `PAST_DUE`/`REVIEW`. O worker não deve ficar parado entre os aniversários.
-8. Homologar cartão aprovado/recusado, timeout, notificação repetida, parcelamento sem juros, renovação CIT→MIT, cancelamento, estorno, e-mail e retorno ao app em Android/iOS reais. Não usar dinheiro/cartões reais em testes automatizados.
-9. Somente após homologação, configurar credenciais produtivas e `MERCADOPAGO_ENVIRONMENT=production`, conferir domínio/worker e testar a operação autorizada.
+Testes locais cobrem a ausência de criação de perfis, bloqueio de renovações antigas, compra manual subsequente, confirmação, estorno, duplicidade, proxy e interfaces Next/Expo. Esses testes não substituem a homologação na conta Mercado Pago.
 
-Conferência manual segura: `python manage.py reconcile_payment UUID_DO_PEDIDO ID_NUMERICO_DO_PAGAMENTO`. Consulta o provedor; não permite aprovação manual.
-
-## Verificações locais
-
-Testes de contrato/backend usam snapshots sintéticos do provedor. Testes Playwright usam SDK/API simulados para verificar interface e payloads; não constituem certificação do SDK ou conta Mercado Pago. Validações executadas: suíte completa de 207 testes no backend (seis dependentes de PostgreSQL ignorados nessa execução); suíte financeira final de 64 testes aprovada; 39 testes aprovados em PostgreSQL isolado, incluindo concorrência real de envio/confirmação; 12 testes de checkout/painel Next e 2 de associação React Native no Edge; 9 testes do proxy e 5 do transporte nativo; tipos e lint do app, build Next e exportação Expo para Android/iOS/web aprovados. Não houve deploy, migração do banco operacional ou cobrança real.
-
-Limitações de homologação: sem credenciais Mercado Pago no ambiente, sem autorização comercial do produto, sem pagamento real e sem teste em aparelhos físicos. A experiência nativa de compra usa o portal externo; os testes Expo web não substituem builds instalados.
+[Integração oficial de cartões via Orders](https://www.mercadopago.com.br/developers/pt/docs/checkout-api-orders/payment-integration/websites/cards).

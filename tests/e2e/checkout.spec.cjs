@@ -1,7 +1,7 @@
 const { test, expect } = require('../../frontend/node_modules/@playwright/test');
 const path = require('node:path');
 
-const plan = { provider: 'mercadopago', automaticRenewal: true, amount: 69990, installments: 10, planVersion: 'annual-2026-v3-mp-recurring', policyVersion: 'test-v1', available: true, sandbox: true };
+const plan = { provider: 'mercadopago', automaticRenewal: false, amount: 69990, installments: 10, planVersion: 'annual-2026-v5-mp-manual', policyVersion: 'test-v1', available: true, sandbox: true };
 async function setup(page, { offline = false, declined = false, uncertain = false, keyFailure = false, pending = false } = {}) {
   const requests = []; let submitted = false;
   await page.route('https://sdk.mercadopago.com/**', route => route.fulfill({ contentType: 'application/javascript', body: `window.MercadoPago = class { bricks() { return { create: async (kind, target, options) => {
@@ -53,7 +53,7 @@ test('Mercado Pago recebe token, consentimento e oferta; dados de cartão ficam 
   const requests = await setup(page); await page.goto('/#checkout'); await fill(page); await pay(page);
   await expect(page.getByRole('heading', { name: 'Sua associação está ativa' })).toBeVisible();
   expect(requests).toHaveLength(1);
-  expect(requests[0].body).toEqual({ accepted: true, automaticRenewal: true, planVersion: plan.planVersion, policyVersion: plan.policyVersion,
+  expect(requests[0].body).toEqual({ accepted: true, automaticRenewal: false, planVersion: plan.planVersion, policyVersion: plan.policyVersion,
     customer: { name: 'Associado Teste', email: 'buyer@example.test', cpf: '12345678909', phone: '11999999999' },
     card: { token: 'synthetic-token-123456', paymentMethodId: 'visa', issuerId: '25', installments: 10 } });
   expect(await page.evaluate(() => window.brickOptions.customization.paymentMethods)).toEqual({ types: { included: ['credit_card'] }, minInstallments: 10, maxInstallments: 10 });
@@ -114,7 +114,7 @@ test('rota checkout mantém o redirecionamento para a landing', async ({ page })
 });
 
 
-test('cliente cancela somente a próxima renovação pelo painel Next', async ({ page }) => {
+test('painel Next informa renovação manual sem botão de cobrança', async ({ page }) => {
   let canceled = false;
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -136,10 +136,7 @@ test('cliente cancela somente a próxima renovação pelo painel Next', async ({
     return route.fulfill({ json: { results: [], nextCursor: null } });
   });
   await page.goto('/cliente#minha-conta');
-  await expect(page.getByText('Renovação automática ativa', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Cancelar próxima renovação' })).toBeDisabled();
-  await page.getByLabel('Quero cancelar a próxima renovação automática.').check();
-  await page.getByRole('button', { name: 'Cancelar próxima renovação' }).click();
-  await expect(page.getByText('Próxima renovação cancelada', { exact: true })).toBeVisible();
-  expect(canceled).toBe(true); expect(errors).toEqual([]);
+  await expect(page.getByText('Sua adesão não tem renovação automática.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancelar próxima renovação' })).toHaveCount(0);
+  expect(canceled).toBe(false); expect(errors).toEqual([]);
 });

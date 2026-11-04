@@ -29,16 +29,16 @@ class MercadoPagoConcurrencyTests(TransactionTestCase):
 
     def test_simultaneous_sends_charge_once(self):
         order = start_order(fixtures.body(), "session", "synthetic-concurrent-key")
-        with patch("integrations.mercadopago.client.request_api", side_effect=self.provider) as provider:
+        with patch("integrations.mercadopago.orders.request_api", side_effect=self.provider) as provider:
             statuses = self.parallel(lambda: send_order(order.pk, fixtures.body()["card"]).status)
         self.assertEqual(statuses, ["WAITING", "WAITING"])
-        self.assertEqual(len([call for call in provider.call_args_list if call.args[0] == "/v1/payments"]), 1)
+        self.assertEqual(len([call for call in provider.call_args_list if call.args[0] == "/v1/orders"]), 1)
 
     def test_simultaneous_confirmations_activate_once(self):
         order = start_order(fixtures.body(), "session", "synthetic-concurrent-key")
-        with patch("integrations.mercadopago.client.request_api", side_effect=self.provider):
+        with patch("integrations.mercadopago.orders.request_api", side_effect=self.provider):
             order = send_order(order.pk, fixtures.body()["card"])
-        with patch("integrations.mercadopago.client.payment", return_value=self.snapshot(order)):
-            self.assertEqual(self.parallel(lambda: reconcile_payment(order.pk, "987").status), ["PAID", "PAID"])
+        with patch("integrations.mercadopago.orders.payment", return_value=self.snapshot(order)):
+            self.assertEqual(self.parallel(lambda: reconcile_payment(order.pk, "ORD01JS2V6CM8KJ0EC4H502TGK1WP").status), ["PAID", "PAID"])
         self.assertEqual(Membership.objects.count(), 1)
         self.assertEqual(IdentityEmail.objects.count(), 1)

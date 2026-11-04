@@ -1,5 +1,6 @@
 """Ciclo anual: cada renovação é uma compra integral em 10 parcelas."""
 import json
+import re
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
@@ -10,7 +11,7 @@ from django.utils.dateparse import parse_datetime
 from apps.identity.models import User
 from apps.identity.security import IdentityError, encrypt, decrypt, digest
 from apps.identity.services import audit
-from integrations.mercadopago import client
+from integrations.mercadopago import orders as client
 from .checkout import canonical, check_identity, fingerprint
 from .models import Order, Subscription, Membership, BillingIdentity, PaymentEvent
 from .provider import available, environment
@@ -23,8 +24,8 @@ def decode(value):
 def start_order(data, session_digest, key):
     if not available() or settings.BILLING_PROVIDER != "mercadopago":
         raise IdentityError("BILLING_UNAVAILABLE", "Pagamento ainda indisponível.", 503)
-    if not data["accepted"] or not data["automaticRenewal"]:
-        raise IdentityError("ACCEPTANCE_REQUIRED", "Confirme as condições e a renovação automática anual.", 422)
+    if not data["accepted"] or data["automaticRenewal"]:
+        raise IdentityError("ACCEPTANCE_REQUIRED", "Confirme a compra anual sem renovação automática.", 422)
     reference = digest(session_digest + key)
     payload_digest = fingerprint(canonical(data))
     existing = Order.objects.filter(request_key=reference).first()
@@ -60,6 +61,12 @@ def send_order(order_id, card=None):
     if not available():
         raise IdentityError("BILLING_UNAVAILABLE", "Pagamento ainda indisponível.", 503)
     original = Order.objects.get(pk=order_id)
+    if original.cycle:
+        # Never send a scheduled renewal, including events queued before removal.
+        if not original.provider_order_id:
+            original.status, original.encrypted_payment_payload = "CANCELED", ""
+            original.save(update_fields=["status", "encrypted_payment_payload"])
+        return original
     # Ordem de bloqueio constante: assinatura, pedido. Cancelamento usa a mesma assinatura.
     with transaction.atomic():
         subscription = Subscription.objects.select_for_update().get(pk=original.subscription_id)
@@ -80,7 +87,7 @@ def send_order(order_id, card=None):
             subscription.encrypted_instrument = encrypt(canonical(instrument))
             subscription.save(update_fields=["encrypted_instrument"])
         if not order.encrypted_payment_payload:
-            payload = client.payment_payload(order, subscription, decode(subscription.encrypted_instrument))
+            payload = client.payment_payload(order, subscription, decode(subscription.encrypted_instrument), card)
             order.encrypted_payment_payload = encrypt(canonical(payload))
             order.payment_started_at = timezone.now()
             order.save(update_fields=["encrypted_payment_payload", "payment_started_at"])
@@ -117,9 +124,12 @@ def send_order(order_id, card=None):
         PaymentEvent.objects.get_or_create(digest=digest("mp-send:" + str(order.pk)), defaults={
             "order": order, "provider_order_id": "", "available_at": timezone.now()})
         try:
-            result = client.request_api("/v1/payments", decode(order.encrypted_payment_payload), order.pk)
+            payload = decode(order.encrypted_payment_payload)
+            if payload.get("type") != "online" or any("stored_credential" in tx or "automatic_payments" in tx for tx in payload.get("transactions", {}).get("payments", [])):
+                raise IdentityError("PAYMENT_REVIEW_REQUIRED", "Tentativa anterior exige conferência antes da migração.", 409)
+            result = client.create_order(payload, order.pk)
             payment_id = client.identifier(result.get("id"))
-            if not payment_id.isdigit() or result.get("external_reference") != str(order.pk):
+            if not re.fullmatch(client.ORDER_ID, payment_id) or result.get("external_reference") != str(order.pk):
                 raise IdentityError("INVALID_PAYMENT", "Pagamento em conferência.", 502)
             order.provider_order_id, order.status = payment_id, "WAITING"
             order.encrypted_payment_payload = ""
@@ -184,12 +194,8 @@ def reconcile_payment(order_id, provider_id=""):
             start = max(paid_at, latest) if latest else paid_at
             membership = Membership.objects.create(order=order, user=user, starts_at=start, expires_at=start + relativedelta(years=1))
             order.user, order.paid_at, order.status = user, paid_at, "PAID"
-            sub.user, sub.next_charge_at, sub.last_cycle = user, membership.expires_at, order.cycle
-            sub.status = "CANCELED" if sub.canceled_at else "ACTIVE"
-            network_id = snapshot.get("expanded", {}).get("gateway", {}).get("reference", {}).get("network_transaction_id")
-            if network_id:
-                instrument["networkTransactionId"] = str(network_id)
-                sub.encrypted_instrument = encrypt(canonical(instrument))
+            sub.user, sub.next_charge_at, sub.last_cycle = user, None, order.cycle
+            sub.status, sub.canceled_at = "COMPLETED", sub.canceled_at or timezone.now()
             send_access(user)
             audit(user, "membership.paid", "client", orderId=str(order.pk))
         elif order.status not in ("PAID", "REVOKED"):
@@ -204,12 +210,7 @@ def reconcile_payment(order_id, provider_id=""):
 
 
 def subscription_data(user):
-    sub = Subscription.objects.filter(user=user, environment=environment("mercadopago")).order_by("-accepted_at").first()
-    if not sub:
-        return {"subscription": None}
-    return {"subscription": {"status": sub.status, "automaticRenewal": sub.canceled_at is None and sub.status == "ACTIVE",
-        "nextChargeAt": sub.next_charge_at.isoformat() if sub.next_charge_at and not sub.canceled_at else None,
-        "amount": sub.amount, "installments": sub.installments, "canceledAt": sub.canceled_at.isoformat() if sub.canceled_at else None}}
+    return {"subscription": None}
 
 
 def cancel_renewal(user):
@@ -222,20 +223,5 @@ def cancel_renewal(user):
 
 
 def renew_due():
-    if settings.BILLING_PROVIDER != "mercadopago" or not available():
-        return False
-    with transaction.atomic():
-        sub = Subscription.objects.select_for_update(skip_locked=True).filter(status="ACTIVE", canceled_at__isnull=True,
-            environment=environment(), next_charge_at__lte=timezone.now()).order_by("next_charge_at").first()
-        if not sub:
-            return False
-        cycle = sub.last_cycle + 1
-        order, _ = Order.objects.get_or_create(request_key=digest(f"renew:{sub.pk}:{cycle}"), defaults={
-            "session_digest": "", "provider": "mercadopago", "subscription": sub, "cycle": cycle,
-            "amount": sub.amount, "installments": sub.installments, "plan_version": sub.plan_version,
-            "environment": sub.environment, "policy_version": sub.policy_version, "encrypted_customer": sub.encrypted_customer})
-        sub.status = "PAST_DUE"  # Evento assume a tentativa; não gerar outra cobrança anual.
-        sub.save(update_fields=["status"])
-        PaymentEvent.objects.get_or_create(digest=digest("mp-renew:" + str(order.pk)), defaults={
-            "order": order, "provider_order_id": "", "available_at": timezone.now()})
-    return True
+    # Automatic billing removed by product decision, irrespective of old flags.
+    return False

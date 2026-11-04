@@ -1,6 +1,6 @@
 # IUSTUS — Defesa Jurídica Online
 
-**Mercado Pago — 04/11/2026:** implementação local de checkout e renovação anual em 10x, com configuração e liberação comercial pendentes. [Configuração, arquitetura e homologação](docs/MERCADO_PAGO.md). As referências PagBank abaixo são histórico.
+**Mercado Pago — 04/11/2026:** implementação local de checkout anual sem renovação automática em 10x, com configuração e homologação da conta pendentes. [Configuração, arquitetura e homologação](docs/MERCADO_PAGO.md). As referências PagBank abaixo são histórico.
 
 **Mobile — 06/10/2026:** primeira base do aplicativo do associado em `mobile/`, com Expo/React Native, login, recuperação, associação e consulta de casos pelo mesmo backend. [Execução, segurança e próximos passos](mobile/README.md). Pagamento dentro do app, envio de documentos, notificações e publicação nas lojas ainda não fazem parte desta entrega.
 
@@ -117,7 +117,7 @@ Use `npm run typecheck` para verificar TypeScript. O backend tem instalação e 
 
 Use as variáveis do [modelo Mercado Pago](infra/deploy/mercadopago.env.example) no `backend/.env` local ou no ambiente do backend e worker. Mantenha `BILLING_PROVIDER=mercadopago` e `BILLING_ENABLED=false` durante a preparação. O frontend recebe a chave pública pela API; o Access Token permanece no backend.
 
-A implementação atual ainda usa Payments API. A migração para Orders e sua homologação estão pendentes; credenciais de teste não tornam o checkout pronto para produção. Consulte [o estado da integração](docs/MERCADO_PAGO.md).
+Novas cobranças usam Orders API; a homologação remota ainda está pendente. Credenciais de teste não tornam o checkout pronto para produção. Consulte [o estado da integração](docs/MERCADO_PAGO.md).
 
 Variáveis `PAGBANK_*` não são necessárias para Mercado Pago. Ainda existe código legado PagBank no backend, testes e migrações para pedidos históricos; ele não foi convertido em Orders nem deve ser selecionado para novas vendas. Documentos antigos que mencionam PagBank descrevem etapas anteriores.
 
