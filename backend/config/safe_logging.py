@@ -1,6 +1,8 @@
 """Server exception diagnostics without request data or exception messages."""
 import logging
+import re
 import traceback
+from urllib.error import HTTPError
 
 
 class SafeExceptionFormatter(logging.Formatter):
@@ -12,6 +14,11 @@ class SafeExceptionFormatter(logging.Formatter):
             while error is not None and id(error) not in seen:
                 seen.add(id(error))
                 lines.append(type(error).__name__)
+                code = getattr(error, "identity_code", None)
+                if isinstance(code, str) and re.fullmatch(r"[A-Z_]{1,80}", code):
+                    lines.append(f"code={code}")
+                if isinstance(error, HTTPError):
+                    lines.append(f"provider_http_status={error.code}")
                 sqlstate = getattr(error, "sqlstate", None) or getattr(error, "pgcode", None)
                 if isinstance(sqlstate, str) and len(sqlstate) == 5 and sqlstate.isalnum():
                     lines.append(f"SQLSTATE={sqlstate}")

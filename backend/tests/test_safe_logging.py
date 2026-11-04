@@ -5,6 +5,24 @@ from config.safe_logging import SafeExceptionFormatter
 
 
 class SafeLoggingTests(SimpleTestCase):
+    def test_handled_api_failure_logs_exception_without_private_message(self):
+        from apps.identity.errors import identity_exception_handler
+        from apps.identity.security import IdentityError
+        from urllib.error import HTTPError
+        try:
+            try:
+                raise HTTPError("https://private-url", 403, "private-provider-body", {}, None)
+            except HTTPError as cause:
+                raise IdentityError("PAYMENT_PROVIDER_UNAVAILABLE", "private-message", 503) from cause
+        except IdentityError as exc:
+            with self.assertLogs("django.request", level="ERROR") as captured:
+                response = identity_exception_handler(exc, {})
+        output = SafeExceptionFormatter().format(captured.records[0])
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("code=PAYMENT_PROVIDER_UNAVAILABLE", output)
+        self.assertIn("provider_http_status=403", output)
+        self.assertNotIn("private-", output)
+
     def test_exception_chain_keeps_location_and_omits_sensitive_values(self):
         try:
             try:
