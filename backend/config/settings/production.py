@@ -37,6 +37,17 @@ def https_origin(name):
 
 
 DEBUG = False
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"safe_exception": {"()": "config.safe_logging.SafeExceptionFormatter"}},
+    "handlers": {"safe_console": {
+        "class": "logging.StreamHandler", "formatter": "safe_exception", "level": "ERROR",
+    }},
+    "loggers": {"django.request": {
+        "handlers": ["safe_console"], "level": "ERROR", "propagate": False,
+    }},
+}
 SECRET_KEY = required_secret("DJANGO_SECRET_KEY", 50)
 IUSTUS_PROXY_SECRET = required_secret("IUSTUS_PROXY_SECRET")
 IDENTITY_ENCRYPTION_KEY = env("IDENTITY_ENCRYPTION_KEY")
