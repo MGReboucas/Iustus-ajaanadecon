@@ -62,6 +62,24 @@ class MercadoPagoTests(TestCase):
         self.assertEqual(result.status_code, 201, result.content)
         return browser, Order.objects.get()
 
+    def test_sandbox_creation_retains_id_and_retries_do_not_charge_again(self):
+        browser = self.browser()
+        sandbox_id = "ORDTST01M6M5MYRCKEXHNCSTPF06A5T7"
+        def provider(path, payload=None, key=None, **kwargs):
+            if path == "/v1/orders":
+                return {"id": sandbox_id, "external_reference": payload["external_reference"]}
+            return self.provider(path, payload, key, **kwargs)
+        with patch("integrations.mercadopago.orders.request_api", side_effect=provider):
+            result = self.submit(browser)
+        self.assertEqual(result.status_code, 201, result.content)
+        order = Order.objects.get()
+        self.assertEqual(order.provider_order_id, sandbox_id)
+        self.assertEqual(order.status, "WAITING")
+        with patch("integrations.mercadopago.orders.request_api") as api:
+            send_order(order.pk)
+        api.assert_not_called()
+        self.assertFalse(Membership.objects.exists())
+
     def snapshot(self, order, status="approved"):
         return {"id": order.provider_order_id or "ORD01JS2V6CM8KJ0EC4H502TGK1WP", "external_reference": str(order.pk), "collector_id": 123,
             "live_mode": False, "payer": {"email": "buyer@example.test"}, "currency_id": "BRL",

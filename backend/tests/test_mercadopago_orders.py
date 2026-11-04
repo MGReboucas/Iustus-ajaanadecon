@@ -18,6 +18,29 @@ def snapshot():
 
 @override_settings(**CONFIG)
 class OrdersContractTests(SimpleTestCase):
+    def test_sandbox_id_lookup_and_signature(self):
+        import hashlib, hmac
+        data = snapshot()
+        data["id"] = "ORDTST01M6M5MYRCKEXHNCSTPF06A5T7"
+        with patch.object(orders, "request_api", side_effect=[{"id": 123, "tags": ["test_user"]}, data]) as api:
+            self.assertEqual(orders.payment(data["id"])["status"], "approved")
+        self.assertEqual(api.call_args_list[1].args[0], "/v1/orders/" + data["id"])
+        manifest = f"id:{data['id']};request-id:event;ts:123;"
+        signature = hmac.new(b"synthetic-webhook", manifest.encode(), hashlib.sha256).hexdigest()
+        self.assertTrue(orders.verify_signature(data["id"], "event", "ts=123,v1=" + signature))
+        self.assertFalse(orders.verify_signature(data["id"] + "X", "event", "ts=123,v1=" + signature))
+
+    def test_sandbox_accredited_with_interest_is_not_accepted(self):
+        data = snapshot()
+        data["id"] = "ORDTST01M6M5MYRCKEXHNCSTPF06A5T7"
+        data["total_paid_amount"] = "844.43"
+        tx = data["transactions"]["payments"][0]
+        tx["paid_amount"] = "844.40"
+        tx["payment_method"]["installment_amount"] = "84.44"
+        with self.assertRaises(IdentityError) as caught:
+            orders.normalize(data)
+        self.assertEqual(caught.exception.identity_code, "PAYMENT_AMOUNT_MISMATCH")
+
     def test_authenticated_lookup_uses_orders_endpoint_and_checks_account(self):
         with patch.object(orders, "request_api", side_effect=[{"id": 123, "tags": ["test_user"]}, snapshot()]) as api:
             result = orders.payment(snapshot()["id"])

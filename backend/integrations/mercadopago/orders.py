@@ -4,9 +4,7 @@ from decimal import Decimal
 from django.conf import settings
 from apps.identity.security import IdentityError
 from . import client as legacy
-from .client import request_api, identifier, cents, verify_signature
-
-ORDER_ID = r"ORD[A-Z0-9]{26}"
+from .client import ORDER_ID, request_api, identifier, cents, verify_signature
 
 
 def check_account():

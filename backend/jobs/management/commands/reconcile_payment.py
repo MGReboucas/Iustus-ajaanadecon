@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 from apps.billing.models import Order, PaymentEvent
 from apps.billing.services import reconcile
 from django.utils import timezone
+from integrations.mercadopago.client import ORDER_ID
 
 
 class Command(BaseCommand):
@@ -14,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         provider_id = options["provider_order_id"]
-        if not re.fullmatch(r"(?:ORDE_[A-Za-z0-9-]+|ORD[A-Z0-9]{26}|[0-9]{1,30})", provider_id):
+        if not re.fullmatch(rf"(?:ORDE_[A-Za-z0-9-]+|{ORDER_ID}|[0-9]{{1,30}})", provider_id):
             raise CommandError("Informe o ID ORD Mercado Pago (ou ID legado).")
         try:
             order = Order.objects.get(pk=options["order_id"])

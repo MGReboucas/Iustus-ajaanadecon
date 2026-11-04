@@ -9,6 +9,8 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 from django.conf import settings
 from apps.identity.security import IdentityError
 
+ORDER_ID = r"ORD(?:TST)?[A-Z0-9]{26}"
+
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -44,7 +46,7 @@ def request_api(path, payload=None, key=None, *, configuration_check=False):
         if path == "/v1/orders" and exc.code == 402 and isinstance(payload, dict):
             try:
                 result = json.loads(exc.read(1048576))
-                if (isinstance(result, dict) and re.fullmatch(r"ORD[A-Z0-9]{26}", str(result.get("id", "")))
+                if (isinstance(result, dict) and re.fullmatch(ORDER_ID, str(result.get("id", "")))
                         and result.get("external_reference") == payload.get("external_reference")):
                     return result
             except (ValueError, TypeError):
@@ -93,7 +95,7 @@ def validate_payment(order, snapshot, instrument):
 
 
 def verify_signature(payment_id, request_id, signature):
-    if not settings.MERCADOPAGO_WEBHOOK_SECRET or not re.fullmatch(r"(?:[0-9]{1,30}|ORD[A-Z0-9]{26})", payment_id or ""):
+    if not settings.MERCADOPAGO_WEBHOOK_SECRET or not re.fullmatch(rf"(?:[0-9]{{1,30}}|{ORDER_ID})", payment_id or ""):
         return False
     if not request_id or len(request_id) > 200 or len(signature) > 1000:
         return False
