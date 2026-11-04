@@ -31,6 +31,9 @@ class PortalMiddleware:
             original_host = request.get_host().lower()
             host = request.META.get("HTTP_X_IUSTUS_PORTAL_HOST", original_host).lower()
             origins = {urlsplit(origin).netloc.lower(): role for role, origin in settings.PORTAL_ORIGINS.items()}
+            if request.shared_portal:
+                origins.update({urlsplit(origin).netloc.lower(): "client"
+                                for origin in getattr(settings, "IUSTUS_PORTAL_ALIASES", [])})
             request.portal = origins.get(host)
             if request.portal and request.shared_portal:
                 request.portal = "team" if request.path.startswith(("/api/v1/auth/mfa/", "/api/v1/auth/invitations/")) else "client"

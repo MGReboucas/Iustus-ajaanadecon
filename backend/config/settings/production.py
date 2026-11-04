@@ -65,6 +65,9 @@ if not ALLOWED_HOSTS or any(not host or "*" in host or host.startswith(".") or "
     raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS exige uma lista de hosts exatos.")
 ALLOWED_HOSTS += [urlsplit(origin).hostname for origin in PORTAL_ORIGINS.values()]
 CSRF_TRUSTED_ORIGINS = list(PORTAL_ORIGINS.values())
+IUSTUS_PORTAL_ALIASES = ["https://iustus.app", "https://www.iustus.app"]
+ALLOWED_HOSTS += [urlsplit(origin).hostname for origin in IUSTUS_PORTAL_ALIASES]
+CSRF_TRUSTED_ORIGINS += IUSTUS_PORTAL_ALIASES
 
 DATABASES = {"default": env.db("DATABASE_URL")}
 if DATABASES["default"]["ENGINE"] != "django.db.backends.postgresql":
