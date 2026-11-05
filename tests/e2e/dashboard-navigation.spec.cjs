@@ -15,11 +15,16 @@ test('dashboard sections preserve drafts and support browser history', async ({ 
   await expect(page.locator('#resumo')).toBeVisible();
   await expect(page.locator('#meus-casos')).toBeHidden();
   await expect(page.locator('#minha-conta')).toBeHidden();
-  await nav.getByRole('link', { name: 'Casos', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Vamos começar seu atendimento?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Começar meu atendimento' }).click();
   await expect(page.locator('#meus-casos')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Seu primeiro caso começa aqui' })).toBeVisible();
   await expect(page.locator('#resumo')).toBeHidden();
   await nav.getByRole('link', { name: 'Minha conta' }).click();
+  await expect(page.getByRole('button', { name: 'Salvar perfil' })).toBeDisabled();
   await page.getByLabel('Nome de exibição').fill('Nome ainda não salvo');
+  await expect(page.getByText('Alterações ainda não salvas')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Salvar perfil' })).toBeEnabled();
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await expect(nav).toBeInViewport();
   for (const link of await nav.getByRole('link').all()) await expect(link).toBeInViewport();

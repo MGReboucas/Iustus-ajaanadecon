@@ -9,7 +9,7 @@ import CaseStatusChart from "./CaseStatusChart";
 type Notices = Page<Notice>;
 const actions: Record<string, string> = eventLabels;
 
-export default function DashboardOverview({ user, revision, openCase }: { user: Profile; revision: number; openCase: (id: string) => void }) {
+export default function DashboardOverview({ user, revision, openCase, showCases }: { user: Profile; revision: number; openCase: (id: string) => void; showCases: () => void }) {
   const [overview, setOverview] = useState<Overview>();
   const [notices, setNotices] = useState<Notices>({ results: [], nextCursor: null });
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -49,6 +49,14 @@ export default function DashboardOverview({ user, revision, openCase }: { user: 
     {error && <p role="alert" className="dashboard-error">{error}</p>}
     {busy && <p aria-live="polite">Atualizando resumo…</p>}
     {overview && <>
+      {user.role === "CLIENT" && <section className="dashboard-next-action" aria-labelledby="next-action-title">
+        <div><p className="dashboard-eyebrow">SEU PRÓXIMO PASSO</p>
+          <h3 id="next-action-title">{overview.totalCases === 0 ? "Vamos começar seu atendimento?" : overview.attentionCount > 0 ? "Há casos precisando de você" : "Seu atendimento em um só lugar"}</h3>
+          <p>{overview.totalCases === 0 ? "Conte o que aconteceu e reúna seus documentos. Você pode salvar um rascunho antes de enviar para análise." : overview.attentionCount > 0 ? "Confira os rascunhos e as solicitações do advogado para dar continuidade ao atendimento." : "Acompanhe seus casos ou cadastre uma nova ocorrência. As novidades aparecem na central de avisos."}</p>
+        </div>
+        <button onClick={() => overview.attentionCases[0] ? openCase(overview.attentionCases[0].id) : showCases()}>{overview.totalCases === 0 ? "Começar meu atendimento" : overview.attentionCases.length > 0 ? "Ver próxima pendência" : "Acessar meus casos"}<span aria-hidden="true"> →</span></button>
+        {overview.totalCases === 0 && <ol className="dashboard-start-steps"><li><strong>1. Conte o que aconteceu</strong><span>Cadastre uma ocorrência na seção Casos.</span></li><li><strong>2. Envie para análise</strong><span>Revise os dados e anexe os documentos solicitados.</span></li><li><strong>3. Acompanhe por aqui</strong><span>Se o caso for aceito, siga as orientações para assinar a procuração.</span></li></ol>}
+      </section>}
       <div className="dashboard-metrics">
         <article><span>{admin ? "Casos recebidos" : "Seus casos"}</span><strong>{overview.totalCases}</strong><small>{admin ? "Fila do escritório" : "No seu acompanhamento"}</small></article>
         <article><span>{admin ? "Sem responsável" : "Precisam de você"}</span><strong>{overview.attentionCount}</strong><small>{admin ? "Aguardando distribuição" : user.role === "CLIENT" ? "Rascunhos, documentos e complementos" : "Triagens, preparação e compromissos vencidos"}</small></article>

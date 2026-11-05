@@ -1,0 +1,67 @@
+.dashboard{background:radial-gradient(ellipse at 85% 0,rgba(37,61,91,.22),transparent 48%),#080f1e;padding-top:24px;padding-bottom:56px;font-family:Arial,sans-serif;line-height:1.5}
+.dashboard>header{padding-bottom:18px;border-color:#243249}
+.dashboard .dashboard-brand .iustus-brand{width:56px;height:56px}
+.dashboard header .dashboard-brand span{font-size:14px;color:#d7dfeb}
+.dashboard header>button{background:transparent;border:1px solid #3b4b62;color:#cbd6e5;padding:10px 16px}
+.dashboard-welcome{padding:28px 0 12px}
+.dashboard h1{font-size:clamp(24px,3vw,32px);letter-spacing:-.035em;line-height:1.25;margin:10px 0 12px;overflow-wrap:anywhere}
+.dashboard-welcome>p:last-child{font-size:14px;max-width:760px;margin-bottom:8px}
+.dashboard-nav{gap:8px;padding:12px 0;margin-bottom:28px;background:#080f1e;box-shadow:0 12px 20px -20px #000}
+.dashboard-nav a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;padding:10px 20px;border-color:transparent;color:#b8c4d5;font-weight:600;transition:background .15s,color .15s,border-color .15s}
+.dashboard-nav a:hover{border-color:#415777;color:#fff}
+.dashboard-nav a[aria-current=page]{box-shadow:0 3px 12px #0002}
+.dashboard button{min-height:44px;font-size:13px;transition:filter .15s,background .15s}
+.dashboard button:not(:disabled):hover{filter:brightness(1.1)}
+.dashboard p{color:#b8c4d5}
+.dashboard h2{letter-spacing:-.025em;font-size:22px}
+.dashboard h3{letter-spacing:-.015em}
+.dashboard .dashboard-card{background:linear-gradient(145deg,#142136,#101b2d);border-color:#2b3a50;border-radius:16px;padding:26px;box-shadow:0 6px 24px #00000012}
+.dashboard-grid{gap:20px;align-items:start}
+.dashboard .dashboard-card h2{font-size:18px;line-height:1.4}
+.dashboard input:not([type=checkbox]):not([type=radio]),.dashboard select,.dashboard textarea{background:#0b1423;border-color:#35465e;border-radius:9px;min-height:46px;font:inherit;font-size:14px;margin-top:8px}
+.dashboard label{font-size:14px;font-weight:500;color:#dce4ee}
+.dashboard .dashboard-note{font-size:13px;line-height:1.7;color:#9cacc2}
+.account-heading{display:flex;align-items:end;justify-content:space-between;gap:24px;margin:0 0 22px}
+.dashboard .dashboard-eyebrow{font-size:10px;letter-spacing:.14em;color:#e5b869;font-weight:700;margin:0 0 6px}
+.account-heading h2{margin:0;font-size:26px}
+.account-heading>p{font-size:13px;max-width:340px;margin:0}
+.profile-summary{display:flex;align-items:center;gap:14px;margin-bottom:24px;min-width:0}
+.profile-avatar{display:grid;place-items:center;width:46px;height:46px;flex-shrink:0;border-radius:14px;background:#e5b86918;border:1px solid #e5b86940;color:#e5b869;font-size:21px;font-weight:700}
+.profile-summary>div{min-width:0}
+.dashboard .profile-summary h2{margin:0 0 3px}
+.dashboard .profile-summary p{margin:0;font-size:13px;overflow-wrap:anywhere}
+.dashboard .account-preference{border-top:1px solid #2b3a50;padding-top:20px;margin-top:24px;font-weight:400}
+.dashboard .subscription-card{border-top:3px solid #b49156}
+.subscription-label{display:block;font-size:10px;letter-spacing:.12em;font-weight:700;color:#d9b677;margin-bottom:16px}
+.dashboard-secondary-link{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;margin-top:24px;border:1px solid #465773;border-radius:9px;color:#edca88;text-decoration:none;font-size:13px;font-weight:600;min-height:44px;box-sizing:border-box}
+.dashboard-secondary-link:hover{background:#20314a}
+.account-management{margin-top:20px}
+.account-management>.dashboard-card>p{max-width:780px;font-size:14px}
+.account-management form{max-width:780px;margin-top:22px}
+.dashboard .account-management>.dashboard-card>button{background:transparent;color:#bdcadb;border:1px solid #415777}
+.dashboard .cases-workspace{margin-top:0;padding-top:0;border-top:0}
+.dashboard-metrics article{position:relative;border-color:#304159;box-shadow:0 5px 20px #0001}
+.dashboard-metrics strong{font-size:38px;letter-spacing:-.04em}
+.dashboard-metrics span{font-size:13px}
+.dashboard .case-chart-track{background:#28364b}
+.dashboard .overview-heading>button{background:transparent;border:1px solid #415777;color:#cbd6e5}
+.dashboard .dashboard-error{color:#f1b6b6;background:#57232930}
+@media(max-width:600px){.dashboard{padding:18px 16px 32px}.dashboard .dashboard-brand .iustus-brand{width:46px;height:46px}.dashboard header .dashboard-brand span{font-size:12px;max-width:none}.dashboard-welcome{padding-top:22px}.dashboard-nav{gap:4px;margin-bottom:22px}.dashboard-nav a{padding:10px 12px;font-size:13px;flex:1;white-space:nowrap}.dashboard .dashboard-card{padding:20px}.account-heading{align-items:start;flex-direction:column;gap:8px}.account-heading>p{max-width:none}.account-heading h2{font-size:23px}.dashboard-grid{gap:16px}.dashboard .profile-summary p{font-size:12px}.dashboard .overview-heading{gap:12px}.dashboard .overview-heading>button{align-self:stretch}.dashboard .account-preference{line-height:1.6}}
+@media(prefers-reduced-motion:reduce){.dashboard button,.dashboard-nav a{transition:none}}
+.dashboard-next-action{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:20px 28px;padding:26px;margin:0 0 24px;border:1px solid #77633e;border-radius:16px;background:linear-gradient(120deg,#1c293a,#132033)}
+.dashboard-next-action h3{font-size:23px;line-height:1.3;margin:6px 0 10px}
+.dashboard-next-action p{font-size:14px;max-width:650px;margin:0}
+.dashboard-next-action>button{white-space:nowrap}
+.dashboard-start-steps{grid-column:1/-1;list-style:none;padding:22px 0 0;margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;border-top:1px solid #394657}
+.dashboard-start-steps strong{display:block;font-size:13px;color:#e8d3a9;margin-bottom:6px}
+.dashboard-start-steps span{display:block;font-size:12px;color:#b8c4d5;line-height:1.7}
+.case-empty-state{padding:30px;border:1px dashed #415777;border-radius:12px;text-align:center;margin:24px 0;background:#111d3180}
+.case-empty-state h3{margin:0 0 10px;font-size:19px}
+.case-empty-state p{max-width:580px;margin:0 auto 16px;font-size:14px}
+.case-submit-checklist{border:1px solid #415777;border-radius:10px;padding:18px;margin:20px 0;background:#0c1728;font-size:14px}
+.case-submit-checklist ul{padding-left:20px;margin-bottom:0;color:#b8c4d5}
+.case-submit-checklist li+li{margin-top:8px}
+.profile-save{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.profile-save span{font-size:12px;color:#e5b869}
+.dashboard button:disabled{cursor:not-allowed}
+@media(max-width:700px){.dashboard-next-action{grid-template-columns:1fr;padding:20px}.dashboard-next-action h3{font-size:21px}.dashboard-next-action>button{width:100%;white-space:normal}.dashboard-start-steps{grid-template-columns:1fr;gap:16px}.case-empty-state{padding:24px 18px}}

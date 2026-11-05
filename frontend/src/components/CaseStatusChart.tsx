@@ -14,8 +14,8 @@ export default function CaseStatusChart({ states }: { states: StateCount[] }) {
   const total = rows.reduce((sum, row) => sum + row.count, 0);
   return <section className="dashboard-card case-status-chart" aria-labelledby="case-chart-title">
     <h3 id="case-chart-title">Suas solicitações por situação</h3>
-    <p>{total ? `${total} ${total === 1 ? "solicitação" : "solicitações"} no seu painel. Consulte os detalhes de cada caso na lista abaixo.` : "Você ainda não tem solicitações. Use Cadastrar ocorrência para começar."}</p>
-    <ul>{rows.map(row => <li key={row.label}><span>{row.label}</span><div className="case-chart-track" aria-hidden="true"><div style={{ width: `${row.count / maximum * 100}%`, backgroundColor: row.color }} /></div><strong aria-label={`${row.count} ${row.label.toLowerCase()}`}>{row.count}</strong></li>)}</ul>
+    <p>{total ? `${total} ${total === 1 ? "solicitação" : "solicitações"} no seu painel. Consulte os detalhes na seção Casos.` : "As situações dos seus casos aparecerão aqui após o primeiro cadastro."}</p>
+    {total > 0 && <ul>{rows.map(row => <li key={row.label}><span>{row.label}</span><div className="case-chart-track" aria-hidden="true"><div style={{ width: `${row.count / maximum * 100}%`, backgroundColor: row.color }} /></div><strong aria-label={`${row.count} ${row.label.toLowerCase()}`}>{row.count}</strong></li>)}</ul>}
     <small>Após a aprovação, a associação prepara a procuração específica do caso para sua assinatura.</small>
   </section>;
 }

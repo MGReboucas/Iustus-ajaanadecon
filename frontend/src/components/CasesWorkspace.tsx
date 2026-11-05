@@ -118,7 +118,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
     {notice && <p role="status">{notice}</p>}
     <label className="case-filter">Filtrar por estado<select value={filter} disabled={busy} onChange={e => { const state = e.target.value; setFilter(state); setSelected(undefined); void run(() => list(state)); }}><option value="">Todos</option>{catalog?.states.filter(s => !admin || s.id !== "RASCUNHO").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
     {busy && <p aria-live="polite">Carregando…</p>}
-    {!busy && rows.length === 0 && <p>Nenhum caso encontrado neste filtro.</p>}
+    {!busy && !error && rows.length === 0 && <div className="case-empty-state"><h3>{filter ? "Nenhum caso nesta situação" : client ? "Seu primeiro caso começa aqui" : "Nenhum caso por aqui ainda"}</h3><p>{filter ? "Escolha outra situação ou volte a ver todos os casos." : client ? "Use Cadastrar ocorrência para contar o que aconteceu. O rascunho só será enviado para análise quando você confirmar o envio." : "Os casos aparecerão nesta lista assim que estiverem disponíveis para você."}</p>{filter && <button onClick={() => { setFilter(""); void run(() => list("")); }}>Limpar filtro</button>}</div>}
     <div className="case-list">{rows.map(item => <button className="case-row" aria-pressed={selected?.id === item.id} key={item.id} disabled={busy} onClick={() => void run(() => load(item))}>
       <span><strong>{admin ? `Caso ${item.reference}` : item.title || "Rascunho sem título"}</strong><small>{item.categoryLabel || "Categoria não informada"} · {item.reference}</small></span><span className="case-badge">{item.stateLabel}{admin && !item.lawyerId ? " · Sem responsável" : ""}</span>
     </button>)}</div>
@@ -143,6 +143,11 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
             <button>Salvar rascunho</button>
           </fieldset></form>
           <p>Salve os dados antes de enviar. Anexe os documentos comprobatórios abaixo e aguarde a verificação. O envio encaminha a ocorrência para análise; não garante aceite.</p>
+          <div className="case-submit-checklist" aria-label="Antes de enviar para análise"><strong>Antes de enviar</strong><ul>
+            <li>{dirty ? "Salve as alterações do rascunho." : "As alterações do rascunho estão salvas."}</li>
+            {catalog?.intakeRequired && <><li>{occurredOn ? "Data do ocorrido preenchida." : "Preencha a data do ocorrido."}</li><li>{documents.results.some(file => file.status === "AVAILABLE" && file.uploadedById === user.id) ? "Documento verificado e disponível." : "Anexe um documento abaixo e aguarde a verificação."}</li></>}
+            {!catalog?.submission?.canSubmit && <li>{catalog?.submission?.message || "O envio ainda não está liberado para sua conta."}</li>}
+          </ul></div>
           <button disabled={busy || !!dirty || !catalog?.submission?.canSubmit || (catalog?.intakeRequired && (!occurredOn || !documents.results.some(file => file.status === "AVAILABLE" && file.uploadedById === user.id)))} onClick={submit}>Enviar ocorrência para análise</button>
         </> : <><h4>{selected.title}</h4><p>{selected.categoryLabel}</p><p>Data do ocorrido: {selected.occurredOn ? selected.occurredOn.split("-").reverse().join("/") : "Não informada"}</p><p className="case-narrative">{selected.description}</p></>}
         {user.role === "LAWYER" && selected.state === "SUBMETIDO" && <button disabled={busy} onClick={() => void run(() => change(`cases/${selected.id}/transitions`, { version: selected.version, targetState: "EM_TRIAGEM" }))}>Iniciar triagem</button>}
