@@ -12,6 +12,7 @@ Conferir: acrescente `--check` ao comando.
 | GET, POST | `/api/v1/admin/service-access` | `apps.cases.admission.AccessView` |
 | GET | `/api/v1/admin/users` | `apps.administration.views.UsersView` |
 | POST | `/api/v1/admin/users/<uuid:pk>/access` | `apps.administration.views.UserAccessView` |
+| GET | `/api/v1/admin/users/<uuid:pk>/details` | `apps.administration.views.UserDetailsView` |
 | GET | `/api/v1/auth/csrf` | `apps.identity.views.CSRFView` |
 | POST | `/api/v1/auth/invitations/accept` | `apps.identity.views.AcceptInviteView` |
 | POST | `/api/v1/auth/login` | `apps.identity.views.LoginView` |
