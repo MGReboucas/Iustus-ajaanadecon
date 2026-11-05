@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { api, ApiError, Portal, Profile } from "@/lib/api/client";
 import "./dashboard.css";
 import CasesWorkspace from "./CasesWorkspace";
@@ -9,6 +9,7 @@ import DashboardOverview from "./DashboardOverview";
 import ServiceAccess from "./ServiceAccess";
 import AccountSettings from "./AccountSettings";
 import AccountManagement from "./AccountManagement";
+import AdminDirectory from "./AdminDirectory";
 import "./dashboard-polish.css";
 
 type DashboardSection = "resumo" | "meus-casos" | "minha-conta";
@@ -36,8 +37,6 @@ export default function Dashboard({ portal }: { portal: Portal }) {
   const [user, setUser] = useState<Profile>();
   const [manualAdmission, setManualAdmission] = useState(false);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
   const [openCase, setOpenCase] = useState<{ id: string; sequence: number }>();
@@ -52,14 +51,8 @@ export default function Dashboard({ portal }: { portal: Portal }) {
     try { await api("auth/logout", {}); window.location.replace("/acessar"); }
     catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível sair."); setBusy(false); }
   }
-  async function invite(event: FormEvent) {
-    event.preventDefault(); setBusy(true); setError(""); setMessage("");
-    try { const result = await api<{ message: string }>("admin/invitations", { email }); setMessage(result.message); setEmail(""); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível enviar o convite."); }
-    finally { setBusy(false); }
-  }
   return <main className="dashboard">
-    <header><div className="dashboard-brand"><Brand /><span>{portal === "team" ? "Portal profissional" : "Área do associado"}</span></div>{user && <button disabled={busy} onClick={leave}>Sair da conta</button>}</header>
+    <header><div className="dashboard-brand"><Brand /><span>{user?.role === "ADMIN" ? "Painel administrativo" : portal === "team" ? "Portal profissional" : "Área do associado"}</span></div>{user && <button disabled={busy} onClick={leave}>Sair da conta</button>}</header>
     {error && <p role="alert" className="dashboard-error">{error}</p>}
     {!user && !error && <p role="status">Carregando seu acesso…</p>}
     {user && <>
@@ -70,7 +63,7 @@ export default function Dashboard({ portal }: { portal: Portal }) {
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault(); navigate(id);
       }}>{label}</a>)}</nav>
-      <div id="resumo" hidden={section !== "resumo"}><DashboardOverview user={user} revision={revision} showCases={() => navigate("meus-casos")} openCase={id => { navigate("meus-casos"); setOpenCase({ id, sequence: Date.now() }); }} /></div>
+      <div id="resumo" hidden={section !== "resumo"}>{user.role === "ADMIN" && <AdminDirectory />}<DashboardOverview user={user} revision={revision} showCases={() => navigate("meus-casos")} openCase={id => { navigate("meus-casos"); setOpenCase({ id, sequence: Date.now() }); }} /></div>
       <div hidden={section !== "meus-casos"}>
       {user.role === "ADMIN" && manualAdmission && <ServiceAccess />}
       <CasesWorkspace user={user} openCase={openCase} onChange={() => setRevision(value => value + 1)} />
@@ -79,7 +72,7 @@ export default function Dashboard({ portal }: { portal: Portal }) {
       <div className="account-heading"><div><p className="dashboard-eyebrow">PREFERÊNCIAS E DADOS</p><h2>Minha conta</h2></div><p>Cuide do seu perfil, da associação e da sua privacidade.</p></div>
       <div className="dashboard-grid">
         <AccountSettings user={user} onChange={setUser} />
-        {portal === "team" && user.role === "ADMIN" && <section className="dashboard-card"><h2>Aprovar profissional</h2><p>A aprovação registra o profissional e envia um link para confirmar o e-mail e definir a senha. Use o mesmo e-mail para reenviar uma ativação pendente.</p><form onSubmit={invite}><label>E-mail do profissional<input required type="email" maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label><button disabled={busy}>Aprovar e enviar ativação</button></form>{message && <p role="status">{message}</p>}</section>}
+
       </div>
       <AccountManagement admin={user.role === "ADMIN"} />
       </div>

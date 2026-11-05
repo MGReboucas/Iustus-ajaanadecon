@@ -46,7 +46,7 @@ test('administrador confirma MFA, convida advogado e usa recuperação uma vez',
   const page = await context.newPage();
   await signIn(page, teamOrigin, admin);
   const codes = await enroll(page);
-  await page.getByRole('link', { name: 'Minha conta', exact: true }).click();
+  await page.getByRole('link', { name: 'Visão geral', exact: true }).click();
   await page.getByLabel('E-mail do profissional').fill(lawyer);
   await page.getByRole('button', { name: 'Aprovar e enviar ativação' }).click();
   await expect(page.getByRole('status')).toContainText('convite');
@@ -67,9 +67,9 @@ test('administrador confirma MFA, convida advogado e usa recuperação uma vez',
   await page.getByLabel('Código do autenticador ou de recuperação').fill(codes[0]);
   await page.getByRole('button', { name: 'Confirmar segundo fator' }).click();
   await expect(page.getByRole('heading', { name: 'Olá, Admin Teste.' })).toBeVisible();
-  await page.getByRole('link', { name: 'Minha conta', exact: true }).click();
+  await page.getByRole('link', { name: 'Visão geral', exact: true }).click();
   await page.getByRole('button', { name: 'Atualizar usuários' }).click();
-  const row = page.locator('.account-management li').filter({ hasText: lawyer });
+  const row = page.getByRole('row').filter({ hasText: lawyer });
   await row.getByRole('button', { name: 'Revogar acesso', exact: true }).click();
   await page.getByLabel('Motivo da alteração').fill('Revogação sintética de acesso da equipe.');
   await page.getByRole('button', { name: 'Confirmar alteração de acesso' }).click();
