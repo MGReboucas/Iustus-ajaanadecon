@@ -61,6 +61,7 @@ except (ValueError, TypeError) as exc:
 PORTAL_ORIGINS = {"team": https_origin("IUSTUS_PUBLIC_ORIGIN")}
 IDENTITY_SHARED_PORTAL = True
 PORTAL_ORIGINS["client"] = PORTAL_ORIGINS["team"]
+EMAIL_PUBLIC_ORIGIN = "https://iustus.app"
 IUSTUS_INITIAL_ADMIN_EMAIL = env("IUSTUS_INITIAL_ADMIN_EMAIL", default="")
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS")
 if not ALLOWED_HOSTS or any(not host or "*" in host or host.startswith(".") or "/" in host for host in ALLOWED_HOSTS):

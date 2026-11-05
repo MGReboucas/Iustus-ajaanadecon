@@ -11,6 +11,12 @@ from django.template import Context, Engine
 ROOT = Path(__file__).resolve().parent
 
 
+def canonical_body(body):
+    # Rewrite only the former first-party portal, including already queued links.
+    return re.sub(r"https://iustus-defesa-juridica\.vercel\.app(?=/|[\s]|$)",
+                  "https://iustus.app", body)
+
+
 def render_email(subject, body):
     origins = {urlsplit(origin).netloc for origin in settings.PORTAL_ORIGINS.values()}
     links = re.findall(r"https?://[^\s<>]+", body)
@@ -29,6 +35,7 @@ def render_email(subject, body):
 
 
 def build_message(subject, body, recipients, headers=None):
+    body = canonical_body(body)
     message = EmailMultiAlternatives(subject, body, None, recipients, headers=headers)
     message.attach_alternative(render_email(subject, body), "text/html")
     message.mixed_subtype = "related"

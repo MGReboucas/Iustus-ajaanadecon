@@ -2,7 +2,7 @@ import io
 from unittest.mock import patch
 from django.core import mail
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from apps.identity.models import IdentityEmail
 from apps.identity.security import encrypt
@@ -11,6 +11,13 @@ from jobs.branded_mail import build_message, render_email
 
 
 class BrandedMailTests(TestCase):
+    @override_settings(PORTAL_ORIGINS={"client": "https://iustus.app", "team": "https://iustus.app"})
+    def test_queued_legacy_link_uses_canonical_domain_and_preserves_token(self):
+        message = build_message("Access", "https://iustus-defesa-juridica.vercel.app/acessar#member=synthetic", ["buyer@example.test"])
+        self.assertEqual(message.body, "https://iustus.app/acessar#member=synthetic")
+        self.assertIn('href="https://iustus.app/acessar#member=synthetic"', message.alternatives[0].content)
+        self.assertIn("Concluir meu cadastro", message.alternatives[0].content)
+
     def test_health_check_is_read_only_and_does_not_send_mail(self):
         with patch("jobs.management.commands.check_mail.build_message") as message:
             call_command("check_mail", stdout=io.StringIO())

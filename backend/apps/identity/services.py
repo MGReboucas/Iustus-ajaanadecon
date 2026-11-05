@@ -42,7 +42,8 @@ def issue_token(purpose, email, portal, user=None, created_by=None):
         "MEMBER": "Seu pagamento foi confirmado. Conclua seu cadastro e defina sua senha para acessar a plataforma Iustus.",
     }
     # Fragmento evita incluir o token no request HTTP, Referer ou log do servidor web.
-    url = f"{settings.PORTAL_ORIGINS[portal]}/acessar#{mode}={raw}"
+    origin = getattr(settings, "EMAIL_PUBLIC_ORIGIN", settings.PORTAL_ORIGINS[portal])
+    url = f"{origin}/acessar#{mode}={raw}"
     IdentityEmail.objects.create(
         recipient=email, subject=titles[purpose], available_at=timezone.now(),
         encrypted_body=encrypt(f"{introductions[purpose]}\n\n{url}\n\nEste link expira em {hours} hora(s). Se não reconhece a solicitação, ignore esta mensagem."),
