@@ -11,6 +11,7 @@ test('admin filters people, confirms revocation and restores access', async ({ p
     const req = route.request(), url = new URL(req.url()), path = url.pathname;
     let body = { results: [], nextCursor: null };
     if (path.endsWith('/auth/csrf')) body = { csrfToken: 'test' };
+    if (path.endsWith('/admin/invitations')) body = { message: 'Se o endereço for elegível, o convite será enviado.' };
     if (path.endsWith('/dashboard/team')) body = { user: people[0] };
     if (path.endsWith('/dashboard/overview')) body = { totalCases: 0, attentionCount: 0, unreadCount: 0, states: [], attentionCases: [], recentActivity: [] };
     if (path.endsWith('/cases/catalog')) body = { categories: [], states: [], documentsAvailable: false };
@@ -25,6 +26,9 @@ test('admin filters people, confirms revocation and restores access', async ({ p
   });
   await page.goto('/advogado');
   await expect(page.getByRole('heading', { name: 'Pessoas e acessos' })).toBeVisible();
+  await page.getByLabel('E-mail do profissional').fill('new-lawyer@example.test');
+  await page.getByRole('button', { name: 'Aprovar e enviar ativação' }).click();
+  await expect(page.getByRole('status', { name: 'Resultado da gestão de usuários' })).toContainText('convite');
   await expect(page.getByRole('row').filter({ hasText: 'admin@example.test' }).getByRole('button', { name: /Revogar|Aprovar/ })).toHaveCount(0);
   await page.getByRole('button', { name: /Clientes ativos/ }).click();
   await expect(page.getByRole('row').filter({ hasText: 'client@example.test' })).toBeVisible();

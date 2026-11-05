@@ -64,7 +64,7 @@ export default function AdminDirectory() {
       {([ ["Advogados ativos", "lawyers", "LAWYER", "active"], ["Clientes ativos", "clients", "CLIENT", "active"], ["Aguardando ativação", "pending", "", "pending"], ["Acessos revogados", "revoked", "", "revoked"] ] as const).map(([label, key, r, s]) => <button key={key} disabled={busy} aria-pressed={role === r && status === s} onClick={() => filter(r, s)}><span>{label}</span><strong>{data?.summary?.[key] ?? "—"}</strong><small>Ver lista →</small></button>)}
     </div>
     <p className="dashboard-note">Ativos = acesso liberado e e-mail confirmado. Esses números não indicam associação paga ou vigência financeira.</p>
-    {message && <p role="status" className="admin-success">{message}</p>}
+    {message && <p role="status" aria-label="Resultado da gestão de usuários" className="admin-success">{message}</p>}
     {error && <p role="alert" className="dashboard-error">{error}</p>}
     <section className="dashboard-card admin-people"><div className="overview-heading"><h3>Gestão de usuários</h3><span>{data && !loading ? `${data.total} resultado(s)` : "Carregando…"}</span></div>
       <form className="admin-filters" onSubmit={e => { e.preventDefault(); resetPage(); setQuery(search.trim()); }}>
