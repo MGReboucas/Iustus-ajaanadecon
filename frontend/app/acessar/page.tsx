@@ -106,7 +106,7 @@ export default function Access() {
           </fieldset>
         </form>
         <div className="auth-links">
-          {mode === "login" && <><a href="/#checkout">Quero me associar</a><button disabled={!context || busy} onClick={() => change("memberResend")}>Já paguei: reenviar acesso</button></>}
+          {mode === "login" && <><a className="auth-join" href="/#checkout"><span>Quero me associar</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></a><button disabled={!context || busy} onClick={() => change("memberResend")}>Já paguei: reenviar acesso</button></>}
           {mode === "login" && <button disabled={!context || busy} onClick={() => change("recovery")}>Esqueci minha senha</button>}
           {mode === "login" && context?.registrationAvailable && <>
             <button disabled={busy} onClick={() => change("register")}>Criar conta de cliente</button>
