@@ -57,7 +57,7 @@ class OperationsTests(TestCase):
         self.assertEqual(Notification.objects.count(), 3)
     def test_mail_failure_schedules_retry_without_sensitive_error(self):
         self.notice()
-        with patch("jobs.communication.EmailMessage.send", side_effect=RuntimeError("secret")):
+        with patch("jobs.communication.build_message", side_effect=RuntimeError("secret")):
             deliver_case_email()
         item = CaseEmail.objects.get()
         self.assertEqual(item.last_error, "RuntimeError")
