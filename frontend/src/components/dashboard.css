@@ -10,3 +10,4 @@
 .case-chart-track { height: 14px; background: #eef1f6; border-radius: 7px; overflow: hidden; }
 .case-chart-track > div { height: 100%; border-radius: inherit; transition: width .25s ease; }
 @media (max-width: 480px) { .case-status-chart li { grid-template-columns: 116px minmax(0, 1fr) 24px; gap: 8px; font-size: 13px; } }
+.dashboard [hidden]{display:none!important}.dashboard-nav a[aria-current="page"]{background:#e5b869;border-color:#e5b869;color:#111a2a;font-weight:700}.dashboard-account{margin-top:0;padding-top:0;border-top:0}

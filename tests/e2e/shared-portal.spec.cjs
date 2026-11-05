@@ -32,6 +32,7 @@ test('shared origin: customer registration, approval, case assignment and lawyer
   await cp.getByRole('button',{name:'Confirmar meu e-mail'}).click();
   await expect(cp.locator('.auth-message')).toContainText('confirmado');
   await login(cp,customer); await expect(cp).toHaveURL(/\/cliente$/);
+  await cp.getByRole('link', { name: 'Casos', exact: true }).click();
   await cp.getByRole('button',{name:'Cadastrar ocorrência',exact:true}).click();
   await cp.getByLabel('Título do caso').fill('Caso sintético da jornada');
   await cp.getByLabel('Categoria',{exact:true}).selectOption('CONSUMER');
@@ -40,6 +41,7 @@ test('shared origin: customer registration, approval, case assignment and lawyer
   await cp.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
   await expect(cp.getByRole('button',{name:'Enviar ocorrência para análise'})).toBeDisabled();
   await login(ap,admin); await expect(ap).toHaveURL(/\/advogado$/);
+  await ap.getByRole('link', { name: 'Distribuição', exact: true }).click();
   await ap.getByLabel('E-mail do cliente',{exact:true}).fill(customer);
   await ap.getByLabel('Validade da liberação').fill('2030-10-02T15:00');
   await ap.getByLabel('Motivo da liberação').fill('Liberação sintética para teste de atendimento.');
@@ -57,6 +59,7 @@ test('shared origin: customer registration, approval, case assignment and lawyer
   await ap.getByRole('button',{name:'Salvar responsável'}).click();
   await expect(ap.getByRole('button',{name:'Salvar responsável'})).toBeDisabled();
   await login(lp,lawyer); await expect(lp).toHaveURL(/\/advogado$/);
+  await lp.getByRole('link', { name: 'Casos', exact: true }).click();
   await lp.locator('.case-list').getByRole('button',{name:/Caso sintético da jornada/}).click();
   await lp.getByRole('button',{name:'Iniciar triagem'}).click();
   await expect(lp.locator('.case-detail > .cases-heading')).toContainText('Em triagem');

@@ -39,6 +39,7 @@ test('associado paga, ativa, envia ocorrência; advogado aprova e solicita procu
   await expect(cp.locator('.auth-message')).toContainText('Cadastro concluído');
   await login(cp, customer); await expect(cp).toHaveURL(/\/cliente$/);
   await expect(cp.getByRole('heading', { name: 'Suas solicitações por situação' })).toBeVisible();
+  await cp.getByRole('link', { name: 'Casos', exact: true }).click();
   await cp.getByRole('button', { name: 'Cadastrar ocorrência', exact: true }).click();
   const title = 'Ocorrência sintética ' + randomUUID().slice(0, 8);
   await cp.getByLabel('Título do caso').fill(title);
@@ -56,6 +57,7 @@ test('associado paga, ativa, envia ocorrência; advogado aprova e solicita procu
   const item = rows.results.find(row => row.title === title);
   const assigned = JSON.parse(execFileSync(python, [path.join(__dirname, 'association_lawyer.py'), item.lawyerId], { encoding: 'utf8', windowsHide: true }));
   await login(lp, assigned.email); await expect(lp).toHaveURL(/\/advogado$/);
+  await lp.getByRole('link', { name: 'Casos', exact: true }).click();
   await lp.locator('.case-list').getByRole('button', { name: new RegExp(title) }).click();
   await lp.getByRole('button', { name: 'Iniciar triagem' }).click();
   for (const label of [/Escopo compatível/, /Conflito de interesses/, /Informações suficientes/]) await lp.getByLabel(label).check();

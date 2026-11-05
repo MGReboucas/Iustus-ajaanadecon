@@ -1,0 +1,35 @@
+const { test, expect } = require('../../frontend/node_modules/@playwright/test');
+
+test('dashboard sections preserve drafts and support browser history', async ({ page }) => {
+  await page.route('**/api/v1/**', async route => {
+    const path = new URL(route.request().url()).pathname;
+    let body = { results: [], nextCursor: null };
+    if (path.endsWith('/dashboard/client')) body = { user: { id: 'navigation-test', name: 'Associado Teste', email: 'member@example.test', role: 'CLIENT', caseEmailEnabled: true } };
+    if (path.endsWith('/dashboard/overview')) body = { totalCases: 0, attentionCount: 0, unreadCount: 0, states: [], attentionCases: [], recentActivity: [] };
+    if (path.endsWith('/cases/catalog')) body = { categories: [], states: [], documentsAvailable: false, submission: { canSubmit: true, message: '' } };
+    await route.fulfill({ json: body });
+  });
+  await page.goto('/cliente');
+  const nav = page.getByRole('navigation', { name: 'Seções do painel' });
+  await expect(nav.getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('#resumo')).toBeVisible();
+  await expect(page.locator('#meus-casos')).toBeHidden();
+  await expect(page.locator('#minha-conta')).toBeHidden();
+  await nav.getByRole('link', { name: 'Casos', exact: true }).click();
+  await expect(page.locator('#meus-casos')).toBeVisible();
+  await expect(page.locator('#resumo')).toBeHidden();
+  await nav.getByRole('link', { name: 'Minha conta' }).click();
+  await page.getByLabel('Nome de exibição').fill('Nome ainda não salvo');
+  await nav.getByRole('link', { name: 'Visão geral' }).click();
+  await page.goBack();
+  await expect(page.getByLabel('Nome de exibição')).toHaveValue('Nome ainda não salvo');
+  await page.goForward();
+  await expect(page.locator('#resumo')).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await nav.getByRole('link', { name: 'Minha conta' }).click();
+  await page.reload();
+  await expect(page.locator('#minha-conta')).toBeVisible();
+  await expect(page.locator('#meus-casos')).toBeHidden();
+  await expect(page.locator('#resumo')).toBeHidden();
+  await expect(nav.getByRole('link', { name: 'Minha conta' })).toHaveAttribute('aria-current', 'page');
+});

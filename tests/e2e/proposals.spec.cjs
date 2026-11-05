@@ -29,7 +29,7 @@ async function setup(page, role) {
     if (endpoint === `cases/${id}/proposals`) return send({ results: proposals, nextCursor: null });
     return send({ results: [], nextCursor: null });
   });
-  await page.goto(role === 'CLIENT' ? '/cliente' : '/advogado');
+  await page.goto(role === 'CLIENT' ? '/cliente#meus-casos' : '/advogado#meus-casos');
   await page.getByRole('button', { name: /CASO-TESTE/ }).click();
   await expect(page.getByRole('region', { name: 'Propostas de atendimento' })).toBeVisible();
   return writes;
