@@ -2,6 +2,28 @@ const { test, expect } = require('../../frontend/node_modules/@playwright/test')
 const path = require('node:path');
 
 const plan = { provider: 'mercadopago', automaticRenewal: false, amount: 69990, installments: 10, planVersion: 'annual-2026-v5-mp-manual', policyVersion: 'test-v1', available: true, sandbox: true };
+test('retained sandbox review can be archived with confirmation and opens a fresh form', async ({ page }) => {
+  let reset = false;
+  await page.route('**/api/v1/**', route => {
+    const endpoint = new URL(route.request().url()).pathname.split('/api/v1/')[1];
+    if (endpoint === 'billing/plan') return route.fulfill({ json: plan });
+    if (endpoint === 'billing/card-key') return route.fulfill({ json: { publicKey: 'synthetic' } });
+    if (endpoint === 'auth/csrf') return route.fulfill({ json: { csrfToken: 'synthetic' } });
+    if (endpoint === 'billing/checkout/reset-test') {
+      expect(route.request().postDataJSON()).toEqual({ confirm: true });
+      reset = true;
+      return route.fulfill({ json: { reset: true } });
+    }
+    return route.fulfill(reset ? { status: 404, json: {} } : { json: { status: 'REVIEW_AMOUNT' } });
+  });
+  await page.goto('/#checkout');
+  await expect(page.getByText(/divergem do plano contratado/)).toBeVisible();
+  await page.getByRole('button', { name: 'Encerrar tentativa e iniciar novo teste' }).click();
+  expect(reset).toBe(false);
+  await page.getByRole('button', { name: 'Confirmar novo teste' }).click();
+  await expect(page.getByLabel('Nome completo', { exact: true })).toBeVisible();
+  expect(reset).toBe(true);
+});
 async function setup(page, { offline = false, declined = false, uncertain = false, keyFailure = false, pending = false } = {}) {
   const requests = []; let submitted = false;
   await page.route('https://sdk.mercadopago.com/**', route => route.fulfill({ contentType: 'application/javascript', body: `window.MercadoPago = class { bricks() { return { create: async (kind, target, options) => {

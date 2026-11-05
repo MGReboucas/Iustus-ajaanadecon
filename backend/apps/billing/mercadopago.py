@@ -142,8 +142,47 @@ def send_order(order_id, card=None):
 
 
 def reconcile_payment(order_id, provider_id=""):
+    try:
+        return _reconcile_payment(order_id, provider_id)
+    except IdentityError as exc:
+        if exc.identity_code != "PAYMENT_AMOUNT_MISMATCH":
+            raise
+        original = Order.objects.get(pk=order_id)
+        with transaction.atomic():
+            sub = Subscription.objects.select_for_update().get(pk=original.subscription_id)
+            order = Order.objects.select_for_update().get(pk=order_id)
+            if order.status in ("CREATING", "WAITING", "REVIEW", "REVIEW_AMOUNT"):
+                order.status = "REVIEW_AMOUNT"
+                order.save(update_fields=["status"])
+                sub.status = "REVIEW"
+                sub.save(update_fields=["status"])
+        raise
+
+
+def archive_sandbox_order(order_id, session_digest):
+    if environment("mercadopago") != "sandbox":
+        raise IdentityError("FORBIDDEN", "Disponível somente em testes.", 403)
+    original = Order.objects.get(pk=order_id)
+    with transaction.atomic():
+        sub = Subscription.objects.select_for_update().get(pk=original.subscription_id)
+        order = Order.objects.select_for_update().get(pk=order_id)
+        if order.session_digest != session_digest or order.environment != "sandbox" or order.provider != "mercadopago":
+            raise IdentityError("FORBIDDEN", "Tentativa indisponível nesta sessão.", 403)
+        if order.paid_at or order.status in ("PAID", "REVOKED") or Membership.objects.filter(order=order).exists():
+            raise IdentityError("PAYMENT_ALREADY_CONFIRMED", "Este teste já ativou uma associação.", 409)
+        order.status, order.encrypted_payment_payload = "TEST_ARCHIVED", ""
+        order.save(update_fields=["status", "encrypted_payment_payload"])
+        sub.status, sub.canceled_at, sub.next_charge_at = "CANCELED", timezone.now(), None
+        sub.save(update_fields=["status", "canceled_at", "next_charge_at"])
+        PaymentEvent.objects.filter(order=order, processed_at__isnull=True).update(processed_at=timezone.now())
+    return order
+
+
+def _reconcile_payment(order_id, provider_id=""):
     from .services import send_access
     candidate = Order.objects.select_related("subscription").get(pk=order_id)
+    if candidate.status == "TEST_ARCHIVED":
+        return candidate
     if candidate.environment != environment("mercadopago"):
         raise IdentityError("PAYMENT_MISMATCH", "Ambiente divergente.", 422)
     if not provider_id:
@@ -163,6 +202,8 @@ def reconcile_payment(order_id, provider_id=""):
     with transaction.atomic():
         sub = Subscription.objects.select_for_update().get(pk=candidate.subscription_id)
         order = Order.objects.select_for_update().get(pk=order_id)
+        if order.status == "TEST_ARCHIVED":
+            return order  # A test archived during the provider lookup stays archived.
         if order.provider_order_id and order.provider_order_id != str(provider_id):
             raise IdentityError("PAYMENT_MISMATCH", "Pedido já vinculado a outro pagamento.", 422)
         order.provider_order_id = str(provider_id)

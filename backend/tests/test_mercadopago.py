@@ -181,6 +181,51 @@ class MercadoPagoTests(TestCase):
         new = start_order(body(), "new-session", "new-request-key-001")
         self.assertNotEqual(new.pk, order.pk)
 
+    def test_amount_mismatch_becomes_visible_review_and_can_archive_test(self):
+        browser, order = self.create()
+        with patch("integrations.mercadopago.orders.payment", side_effect=IdentityError("PAYMENT_AMOUNT_MISMATCH", "Mismatch", 422)):
+            response = browser.get("/api/v1/billing/checkout")
+        self.assertEqual(response.json()["status"], "REVIEW_AMOUNT")
+        self.assertFalse(Membership.objects.exists())
+        self.assertEqual(self.post(browser, "billing/checkout/reset-test", {"confirm": True}, csrf=False).status_code, 403)
+        response = self.post(browser, "billing/checkout/reset-test", {"confirm": True})
+        self.assertEqual(response.status_code, 200, response.content)
+        order.refresh_from_db()
+        self.assertEqual(order.status, "TEST_ARCHIVED")
+        self.assertEqual(order.encrypted_payment_payload, "")
+        self.assertTrue(PaymentEvent.objects.filter(order=order, processed_at__isnull=False).exists())
+        self.assertEqual(browser.get("/api/v1/billing/checkout").status_code, 404)
+        with patch("integrations.mercadopago.orders.payment") as provider:
+            self.assertEqual(reconcile_payment(order.pk).status, "TEST_ARCHIVED")
+        provider.assert_not_called()
+        def new_provider(path, payload=None, key=None, **kwargs):
+            result = self.provider(path, payload, key, **kwargs)
+            if path == "/v1/orders":
+                result["id"] = "ORDTST01M6M5MYRCKEXHNCSTPF06A5T7"
+            return result
+        with patch("integrations.mercadopago.orders.request_api", side_effect=new_provider):
+            self.assertEqual(self.submit(browser, key="new-sandbox-attempt-002").status_code, 201)
+
+    def test_provider_response_in_flight_cannot_activate_archived_test(self):
+        from apps.billing.mercadopago import archive_sandbox_order
+        _, order = self.create()
+        def response(_):
+            archive_sandbox_order(order.pk, order.session_digest)
+            return self.snapshot(order)
+        with patch("integrations.mercadopago.orders.payment", side_effect=response):
+            self.assertEqual(reconcile_payment(order.pk).status, "TEST_ARCHIVED")
+        self.assertFalse(Membership.objects.exists())
+
+    def test_test_reset_blocks_production_other_session_and_confirmed_order(self):
+        browser, order = self.create()
+        other = self.browser()
+        self.assertEqual(self.post(other, "billing/checkout/reset-test", {"confirm": True}).status_code, 404)
+        with override_settings(MERCADOPAGO_ENVIRONMENT="production"):
+            self.assertEqual(self.post(browser, "billing/checkout/reset-test", {"confirm": True}).status_code, 403)
+        self.confirm(order)
+        self.assertEqual(self.post(browser, "billing/checkout/reset-test", {"confirm": True}).status_code, 409)
+        self.assertTrue(Membership.objects.exists())
+
     def test_refund_revokes_access_and_stops_future_renewal(self):
         _, order = self.create(); order = self.confirm(order)
         snapshot = self.snapshot(order, "refunded"); snapshot["transaction_amount_refunded"] = 699.90

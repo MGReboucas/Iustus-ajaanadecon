@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const routes = new Set([
+  "billing/checkout/reset-test",
   "mobile/auth/context", "mobile/auth/register", "mobile/auth/verify", "mobile/auth/resend", "mobile/auth/reset",
   "mobile/billing/activate", "mobile/billing/resend", "mobile/billing/plan", "mobile/me", "mobile/cases/catalog", "mobile/privacy/requests", "mobile/notifications",
   "mobile/auth/login", "mobile/auth/logout", "mobile/auth/recovery", "mobile/dashboard", "mobile/cases",

@@ -16,6 +16,8 @@ declare global { interface Window { MercadoPago?: new (key: string, options: { l
 const money = (cents: number) => (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const terminal = ["DECLINED", "CANCELED", "EXPIRED", "REVOKED"];
 const statuses: Record<string, string> = {
+  REVIEW_AMOUNT: "O valor ou as parcelas retornados pelo Mercado Pago divergem do plano contratado. A adesão está em conferência; não faça outro pagamento.",
+  TEST_ARCHIVED: "Esta tentativa de teste foi encerrada na aplicação.",
   REVIEW: "Esta tentativa precisa de conferência pela associação. Entre em contato antes de pagar novamente.",
   CREATING: "Estamos conferindo sua tentativa. Aguarde antes de iniciar outro pagamento.",
   WAITING: "Pagamento enviado. Aguardando confirmação do Mercado Pago.",
@@ -68,6 +70,7 @@ export default function AssociationCheckout() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [checkoutReady, setCheckoutReady] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const requestKey = useRef("");
   const payment = useRef<Payment | null>(null);
   const submitting = useRef(false);
@@ -154,11 +157,31 @@ export default function AssociationCheckout() {
     payment.current = null; setStatus(""); setError(""); setAccepted(false); setCustomer(undefined);
   }
 
+  async function resetTest() {
+    if (busy || !plan?.sandbox) return;
+    setBusy(true); setError("");
+    try {
+      await api("billing/checkout/reset-test", { confirm: true });
+      retry(); setConfirmReset(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível encerrar o teste.");
+    } finally { setBusy(false); }
+  }
+
   return <section id="checkout" className="checkout-page" aria-labelledby="checkout-title">
     <div className="checkout-container checkout-layout">
       <section className="checkout-form-wrap">
         <div className="checkout-heading"><span className="checkout-kicker">IUSTUS · UM PROJETO AJA ANADECON</span><h2 id="checkout-title">Faça sua adesão.</h2><p>Cadastre-se e pague com cartão pelo Mercado Pago. Após a confirmação, enviaremos o acesso por e-mail.</p></div>
         {error && <p className="mp-error" role="alert">{error}</p>}
+        {status && plan?.sandbox && !["PAID", "REVOKED"].includes(status) && <div className="checkout-notice">
+          <strong>Ambiente de teste</strong>
+          <p>A tentativa anterior está salva nesta sessão. Você pode arquivá-la e iniciar um novo teste. O histórico será preservado; esta ação não cancela nem estorna pedidos no Mercado Pago.</p>
+          {confirmReset ? <>
+            <p>Encerrar esta tentativa de teste e abrir um novo formulário?</p>
+            <button type="button" className="checkout-submit" disabled={busy} onClick={resetTest}>{busy ? "Encerrando teste…" : "Confirmar novo teste"}</button>
+            <button type="button" disabled={busy} onClick={() => setConfirmReset(false)}>Voltar</button>
+          </> : <button type="button" className="checkout-submit" disabled={busy} onClick={() => setConfirmReset(true)}>Encerrar tentativa e iniciar novo teste</button>}
+        </div>}
         {status ? <div className="checkout-success" role="status"><h2>{status === "PAID" ? "Sua associação está ativa" : "Seu pagamento"}</h2><p>{statuses[status] || "Consultando seu pagamento…"}</p><Link className="back-home" href="/acessar">Entrar ou reenviar acesso</Link>{terminal.includes(status) && <button className="checkout-submit" onClick={retry}>Tentar novamente</button>}{status === "CREATING" && payment.current && <button className="checkout-submit" disabled={busy} onClick={submitPayment}>Reenviar a mesma tentativa</button>}{status === "CREATING" && !payment.current && <p>Aguarde a conferência desta tentativa. Se necessário, entre em contato com a associação.</p>}</div>
         : customer && plan ? <div className="association-form"><p>Associado: {customer.name} · {customer.email}</p><p>{installments}x de {money(amount / installments)}, total de {money(amount)} por ano. Renovação manual: nenhuma nova cobrança será feita automaticamente.</p><CardPayment publicKey={publicKey} plan={plan} customer={customer} onSubmit={pay} onError={setError} /><p className="form-hint">Dados do cartão protegidos pelo Mercado Pago. O Iustus recebe apenas o token para esta compra.</p></div>
         : <form className="association-form" onSubmit={prepare}>

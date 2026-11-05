@@ -111,8 +111,20 @@ class CheckoutView(PublicView):
                 try:
                     order = reconcile(order.pk, order.provider_order_id)
                 except IdentityError:
-                    pass  # O evento durável continua disponível ao worker.
+                    order.refresh_from_db()  # Surface durable review states to the browser.
         return Response({"status": order.status})
+
+
+class ResetSandboxCheckoutView(PublicView):
+    def post(self, request):
+        if request.data != {"confirm": True}:
+            raise IdentityError("INVALID_INPUT", "Confirme o encerramento do teste.", 422)
+        order = Order.objects.filter(pk=request.session.get("checkout_order")).first()
+        if not order or order.session_digest != digest(request.session.session_key or ""):
+            raise Http404
+        mercadopago.archive_sandbox_order(order.pk, digest(request.session.session_key or ""))
+        request.session.pop("checkout_order", None)
+        return Response({"reset": True})
 
 
 class ActivateView(PublicView):

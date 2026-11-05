@@ -1,7 +1,9 @@
 from django.urls import path
 from .views import MercadoPagoWebhookView, SubscriptionView, MobileSubscriptionView, PlanView, CardKeyView, CheckoutView, ActivateView, ResendAccessView, WebhookView
+from .views import ResetSandboxCheckoutView
 
 urlpatterns = [
+    path("billing/checkout/reset-test", ResetSandboxCheckoutView.as_view()),
     path("billing/mercadopago/webhook", MercadoPagoWebhookView.as_view()),
     path("billing/subscription", SubscriptionView.as_view()),
     path("mobile/billing/subscription", MobileSubscriptionView.as_view()),
