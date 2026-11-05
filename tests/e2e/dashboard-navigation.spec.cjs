@@ -20,6 +20,9 @@ test('dashboard sections preserve drafts and support browser history', async ({ 
   await expect(page.locator('#resumo')).toBeHidden();
   await nav.getByRole('link', { name: 'Minha conta' }).click();
   await page.getByLabel('Nome de exibição').fill('Nome ainda não salvo');
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect(nav).toBeInViewport();
+  for (const link of await nav.getByRole('link').all()) await expect(link).toBeInViewport();
   await nav.getByRole('link', { name: 'Visão geral' }).click();
   await page.goBack();
   await expect(page.getByLabel('Nome de exibição')).toHaveValue('Nome ainda não salvo');
@@ -32,4 +35,8 @@ test('dashboard sections preserve drafts and support browser history', async ({ 
   await expect(page.locator('#meus-casos')).toBeHidden();
   await expect(page.locator('#resumo')).toBeHidden();
   await expect(nav.getByRole('link', { name: 'Minha conta' })).toHaveAttribute('aria-current', 'page');
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  for (const link of await nav.getByRole('link').all()) await expect(link).toBeInViewport();
+  await nav.getByRole('link', { name: 'Casos', exact: true }).click();
+  await expect(page.locator('#meus-casos')).toBeVisible();
 });

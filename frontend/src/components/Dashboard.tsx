@@ -62,12 +62,13 @@ export default function Dashboard({ portal }: { portal: Portal }) {
     {error && <p role="alert" className="dashboard-error">{error}</p>}
     {!user && !error && <p role="status">Carregando seu acesso…</p>}
     {user && <>
-      <section className="dashboard-welcome"><p>{portal === "team" ? "ATENDIMENTO DA ASSOCIAÇÃO" : "SEU ATENDIMENTO JURÍDICO"}</p><h1>Olá, {user.name || "bem-vindo"}.</h1><p>{portal === "team" ? "Acompanhe a fila, confira pendências e mantenha seus clientes informados." : "Cadastre ocorrências, assine a procuração dos casos aprovados e acompanhe o trabalho do seu advogado."}</p><nav className="dashboard-nav" aria-label="Seções do painel">{([
+      <section className="dashboard-welcome"><p>{portal === "team" ? "ATENDIMENTO DA ASSOCIAÇÃO" : "SEU ATENDIMENTO JURÍDICO"}</p><h1>Olá, {user.name || "bem-vindo"}.</h1><p>{portal === "team" ? "Acompanhe a fila, confira pendências e mantenha seus clientes informados." : "Cadastre ocorrências, assine a procuração dos casos aprovados e acompanhe o trabalho do seu advogado."}</p></section>
+      <nav className="dashboard-nav" aria-label="Seções do painel">{([
         ["resumo", "Visão geral"], ["meus-casos", user.role === "ADMIN" ? "Distribuição" : "Casos"], ["minha-conta", "Minha conta"],
       ] as const).map(([id, label]) => <a key={id} href={`#${id}`} aria-current={section === id ? "page" : undefined} onClick={event => {
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault(); navigate(id);
-      }}>{label}</a>)}</nav></section>
+      }}>{label}</a>)}</nav>
       <div id="resumo" hidden={section !== "resumo"}><DashboardOverview user={user} revision={revision} openCase={id => { navigate("meus-casos"); setOpenCase({ id, sequence: Date.now() }); }} /></div>
       <div hidden={section !== "meus-casos"}>
       {user.role === "ADMIN" && manualAdmission && <ServiceAccess />}
