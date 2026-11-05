@@ -14,9 +14,21 @@ class BrandedMailTests(TestCase):
     @override_settings(PORTAL_ORIGINS={"client": "https://iustus.app", "team": "https://iustus.app"})
     def test_queued_legacy_link_uses_canonical_domain_and_preserves_token(self):
         message = build_message("Access", "https://iustus-defesa-juridica.vercel.app/acessar#member=synthetic", ["buyer@example.test"])
-        self.assertEqual(message.body, "https://iustus.app/acessar#member=synthetic")
-        self.assertIn('href="https://iustus.app/acessar#member=synthetic"', message.alternatives[0].content)
+        self.assertEqual(message.body, "https://www.iustus.app/acessar#member=synthetic")
+        self.assertIn('href="https://www.iustus.app/acessar#member=synthetic"', message.alternatives[0].content)
         self.assertIn("Concluir meu cadastro", message.alternatives[0].content)
+
+    @override_settings(PORTAL_ORIGINS={"client": "https://iustus.app", "team": "https://iustus.app"})
+    def test_queued_apex_link_uses_www_and_preserves_token(self):
+        message = build_message("Access", "https://iustus.app/acessar#member=synthetic", ["buyer@example.test"])
+        self.assertEqual(message.body, "https://www.iustus.app/acessar#member=synthetic")
+        self.assertIn('href="https://www.iustus.app/acessar#member=synthetic"', message.alternatives[0].content)
+
+    def test_similar_external_hostname_is_not_rewritten(self):
+        body = "https://iustus.app.evil.example/acessar#member=synthetic"
+        message = build_message("Access", body, ["buyer@example.test"])
+        self.assertEqual(message.body, body)
+        self.assertNotIn('href="https://iustus.app.evil.example', message.alternatives[0].content)
 
     def test_health_check_is_read_only_and_does_not_send_mail(self):
         with patch("jobs.management.commands.check_mail.build_message") as message:

@@ -4,7 +4,7 @@ export function middleware(request: NextRequest) {
   if (request.nextUrl.hostname === "iustus-defesa-juridica.vercel.app") {
     const destination = request.nextUrl.clone();
     destination.protocol = "https:";
-    destination.host = "iustus.app";
+    destination.host = "www.iustus.app";
     destination.port = "";
     const redirect = NextResponse.redirect(destination, 307);
     redirect.headers.set("Cache-Control", "no-store, private");

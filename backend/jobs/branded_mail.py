@@ -12,13 +12,15 @@ ROOT = Path(__file__).resolve().parent
 
 
 def canonical_body(body):
-    # Rewrite only the former first-party portal, including already queued links.
-    return re.sub(r"https://iustus-defesa-juridica\.vercel\.app(?=/|[\s]|$)",
-                  "https://iustus.app", body)
+    # Use the reachable canonical host, including links already in the queue.
+    return re.sub(r"https://(?:iustus-defesa-juridica\.vercel\.app|iustus\.app)(?=/|[\s]|$)",
+                  "https://www.iustus.app", body)
 
 
 def render_email(subject, body):
     origins = {urlsplit(origin).netloc for origin in settings.PORTAL_ORIGINS.values()}
+    if origins & {"iustus.app", "iustus-defesa-juridica.vercel.app"}:
+        origins.add("www.iustus.app")
     links = re.findall(r"https?://[^\s<>]+", body)
     url = next((link for link in links if urlsplit(link).netloc in origins
                 and not urlsplit(link).username and not urlsplit(link).password), "")
