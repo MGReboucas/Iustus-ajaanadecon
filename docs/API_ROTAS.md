@@ -26,8 +26,11 @@ Conferir: acrescente `--check` ao comando.
 | POST | `/api/v1/billing/activate` | `apps.billing.views.ActivateView` |
 | GET | `/api/v1/billing/card-key` | `apps.billing.views.CardKeyView` |
 | GET, POST | `/api/v1/billing/checkout` | `apps.billing.views.CheckoutView` |
+| POST | `/api/v1/billing/checkout/reset-test` | `apps.billing.views.ResetSandboxCheckoutView` |
+| POST | `/api/v1/billing/mercadopago/webhook` | `apps.billing.views.MercadoPagoWebhookView` |
 | GET | `/api/v1/billing/plan` | `apps.billing.views.PlanView` |
 | POST | `/api/v1/billing/resend` | `apps.billing.views.ResendAccessView` |
+| GET, POST | `/api/v1/billing/subscription` | `apps.billing.views.SubscriptionView` |
 | POST | `/api/v1/billing/webhook` | `apps.billing.views.WebhookView` |
 | GET, POST | `/api/v1/cases` | `apps.cases.views.CasesView` |
 | GET, PATCH | `/api/v1/cases/<uuid:case_id>` | `apps.cases.views.DetailView` |
@@ -70,6 +73,7 @@ Conferir: acrescente `--check` ao comando.
 | POST | `/api/v1/mobile/billing/activate` | `apps.identity.mobile_flows.MemberActivateView` |
 | GET | `/api/v1/mobile/billing/plan` | `apps.identity.mobile_flows.MobilePlanView` |
 | POST | `/api/v1/mobile/billing/resend` | `apps.identity.mobile_flows.MemberResendView` |
+| GET, POST | `/api/v1/mobile/billing/subscription` | `apps.billing.views.MobileSubscriptionView` |
 | GET, POST | `/api/v1/mobile/cases` | `apps.identity.mobile.MobileCasesView` |
 | GET, PATCH | `/api/v1/mobile/cases/<uuid:case_id>` | `apps.identity.mobile.MobileCaseView` |
 | GET, POST | `/api/v1/mobile/cases/<uuid:case_id>/documents` | `apps.identity.mobile_flows.DocumentsView` |

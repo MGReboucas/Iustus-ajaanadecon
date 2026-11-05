@@ -76,3 +76,5 @@ Documentos narrativos são editados diretamente. Toda mudança de escopo deve in
 - [Propostas historicas de API](API_PROPOSTAS_HISTORICAS.md)
 - [Inventario de rotas Django](API_ROTAS.md)
 - [Associação Iustus — checkout integrado atualizado em 06/10/2026](ASSOCIACAO.md)
+
+- [Mercado Pago: checkout e pagamentos](MERCADO_PAGO.md)

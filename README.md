@@ -182,3 +182,5 @@ A comunicação jurídica, critérios de atendimento, modelos, condições comer
 - [Inventario de rotas Django](docs/API_ROTAS.md)
 - [Etapa 1 — Produto e contratação](docs/ETAPA_01_PRODUTO_CONTRATACAO.md)
 - [Etapa 2 — Contratos entre site, aplicativo e backend](docs/ETAPA_02_CONTRATOS.md)
+
+- [Mercado Pago: checkout e pagamentos](docs/MERCADO_PAGO.md)
