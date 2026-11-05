@@ -1,7 +1,8 @@
+import logging
 import uuid
 from datetime import timedelta
 
-from django.core.mail import send_mail
+from jobs.branded_mail import build_message
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -26,10 +27,12 @@ def deliver_one():
         item.save(update_fields=["lease_until", "lease_id", "attempts"])
     # Efeito externo fora da transação. Entrega é at-least-once; token é de uso único.
     try:
-        count = send_mail(item.subject, decrypt(item.encrypted_body), None, [item.recipient], fail_silently=False)
+        count = build_message(item.subject, decrypt(item.encrypted_body), [item.recipient]).send(fail_silently=False)
         if count != 1:
             raise RuntimeError("MailNotAccepted")
     except Exception as exc:
+        logging.getLogger("jobs.mail").error("Identity email delivery failed: %s", type(exc).__name__,
+            extra={"status_code": getattr(exc, "http_status", None) or "-"})
         IdentityEmail.objects.filter(pk=item.pk, lease_id=lease).update(
             lease_until=None, lease_id=None, last_error=type(exc).__name__[:40],
             available_at=timezone.now() + timedelta(seconds=min(3600, 30 * 2 ** item.attempts)),

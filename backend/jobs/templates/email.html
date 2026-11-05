@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>{{ subject }}</title></head>
+<body style="margin:0;padding:0;background-color:#edf1f5;font-family:Arial,Helvetica,sans-serif;color:#142c46;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">{{ subject }} — uma mensagem da Iustus para você.</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#edf1f5;">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #d9e1e9;border-radius:16px;overflow:hidden;">
+<tr><td align="center" bgcolor="#0b1b2f" style="padding:30px 24px 26px;background-color:#0b1b2f;border-bottom:3px solid #e6b951;">
+<img src="cid:iustus-logo" width="90" height="90" alt="ÍUSTUS" style="display:block;border:0;width:90px;height:90px;">
+<p style="margin:16px 0 0;font-size:10px;line-height:16px;letter-spacing:2px;color:#e6b951;">IUSTUS · UM PROJETO AJA ANA DECON</p>
+</td></tr>
+<tr><td style="padding:36px 28px 16px;">
+<p style="margin:0 0 12px;color:#58768d;font-size:11px;font-weight:bold;letter-spacing:2px;">SUA CONTA IUSTUS</p>
+<h1 style="margin:0 0 24px;color:#142c46;font-family:Georgia,'Times New Roman',serif;font-size:28px;line-height:36px;font-weight:normal;">{{ subject }}</h1>
+{% for paragraph in paragraphs %}<p style="margin:0 0 18px;font-size:15px;line-height:25px;color:#425970;">{{ paragraph|linebreaksbr }}</p>{% endfor %}
+{% if url %}
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:26px 0;"><tr><td bgcolor="#efc367" style="border-radius:6px;background-color:#efc367;text-align:center;">
+<a href="{{ url }}" style="display:inline-block;padding:17px 26px;border:1px solid #d7aa4b;border-radius:6px;color:#10243a;text-decoration:none;font-size:15px;font-weight:bold;line-height:20px;">{{ label }}</a>
+</td></tr></table>
+<p style="margin:0 0 8px;font-size:12px;line-height:20px;color:#667b8e;">Se o botão não abrir, copie e cole este endereço no navegador:</p>
+<p style="margin:0 0 24px;font-size:11px;line-height:18px;word-break:break-all;overflow-wrap:anywhere;"><a href="{{ url }}" style="color:#365f7f;text-decoration:underline;word-break:break-all;">{{ url }}</a></p>
+{% endif %}
+</td></tr>
+<tr><td style="padding:22px 28px;background-color:#f5f7fa;border-top:1px solid #e3e9ef;">
+<p style="margin:0 0 8px;font-size:12px;line-height:20px;color:#425970;"><strong>Cuidamos do seu acesso.</strong> Não compartilhe links de ativação ou recuperação de senha.</p>
+<p style="margin:0;font-size:11px;line-height:18px;color:#708294;">Mensagem automática da plataforma Iustus. Consulte seus dados e atendimentos com segurança na sua conta.</p>
+</td></tr></table>
+<p style="margin:22px 0 0;font-size:11px;line-height:18px;color:#6c8092;">ÍUSTUS · AJA ANA DECON</p>
+</td></tr></table>
+</body></html>

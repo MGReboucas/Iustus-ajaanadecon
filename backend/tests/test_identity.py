@@ -207,7 +207,7 @@ class IdentityTests(TestCase):
 
     def test_mail_retry_and_scrubbing_after_delivery(self):
         item = IdentityEmail.objects.create(recipient="test@example.test", subject="Teste", encrypted_body=encrypt("Link fictício"), available_at=timezone.now())
-        with patch("jobs.mail.send_mail", side_effect=ConnectionError("secret-not-for-logs")):
+        with patch("jobs.mail.build_message", side_effect=ConnectionError("secret-not-for-logs")):
             self.assertTrue(deliver_one())
         item.refresh_from_db()
         self.assertEqual(item.last_error, "ConnectionError")

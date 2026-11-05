@@ -35,11 +35,17 @@ def issue_token(purpose, email, portal, user=None, created_by=None):
     )
     mode = {"VERIFY": "verify", "RESET": "reset", "INVITE": "invite", "MEMBER": "member"}[purpose]
     titles = {"VERIFY": "Confirme seu e-mail", "RESET": "Redefina sua senha", "INVITE": "Convite para a equipe Iustus", "MEMBER": "Pagamento confirmado: conclua seu cadastro na Iustus"}
+    introductions = {
+        "VERIFY": "Confirme seu endereço de e-mail para continuar seu cadastro na Iustus.",
+        "RESET": "Recebemos uma solicitação para redefinir a senha da sua conta. Use o link abaixo para criar uma nova senha.",
+        "INVITE": "Você recebeu um convite para a equipe Iustus. Confirme seu e-mail e defina sua senha para começar.",
+        "MEMBER": "Seu pagamento foi confirmado. Conclua seu cadastro e defina sua senha para acessar a plataforma Iustus.",
+    }
     # Fragmento evita incluir o token no request HTTP, Referer ou log do servidor web.
     url = f"{settings.PORTAL_ORIGINS[portal]}/acessar#{mode}={raw}"
     IdentityEmail.objects.create(
         recipient=email, subject=titles[purpose], available_at=timezone.now(),
-        encrypted_body=encrypt(f"{titles[purpose]}\n\n{url}\n\nEste link expira em {hours} hora(s). Se não reconhece a solicitação, ignore esta mensagem."),
+        encrypted_body=encrypt(f"{introductions[purpose]}\n\n{url}\n\nEste link expira em {hours} hora(s). Se não reconhece a solicitação, ignore esta mensagem."),
     )
 
 

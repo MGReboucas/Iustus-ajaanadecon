@@ -83,6 +83,42 @@ Quando o transporte estiver resolvido, configurar as mesmas variáveis de armaze
 
 Procedimentos de backup, incidente e reversão: [Operação](../../docs/OPERACAO.md). Reverter artefatos compatíveis; não restaurar banco automaticamente durante rollback.
 
+## E-mails pelo Gmail SMTP
+
+Os fluxos existentes criam mensagens na fila persistente. O processo de envio usa SMTP autenticado, HTML com logo incorporado, texto alternativo e tentativas limitadas. Nenhuma API publica permite envio arbitrario.
+
+No computador que enviara as mensagens, configurar privadamente em `backend/.env`:
+
+```dotenv
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=ENDERECO_GMAIL
+EMAIL_HOST_PASSWORD=SENHA_DE_APP
+DEFAULT_FROM_EMAIL=Iustus <ENDERECO_GMAIL>
+IUSTUS_PUBLIC_ORIGIN=https://iustus.app
+```
+
+Usar uma senha de app Google, nunca a senha normal da conta. `DATABASE_URL`, `DJANGO_SECRET_KEY` e `IDENTITY_ENCRYPTION_KEY` devem corresponder a API de producao. Nao substituir chaves existentes nem usar o banco de desenvolvimento. Credenciais nao devem entrar no Git. No Render, as configuracoes sao variaveis privadas do servico; elas nao sao copiadas automaticamente para este computador.
+
+O perfil `config.settings.mail_worker` le o arquivo `backend/.env`, exige PostgreSQL com SSL e origem HTTPS e envia via SMTP. O perfil local continua gravando e-mails em arquivos para evitar envios reais durante desenvolvimento.
+
+Executar na raiz:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File infra/mail-worker.ps1 -Action check
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File infra/mail-worker.ps1 -Action start
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File infra/mail-worker.ps1 -Action status
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File infra/mail-worker.ps1 -Action stop
+```
+
+Start valida SMTP antes de iniciar o processo oculto. O computador precisa ficar ligado, acordado e conectado. Logs ficam em `.local/mail-worker.error.log`. Nao ha inicializacao automatica com o Windows. A fila usa leases e ate cinco tentativas; apos esgotamento ou expiracao de links, usar reenviar acesso para gerar nova mensagem. O worker tambem agenda lembretes; nao executa pagamentos, scanner ou limpeza de documentos.
+
+O [Render gratuito](https://render.com/docs/free) bloqueia as portas SMTP 465 e 587. Manter o worker neste computador nesse caso. Em uma hospedagem que permita SMTP, `MAIL_WORKER_IN_WEB=true` pode executar a fila no mesmo container da API. O Blueprint render.yaml descreve dois servicos pagos e nao deve ser aplicado para essa opcao sem avaliar custos.
+
+Para conferir contagens sem envio, executar em backend `python manage.py check_mail --settings=config.settings.mail_worker`. `--connect` testa autenticacao sem enviar. Um teste de entrega explicitamente autorizado pode usar `--send-to ENDERECO`; conferir a caixa de entrada e spam, pois aceitacao SMTP nao comprova entrega final.
+
+Previa sem envio: `python manage.py preview_mail --settings=config.settings.test --output ../.local/email-previews`. Conferir cadastro, recuperacao de senha, convite, pagamento, reenvio e avisos de atendimento. O logo e incorporado, sem rastreadores externos; detalhes juridicos nao sao incluidos nas notificacoes.
+
 ## Administrador inicial
 
 Configure `IUSTUS_INITIAL_ADMIN_EMAIL` e execute `python manage.py bootstrap_admin --name "Administrador"` no servidor. O worker enviará um link de uso único, válido por 24 horas, para confirmar o e-mail e definir a senha. MFA é exigido no primeiro login. Repetir o comando antes da ativação substitui o link; depois da ativação, o comando recusa alterações. Contas existentes nunca são promovidas pelo e-mail da variável.

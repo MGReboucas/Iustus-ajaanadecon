@@ -1,8 +1,9 @@
 import hashlib
+import logging
 import uuid
 from datetime import timedelta
 from django.conf import settings
-from django.core.mail import EmailMessage
+from jobs.branded_mail import build_message
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -42,11 +43,13 @@ def deliver_case_email():
     title = EVENT_TITLES.get(notice.kind, "Há uma novidade ou pendência no seu atendimento Iustus.")
     body = title + "\n\nEntre no painel para consultar os detalhes com segurança:\n" + url + "\n\nVocê pode ajustar estes e-mails em Minha conta."
     try:
-        message = EmailMessage("Iustus: atualização no atendimento", body, None, [user.email],
+        message = build_message("Iustus: atualização no atendimento", body, [user.email],
                                headers={"Message-ID": f"<case-{notice.pk}@iustus.invalid>"})
         if message.send(fail_silently=False) != 1:
             raise RuntimeError("MailNotAccepted")
     except Exception as exc:
+        logging.getLogger("jobs.mail").error("Case email delivery failed: %s", type(exc).__name__,
+            extra={"status_code": getattr(exc, "http_status", None) or "-"})
         CaseEmail.objects.filter(pk=item.pk, lease_id=lease).update(lease_id=None, lease_until=None,
             last_error=type(exc).__name__[:40], available_at=timezone.now()+timedelta(seconds=min(3600,30*2**item.attempts)))
     else:

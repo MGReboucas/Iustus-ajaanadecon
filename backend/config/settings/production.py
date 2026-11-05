@@ -46,6 +46,8 @@ LOGGING = {
     }},
     "loggers": {"django.request": {
         "handlers": ["safe_console"], "level": "ERROR", "propagate": False,
+    }, "jobs.mail": {
+        "handlers": ["safe_console"], "level": "ERROR", "propagate": False,
     }},
 }
 SECRET_KEY = required_secret("DJANGO_SECRET_KEY", 50)
@@ -90,17 +92,20 @@ SECURE_HSTS_PRELOAD = False
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "no-referrer"
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = env("EMAIL_HOST")
+EMAIL_PROVIDER = env("EMAIL_PROVIDER", default="smtp")
+EMAIL_HOST = env("EMAIL_HOST", default="")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
-EMAIL_HOST_USER = env("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_SSL = EMAIL_PORT == 465
 EMAIL_USE_TLS = not EMAIL_USE_SSL
 EMAIL_TIMEOUT = 20
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
+if EMAIL_PROVIDER != "smtp":
+    raise ImproperlyConfigured("EMAIL_PROVIDER deve ser smtp.")
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 if not all((EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, DEFAULT_FROM_EMAIL)):
-    raise ImproperlyConfigured("Configure o envio autenticado de e-mail antes de publicar o cadastro.")
+    raise ImproperlyConfigured("Configure EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD e DEFAULT_FROM_EMAIL.")
 REGISTRATION_POLICY_VERSION = env("REGISTRATION_POLICY_VERSION", default="web-evaluation-v1")
 
 # Sem permissões locais de submissão, arquivos temporários ou cobrança automática.

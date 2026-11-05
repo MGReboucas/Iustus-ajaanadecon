@@ -20,7 +20,7 @@ const statuses: Record<string, string> = {
   REVIEW: "Esta tentativa precisa de conferência pela associação. Entre em contato antes de pagar novamente.",
   CREATING: "Estamos conferindo sua tentativa. Aguarde antes de iniciar outro pagamento.",
   WAITING: "Pagamento enviado. Aguardando confirmação do Mercado Pago.",
-  PAID: "Pagamento confirmado! Enviamos por e-mail as instruções de acesso. Sua adesão vale por um ano, sem renovação automática.",
+  PAID: "Pagamento confirmado! As instruções de acesso serão enviadas por e-mail. Confira também a pasta de spam. Se não receber, use a opção de reenviar acesso abaixo. Sua adesão vale por um ano, sem renovação automática.",
   DECLINED: "O cartão não foi aprovado. Confira os dados ou tente outro cartão.",
   CANCELED: "O pagamento foi cancelado.", EXPIRED: "O prazo deste pagamento terminou.",
   REVOKED: "O pagamento foi estornado ou contestado. Consulte sua conta.",
