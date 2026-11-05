@@ -34,7 +34,7 @@ def start_order(data, session_digest, key):
             raise IdentityError("CHECKOUT_CHANGED", "Esta tentativa já foi registrada com outros dados.", 409)
         return existing
     if (data["planVersion"] != settings.MEMBERSHIP_PLAN_VERSION or data["policyVersion"] != settings.REGISTRATION_POLICY_VERSION
-            or data["card"]["installments"] != settings.MEMBERSHIP_INSTALLMENTS):
+            or not 1 <= data["card"]["installments"] <= settings.MEMBERSHIP_INSTALLMENTS):
         raise IdentityError("PLAN_CHANGED", "Atualize a página para conferir as condições da adesão.", 409)
     buyer = check_identity(data["customer"], environment())
     if Order.objects.filter(session_digest=session_digest, environment=environment(), status__in=["CREATING", "WAITING"]).exclude(request_key=reference).exists():
@@ -42,7 +42,7 @@ def start_order(data, session_digest, key):
     try:
         with transaction.atomic():
             subscription = Subscription.objects.create(environment=environment(), buyer_digest=buyer,
-                amount=settings.MEMBERSHIP_PRICE_CENTS, installments=settings.MEMBERSHIP_INSTALLMENTS,
+                amount=settings.MEMBERSHIP_PRICE_CENTS, installments=data["card"]["installments"],
                 plan_version=settings.MEMBERSHIP_PLAN_VERSION, policy_version=settings.REGISTRATION_POLICY_VERSION,
                 encrypted_customer=encrypt(canonical(data["customer"])))
             return Order.objects.create(request_key=reference, session_digest=session_digest,

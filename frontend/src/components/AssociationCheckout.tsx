@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import Script from "next/script";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import UnifiedCardForm, { type Buyer } from "./UnifiedCardForm";
+import { useEffect, useRef, useState } from "react";
 import { isBillingPlan } from "../../../contracts/validation";
 import { api, ApiError } from "@/lib/api/client";
 import type { BillingPlan as Plan } from "../../../contracts/api";
@@ -10,12 +11,10 @@ import type { BillingPlan as Plan } from "../../../contracts/api";
 type Customer = { name: string; email: string; cpf: string; phone: string };
 type CardData = { token: string; payment_method_id: string; issuer_id: string | number; installments: number };
 type Payment = { accepted: boolean; automaticRenewal: boolean; planVersion: string; policyVersion: string; customer: Customer; card: { token: string; paymentMethodId: string; issuerId: string; installments: number } };
-type Controller = { unmount(): void | Promise<void> };
-type MercadoPagoSDK = { bricks(): { create(name: string, element: string, settings: object): Promise<Controller> } };
-declare global { interface Window { MercadoPago?: new (key: string, options: { locale: string }) => MercadoPagoSDK } }
 const money = (cents: number) => (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const terminal = ["DECLINED", "CANCELED", "EXPIRED", "REVOKED"];
 const statuses: Record<string, string> = {
+  REDIRECTING: "Pagamento enviado. Abrindo o acompanhamento da sua tentativa…",
   REVIEW_AMOUNT: "O valor ou as parcelas retornados pelo Mercado Pago divergem do plano contratado. A adesão está em conferência; não faça outro pagamento.",
   TEST_ARCHIVED: "Esta tentativa de teste foi encerrada na aplicação.",
   REVIEW: "Esta tentativa precisa de conferência pela associação. Entre em contato antes de pagar novamente.",
@@ -26,46 +25,11 @@ const statuses: Record<string, string> = {
   CANCELED: "O pagamento foi cancelado.", EXPIRED: "O prazo deste pagamento terminou.",
   REVOKED: "O pagamento foi estornado ou contestado. Consulte sua conta.",
 };
-const digits = (value: string) => value.replace(/\D/g, "");
-function validCpf(value: string) {
-  return /^\d{11}$/.test(value) && new Set(value).size > 1 && [9, 10].every(size =>
-    ((Array.from(value.slice(0, size)).reduce((sum, char, i) => sum + Number(char) * (size + 1 - i), 0) * 10 % 11) % 10) === Number(value[size]));
-}
-
-function CardPayment({ publicKey, plan, customer, onSubmit, onError }: {
-  publicKey: string; plan: Plan; customer: Customer; onSubmit: (data: CardData) => Promise<void>; onError: (message: string) => void;
-}) {
-  const [sdkReady, setSdkReady] = useState(false);
-  const [ready, setReady] = useState(false);
-  const submit = useRef(onSubmit); submit.current = onSubmit;
-  const error = useRef(onError); error.current = onError;
-  useEffect(() => {
-    if (!sdkReady || !window.MercadoPago) return;
-    let active = true;
-    let controller: Controller | undefined;
-    const mp = new window.MercadoPago(publicKey, { locale: "pt-BR" });
-    mp.bricks().create("cardPayment", "iustus-card-payment", {
-      initialization: { amount: plan.amount / 100, payer: { email: customer.email } },
-      customization: { visual: { style: { theme: "dark" } }, paymentMethods: { types: { included: ["credit_card"] }, minInstallments: plan.installments, maxInstallments: plan.installments } },
-      callbacks: { onReady: () => { if (active) setReady(true); },
-        onSubmit: (data: CardData) => submit.current(data),
-        onError: () => { if (active) error.current("Não foi possível preparar o cartão. Confira os dados e tente novamente."); } },
-    }).then(value => { controller = value; if (!active) void value.unmount(); })
-      .catch(() => { if (active) error.current("Não foi possível carregar o pagamento seguro. Atualize a página."); });
-    return () => { active = false; if (controller) void controller.unmount(); };
-  }, [sdkReady, publicKey, plan.amount, plan.installments, customer.email]);
-  return <>
-    <Script src="https://sdk.mercadopago.com/js/v2" strategy="afterInteractive" onReady={() => setSdkReady(Boolean(window.MercadoPago))} onError={() => onError("Não foi possível carregar o Mercado Pago. Atualize a página.")} />
-    {!ready && <p role="status">Preparando pagamento seguro…</p>}
-    <div id="iustus-card-payment" />
-  </>;
-}
-
 export default function AssociationCheckout() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [plan, setPlan] = useState<Plan>();
   const [publicKey, setPublicKey] = useState("");
-  const [customer, setCustomer] = useState<Customer>();
-  const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
@@ -124,7 +88,9 @@ export default function AssociationCheckout() {
     submitting.current = true; setBusy(true); setError("");
     try {
       const result = await api<{ status: string }>("billing/checkout", payment.current, { idempotencyKey: requestKey.current });
-      payment.current = null; setStatus(result.status);
+      payment.current = null;
+      if (pathname === "/checkout/resultado") setStatus(result.status);
+      else { setStatus("REDIRECTING"); router.push("/checkout/resultado"); }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível concluir o pagamento.");
       if (e instanceof ApiError && ["INVALID_INPUT", "VALIDATION_ERROR", "ACCEPTANCE_REQUIRED", "BUYER_REVIEW_REQUIRED", "IDEMPOTENCY_REQUIRED", "PLAN_CHANGED", "SUBSCRIPTION_EXISTS", "BILLING_UNAVAILABLE"].includes(e.code)) payment.current = null;
@@ -132,29 +98,18 @@ export default function AssociationCheckout() {
     } finally { submitting.current = false; setBusy(false); }
   }
 
-  function prepare(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (busy || !checkoutReady || !plan?.available || !accepted || !publicKey) return;
-    const data = new FormData(event.currentTarget);
-    const value = (name: string) => String(data.get(name) || "").trim();
-    const buyer = { name: value("name"), email: value("email").toLowerCase(), cpf: digits(value("cpf")), phone: digits(value("phone")) };
-    if (buyer.email !== value("emailConfirmation").toLowerCase()) { setError("Os e-mails devem ser iguais. O acesso será enviado para esse endereço."); return; }
-    if (!validCpf(buyer.cpf)) { setError("Informe um CPF válido para o associado."); return; }
-    setError(""); setCustomer(buyer);
-  }
-
-  async function pay(card: CardData) {
-    if (!customer || !plan || !accepted || submitting.current) return;
-    if (Number(card.installments) !== plan.installments) { setError("Este plano exige 10 parcelas sem juros. Confira se o cartão oferece essa condição."); return; }
+  async function pay(card: CardData, customer: Buyer) {
+    if (!plan || submitting.current) return;
+    if (!Number.isInteger(card.installments) || card.installments < 1 || card.installments > plan.installments) return;
     payment.current = { accepted: true, automaticRenewal: false, planVersion: plan.planVersion, policyVersion: plan.policyVersion, customer,
-      card: { token: card.token, paymentMethodId: card.payment_method_id, issuerId: String(card.issuer_id), installments: Number(card.installments) } };
+      card: { token: card.token, paymentMethodId: card.payment_method_id, issuerId: String(card.issuer_id), installments: card.installments } };
     await submitPayment();
   }
 
   function retry() {
     requestKey.current = crypto.randomUUID();
     try { sessionStorage.setItem("iustus-checkout-key", requestKey.current); } catch { /* Sessão identifica a tentativa no servidor. */ }
-    payment.current = null; setStatus(""); setError(""); setAccepted(false); setCustomer(undefined);
+    payment.current = null; setStatus(""); setError("");
   }
 
   async function resetTest() {
@@ -179,27 +134,14 @@ export default function AssociationCheckout() {
           {confirmReset ? <>
             <p>Encerrar esta tentativa de teste e abrir um novo formulário?</p>
             <button type="button" className="checkout-submit" disabled={busy} onClick={resetTest}>{busy ? "Encerrando teste…" : "Confirmar novo teste"}</button>
-            <button type="button" disabled={busy} onClick={() => setConfirmReset(false)}>Voltar</button>
+            <button type="button" className="checkout-secondary" disabled={busy} onClick={() => setConfirmReset(false)}>Voltar</button>
           </> : <button type="button" className="checkout-submit" disabled={busy} onClick={() => setConfirmReset(true)}>Encerrar tentativa e iniciar novo teste</button>}
         </div>}
         {status ? <div className="checkout-success" role="status"><h2>{status === "PAID" ? "Sua associação está ativa" : "Seu pagamento"}</h2><p>{statuses[status] || "Consultando seu pagamento…"}</p><Link className="back-home" href="/acessar">Entrar ou reenviar acesso</Link>{terminal.includes(status) && <button className="checkout-submit" onClick={retry}>Tentar novamente</button>}{status === "CREATING" && payment.current && <button className="checkout-submit" disabled={busy} onClick={submitPayment}>Reenviar a mesma tentativa</button>}{status === "CREATING" && !payment.current && <p>Aguarde a conferência desta tentativa. Se necessário, entre em contato com a associação.</p>}</div>
-        : customer && plan ? <div className="association-form"><p>Associado: {customer.name} · {customer.email}</p><p>{installments}x de {money(amount / installments)}, total de {money(amount)} por ano. Renovação manual: nenhuma nova cobrança será feita automaticamente.</p><CardPayment publicKey={publicKey} plan={plan} customer={customer} onSubmit={pay} onError={setError} /><p className="form-hint">Dados do cartão protegidos pelo Mercado Pago. O Iustus recebe apenas o token para esta compra.</p></div>
-        : <form className="association-form" onSubmit={prepare}>
-          <fieldset disabled={busy}><legend>Cadastro do associado</legend>
-            <label>Nome completo<input name="name" autoComplete="name" required minLength={3} maxLength={120} /></label>
-            <label>E-mail do associado<input name="email" type="email" autoComplete="email" required maxLength={254} /></label>
-            <label>Confirme seu e-mail<input name="emailConfirmation" type="email" autoComplete="off" required maxLength={254} /></label>
-            <div className="form-grid"><label>CPF do associado<input name="cpf" inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" required maxLength={14} /></label><label>Celular com DDD<input name="phone" type="tel" autoComplete="tel-national" placeholder="11999999999" pattern="[0-9]{11}" required maxLength={11} /></label></div>
-          </fieldset>
-          <div className="checkout-total"><strong>{installments}x de {money(amount / installments)} sem juros</strong><span>Total anual: {money(amount)}</span></div>
-          <label className="checkout-acceptance"><input type="checkbox" required checked={accepted} onChange={e => setAccepted(e.target.checked)} />Autorizo a compra anual de {money(amount)} em {installments} parcelas sem renovação automática. Uma nova adesão depende de outro pagamento autorizado por mim. Honorários, custas e despesas são contratados separadamente por caso.</label>
-          <p className="form-hint">Cada ocorrência passa por análise; a procuração específica é solicitada após o aceite. Leia os <Link href="/termos">termos</Link> e a <Link href="/privacidade">política de privacidade</Link>.</p>
-          {plan?.sandbox && plan.available && <p className="checkout-notice">Ambiente de teste: utilize somente cartões e contas de teste do Mercado Pago.</p>}
-          {plan && !plan.available && <p className="checkout-notice" role="status">O pagamento online ainda não está disponível. Associados podem entrar normalmente.</p>}
-          <button className="checkout-submit" disabled={busy || !checkoutReady || !accepted || !plan?.available || !publicKey}>Continuar para pagamento seguro</button>
-        </form>}
+        : plan && publicKey ? <UnifiedCardForm publicKey={publicKey} amount={amount} maxInstallments={installments} busy={busy} enabled={checkoutReady && plan.available} sandbox={plan.sandbox} onPay={pay} onError={setError} />
+        : <p className="checkout-notice" role="status">{plan && !plan.available ? "Pagamento indisponível no momento." : "Preparando checkout seguro…"}</p>}
       </section>
-      <aside className="order-summary" aria-label="Resumo da adesão"><div className="summary-top"><span>ASSOCIAÇÃO ANUAL</span><b>Acompanhamento online</b></div><h2>Iustus</h2><div className="summary-price"><small>{installments} parcelas sem juros de</small><strong>{money(amount / installments)}</strong><p>Total: {money(amount)} por ano.</p></div><ul><li>Acesso aos recursos da plataforma</li><li>Cadastro e acompanhamento de ocorrências</li><li>Documentos e histórico no painel</li><li>Vigência de um ano</li><li>Renovação manual, sem cobranças automáticas</li></ul><p className="summary-description">Honorários e despesas à parte. Multas de trânsito e direito civil, exceto família e sucessões. O envio não garante aceite do caso.</p></aside>
+      <aside className="order-summary" aria-label="Resumo da adesão"><div className="summary-top"><span>ASSOCIAÇÃO ANUAL</span><b>Acompanhamento online</b></div><h2>Iustus</h2><div className="summary-price"><small>Associação anual</small><strong>{money(amount)}</strong><p>Escolha de 1 a {installments} parcelas, conforme as condições sem juros do cartão.</p></div><ul><li>Acesso aos recursos da plataforma</li><li>Cadastro e acompanhamento de ocorrências</li><li>Documentos e histórico no painel</li><li>Vigência de um ano</li><li>Renovação manual, sem cobranças automáticas</li></ul><p className="summary-description">Honorários e despesas à parte. Multas de trânsito e direito civil, exceto família e sucessões. O envio não garante aceite do caso.</p></aside>
     </div>
   </section>;
 }

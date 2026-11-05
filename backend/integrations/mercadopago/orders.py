@@ -66,7 +66,7 @@ def normalize(snapshot):
         raise IdentityError("PAYMENT_AMOUNT_MISMATCH", "Valor da transação divergente.", 422)
     if status == "approved" and cents(tx.get("paid_amount")) != cents(snapshot.get("total_amount")):
         raise IdentityError("PAYMENT_AMOUNT_MISMATCH", "Valor pago divergente.", 422)
-    if method.get("installment_amount") is not None and cents(method["installment_amount"]) * method.get("installments", 0) != cents(snapshot.get("total_amount")):
+    if method.get("installment_amount") is not None and abs(cents(method["installment_amount"]) * method.get("installments", 0) - cents(snapshot.get("total_amount"))) > method.get("installments", 0):
         raise IdentityError("PAYMENT_AMOUNT_MISMATCH", "Parcelamento com valor divergente.", 422)
     return {"id": snapshot["id"], "external_reference": snapshot.get("external_reference"),
             "collector_id": snapshot.get("user_id"), "currency_id": "BRL" if snapshot.get("country_code") == "BRA" and snapshot.get("currency_id", "BRL") == "BRL" else None,

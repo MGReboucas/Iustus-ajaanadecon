@@ -117,10 +117,19 @@ class MercadoPagoTests(TestCase):
             with self.subTest(change=change), patch("integrations.mercadopago.orders.request_api") as provider:
                 self.assertIn(self.submit(self.browser(), data).status_code, (400, 409, 422))
                 provider.assert_not_called()
-        for change in ({"cvv": "123"}, {"number": "4111111111111111"}, {"installments": 1}):
+        for change in ({"cvv": "123"}, {"number": "4111111111111111"}, {"installments": 11}):
             data = body(); data["card"].update(change)
             self.assertIn(self.submit(self.browser(), data).status_code, (400, 409, 422))
         self.assertFalse(Order.objects.exists())
+
+    def test_selected_installments_are_persisted_and_sent_to_provider(self):
+        data = body(); data["card"]["installments"] = 3
+        with patch("integrations.mercadopago.orders.request_api", side_effect=self.provider) as provider:
+            response = self.submit(self.browser(), data)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Order.objects.get().installments, 3)
+        payload = [call.args[1] for call in provider.call_args_list if call.args[0] == "/v1/orders"][0]
+        self.assertEqual(payload["transactions"]["payments"][0]["payment_method"]["installments"], 3)
 
     def test_lost_response_reuses_exact_persisted_payload_and_key(self):
         browser = self.browser(); calls = []

@@ -24,16 +24,23 @@ test('retained sandbox review can be archived with confirmation and opens a fres
   await expect(page.getByLabel('Nome completo', { exact: true })).toBeVisible();
   expect(reset).toBe(true);
 });
-async function setup(page, { offline = false, declined = false, uncertain = false, keyFailure = false, pending = false } = {}) {
+async function setup(page, { offline = false, declined = false, uncertain = false, keyFailure = false, pending = false, interest = false } = {}) {
   const requests = []; let submitted = false;
-  await page.route('https://sdk.mercadopago.com/**', route => route.fulfill({ contentType: 'application/javascript', body: `window.MercadoPago = class { bricks() { return { create: async (kind, target, options) => {
-    window.brickOptions = options;
-    const node = document.getElementById(target);
-    node.innerHTML = '<button type="button">Pagar com cartão de teste</button>';
-    node.firstChild.onclick = () => options.callbacks.onSubmit({ token: 'synthetic-token-123456', payment_method_id: 'visa', issuer_id: '25', installments: 10 });
-    options.callbacks.onReady();
-    return { unmount: () => { node.innerHTML = ''; } };
-  } }; } };` }));
+  await page.route('https://sdk.mercadopago.com/**', route => route.fulfill({ contentType: 'application/javascript', body: `window.MercadoPago = class { cardForm(options) {
+    window.cardFormOptions = options;
+    const form = document.getElementById(options.form.id);
+    const select = document.getElementById(options.form.installments.id);
+    for (const name of ['issuer', 'identificationType']) document.getElementById(options.form[name].id).innerHTML = '<option value="25">Teste</option>';
+    const costs = [{ installments: 1, installment_amount: 699.9, total_amount: 699.9 }, { installments: 10, installment_amount: ${interest ? 84.44 : 69.99}, total_amount: ${interest ? 844.43 : 699.9} }, { installments: 12, installment_amount: 84.44, total_amount: 844.43 }];
+    const handler = event => { event.preventDefault(); options.callbacks.onSubmit(event); };
+    form.addEventListener('submit', handler);
+    setTimeout(() => {
+      options.callbacks.onInstallmentsReceived(null, { payer_costs: costs });
+      select.innerHTML = '<option value="">Selecione</option><option value="1">1x de R$ 699,90</option><option value="10">10x de R$ 69,99</option><option value="12">12x com juros</option>';
+      options.callbacks.onReady();
+    }, 10);
+    return { getCardFormData: () => ({ token: 'synthetic-token-123456', paymentMethodId: 'visa', issuerId: '25', installments: select.value }), unmount: () => form.removeEventListener('submit', handler) };
+  } };` }));
   await page.route('**/api/v1/**', async route => {
     const req = route.request(); const endpoint = new URL(req.url()).pathname.split('/api/v1/')[1];
     if (endpoint === 'billing/plan') return route.fulfill(offline ? { status: 503, json: {} } : { json: plan });
@@ -58,18 +65,32 @@ async function fill(page) {
   await page.getByLabel('Confirme seu e-mail').fill('buyer@example.test');
   await page.getByLabel('CPF do associado', { exact: true }).fill('123.456.789-09');
   await page.getByLabel('Celular com DDD').fill('11999999999');
+  await page.getByLabel('Nome impresso no cartão').fill('APRO');
+  await page.getByLabel('Documento do titular', { exact: true }).fill('12345678909');
+  await page.getByLabel('Quantidade de parcelas').selectOption('10');
   await page.getByLabel(/Autorizo a compra anual/).check();
 }
 async function pay(page) {
-  await page.getByRole('button', { name: 'Continuar para pagamento seguro' }).click();
-  await page.getByRole('button', { name: 'Pagar com cartão de teste' }).click();
+  await page.getByRole('button', { name: 'Pagar R$ 699,90' }).click();
 }
 
 test('API indisponível mantém oferta visível e bloqueia cobrança', async ({ page }) => {
   await setup(page, { offline: true }); await page.goto('/#checkout');
-  await expect(page.locator('.summary-price strong')).toHaveText(/69,99/);
-  await expect(page.getByRole('button', { name: 'Continuar para pagamento seguro' })).toBeDisabled();
+  await expect(page.locator('.summary-price strong')).toHaveText(/699,90/);
+  await expect(page.getByRole('button', { name: 'Pagar R$ 699,90' })).toHaveCount(0);
   await expect(page.locator('.mp-error')).toBeVisible();
+});
+
+test('juros são bloqueados antes do pagamento e cadastro e cartão aparecem juntos', async ({ page }) => {
+  const requests = await setup(page, { interest: true });
+  await page.goto('/#checkout');
+  await expect(page.getByLabel('Nome completo', { exact: true })).toBeVisible();
+  await expect(page.locator('#iustus-card-number')).toBeVisible();
+  await expect(page.locator('#iustus-installments option[value="10"]')).toHaveAttribute('disabled', '');
+  await page.getByLabel('Quantidade de parcelas').selectOption('1');
+  await expect(page.locator('.checkout-total')).toContainText('1x de R$ 699,90');
+  await expect(page.locator('.checkout-total')).not.toContainText('844');
+  expect(requests).toHaveLength(0);
 });
 test('Mercado Pago recebe token, consentimento e oferta; dados de cartão ficam fora da API', async ({ page }) => {
   const requests = await setup(page); await page.goto('/#checkout'); await fill(page); await pay(page);
@@ -78,18 +99,19 @@ test('Mercado Pago recebe token, consentimento e oferta; dados de cartão ficam 
   expect(requests[0].body).toEqual({ accepted: true, automaticRenewal: false, planVersion: plan.planVersion, policyVersion: plan.policyVersion,
     customer: { name: 'Associado Teste', email: 'buyer@example.test', cpf: '12345678909', phone: '11999999999' },
     card: { token: 'synthetic-token-123456', paymentMethodId: 'visa', issuerId: '25', installments: 10 } });
-  expect(await page.evaluate(() => window.brickOptions.customization.paymentMethods)).toEqual({ types: { included: ['credit_card'] }, minInstallments: 10, maxInstallments: 10 });
+  await expect(page).toHaveURL(/checkout\/resultado/);
+  expect(await page.evaluate(() => window.cardFormOptions?.iframe)).not.toBe(false);
   const stored = await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }));
   for (const sensitive of ['buyer@example.test', '12345678909', 'synthetic-token']) expect(stored).not.toContain(sensitive);
 });
 test('CPF inválido e e-mails divergentes impedem preparação do cartão', async ({ page }) => {
   const requests = await setup(page); await page.goto('/#checkout'); await fill(page);
   await page.getByLabel('CPF do associado', { exact: true }).fill('11111111111');
-  await page.getByRole('button', { name: 'Continuar para pagamento seguro' }).click();
+  await page.getByRole('button', { name: 'Pagar R$ 699,90' }).click();
   await expect(page.locator('.mp-error')).toContainText('CPF válido');
   await page.getByLabel('CPF do associado', { exact: true }).fill('12345678909');
   await page.getByLabel('Confirme seu e-mail').fill('different@example.test');
-  await page.getByRole('button', { name: 'Continuar para pagamento seguro' }).click();
+  await page.getByRole('button', { name: 'Pagar R$ 699,90' }).click();
   await expect(page.locator('.mp-error')).toContainText('Os e-mails devem ser iguais');
   expect(requests).toHaveLength(0);
 });
@@ -107,8 +129,8 @@ test('cartão recusado permite nova tentativa com referência diferente', async 
   expect(requests).toHaveLength(2); expect(requests[0].key).not.toBe(requests[1].key);
 });
 test('falha na configuração impede cobrança', async ({ page }) => {
-  const requests = await setup(page, { keyFailure: true }); await page.goto('/#checkout'); await fill(page);
-  await expect(page.getByRole('button', { name: 'Continuar para pagamento seguro' })).toBeDisabled(); expect(requests).toHaveLength(0);
+  const requests = await setup(page, { keyFailure: true }); await page.goto('/#checkout');
+  await expect(page.getByRole('button', { name: 'Pagar R$ 699,90' })).toHaveCount(0); expect(requests).toHaveLength(0);
 });
 test('retorno forjado nunca exibe associação ativa', async ({ page }) => {
   await setup(page, { pending: true }); await page.goto('/?status=approved&payment_id=987#checkout'); await fill(page); await pay(page);
@@ -117,7 +139,7 @@ test('retorno forjado nunca exibe associação ativa', async ({ page }) => {
 });
 test('layout móvel e oferta anual preservados', async ({ page }) => {
   await setup(page); await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/#checkout');
-  await expect(page.locator('.summary-price strong')).toHaveText(/69,99/);
+  await expect(page.locator('.summary-price strong')).toHaveText(/699,90/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: path.join(__dirname, '../../.local/checkout-mercadopago-mobile.png'), fullPage: true });
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -125,7 +147,7 @@ test('layout móvel e oferta anual preservados', async ({ page }) => {
 });
 test('plano inválido bloqueia pagamento', async ({ page }) => {
   await setup(page); await page.route('**/api/v1/billing/plan', route => route.fulfill({ json: { ...plan, installments: 0 } }));
-  await page.goto('/#checkout'); await expect(page.getByRole('button', { name: 'Continuar para pagamento seguro' })).toBeDisabled();
+  await page.goto('/#checkout'); await expect(page.getByRole('button', { name: 'Pagar R$ 699,90' })).toHaveCount(0);
 });
 test('pagamento confirmado permanece ativo ao reabrir checkout', async ({ page }) => {
   await setup(page); await page.route('**/api/v1/billing/checkout', route => route.fulfill({ json: { status: 'PAID' } }));
