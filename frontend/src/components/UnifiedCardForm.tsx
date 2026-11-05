@@ -107,12 +107,11 @@ export default function UnifiedCardForm({ publicKey, amount, maxInstallments, bu
       <div className="form-grid"><label>CPF do associado<input name="cpf" inputMode="numeric" placeholder="000.000.000-00" required maxLength={14} /></label>
       <label>Celular com DDD<input name="phone" type="tel" autoComplete="tel-national" placeholder="11999999999" pattern="[1-9][0-9]9[0-9]{8}" required maxLength={11} /></label></div>
     </fieldset>
-    <fieldset disabled={busy}><legend><span>02</span> Escolha o parcelamento</legend>
-      <p className="form-hint">Informe o cartão abaixo para consultar as parcelas disponíveis. Exibimos somente condições que mantêm o total de {money(amount / 100)}, sem juros.</p>
-      <label>Quantidade de parcelas<select id="iustus-installments" required defaultValue=""><option value="" disabled>Preencha o cartão para consultar</option></select></label>
-      <div className="checkout-total" aria-live="polite"><strong>{quote ? `${quote.installments}x de ${money(Number(quote.installment_amount))} sem juros` : `Total da adesão: ${money(amount / 100)}`}</strong>
-        <span>{quote ? `Total a pagar: ${money(Number(quote.total_amount))}` : "Selecione uma condição para confirmar o pagamento."}</span></div>
-      {quoted && !costs.current.some(cost => Number(cost.installments) <= maxInstallments && cents(Number(cost.total_amount)) === amount) && <p className="mp-error">Este cartão não retornou uma condição sem juros. Nenhum pagamento foi enviado. Confira o parcelamento da conta Mercado Pago ou utilize outro cartão.</p>}
+    <fieldset disabled={busy}><legend><span>02</span> Forma de pagamento</legend>
+      <label>Como deseja pagar?<select name="paymentMethod" defaultValue="credit_card">
+        <option value="credit_card">Cartão de crédito</option>
+        <option value="pix" disabled>Pix — indisponível no momento</option>
+      </select></label>
     </fieldset>
     <fieldset disabled={busy}><legend><span>03</span> Cartão de crédito</legend>
       <label>Número do cartão<div id="iustus-card-number" className="secure-card-field" /></label>
@@ -121,6 +120,11 @@ export default function UnifiedCardForm({ publicKey, amount, maxInstallments, bu
       <div className="form-grid"><label>Tipo de documento do titular<select id="iustus-document-type" required /></label><label>Documento do titular<input id="iustus-document" inputMode="numeric" required /></label></div>
       <label>Banco emissor<select id="iustus-issuer" required /></label>
       <p className="form-hint">Número, validade e CVV são preenchidos nos campos protegidos do Mercado Pago.</p>
+      <p className="form-hint">Informe os dados do cartão para consultar as parcelas disponíveis. Exibimos somente condições que mantêm o total de {money(amount / 100)}, sem juros.</p>
+      <label>Quantidade de parcelas<select id="iustus-installments" required defaultValue=""><option value="" disabled>Preencha o cartão para consultar</option></select></label>
+      <div className="checkout-total" aria-live="polite"><strong>{quote ? `${quote.installments}x de ${money(Number(quote.installment_amount))} sem juros` : `Total da adesão: ${money(amount / 100)}`}</strong>
+        <span>{quote ? `Total a pagar: ${money(Number(quote.total_amount))}` : "Selecione uma condição para confirmar o pagamento."}</span></div>
+      {quoted && !costs.current.some(cost => Number(cost.installments) <= maxInstallments && cents(Number(cost.total_amount)) === amount) && <p className="mp-error">Este cartão não retornou uma condição sem juros. Nenhum pagamento foi enviado. Confira o parcelamento da conta Mercado Pago ou utilize outro cartão.</p>}
     </fieldset>
     <label className="checkout-acceptance"><input type="checkbox" required checked={accepted} onChange={e => setAccepted(e.target.checked)} /><span>Autorizo a compra anual de {money(amount / 100)}, nas parcelas selecionadas, sem renovação automática. Li os <Link href="/termos">termos</Link> e a <Link href="/privacidade">política de privacidade</Link>.</span></label>
     {sandbox && <p className="checkout-notice">Ambiente de teste. Utilize somente cartões e contas de teste.</p>}
