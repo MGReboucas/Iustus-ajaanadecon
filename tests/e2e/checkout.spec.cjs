@@ -77,7 +77,8 @@ async function pay(page) {
 test('API indisponível mantém oferta visível e bloqueia cobrança', async ({ page }) => {
   await setup(page, { offline: true }); await page.goto('/#checkout');
   await expect(page.locator('.summary-price strong')).toHaveText(/699,90/);
-  await expect(page.getByRole('button', { name: 'Pagar R$ 699,90' })).toHaveCount(0);
+  await expect(page.getByLabel('Nome completo', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pagar R$ 699,90' })).toBeDisabled();
   await expect(page.locator('.mp-error')).toBeVisible();
 });
 
@@ -130,7 +131,8 @@ test('cartão recusado permite nova tentativa com referência diferente', async 
 });
 test('falha na configuração impede cobrança', async ({ page }) => {
   const requests = await setup(page, { keyFailure: true }); await page.goto('/#checkout');
-  await expect(page.getByRole('button', { name: 'Pagar R$ 699,90' })).toHaveCount(0); expect(requests).toHaveLength(0);
+  await expect(page.getByLabel('Nome completo', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pagar R$ 699,90' })).toBeDisabled(); expect(requests).toHaveLength(0);
 });
 test('retorno forjado nunca exibe associação ativa', async ({ page }) => {
   await setup(page, { pending: true }); await page.goto('/?status=approved&payment_id=987#checkout'); await fill(page); await pay(page);
@@ -147,7 +149,9 @@ test('layout móvel e oferta anual preservados', async ({ page }) => {
 });
 test('plano inválido bloqueia pagamento', async ({ page }) => {
   await setup(page); await page.route('**/api/v1/billing/plan', route => route.fulfill({ json: { ...plan, installments: 0 } }));
-  await page.goto('/#checkout'); await expect(page.getByRole('button', { name: 'Pagar R$ 699,90' })).toHaveCount(0);
+  await page.goto('/#checkout');
+  await expect(page.getByLabel('Nome completo', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pagar R$ 699,90' })).toBeDisabled();
 });
 test('pagamento confirmado permanece ativo ao reabrir checkout', async ({ page }) => {
   await setup(page); await page.route('**/api/v1/billing/checkout', route => route.fulfill({ json: { status: 'PAID' } }));
