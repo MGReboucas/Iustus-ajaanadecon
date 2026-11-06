@@ -8,6 +8,12 @@ import start_web
 
 
 class MailRuntimeTests(SimpleTestCase):
+    def setUp(self):
+        for name in ("schedule_membership_notices", "update_mail_health"):
+            mocked = patch("jobs.management.commands.run_mail_queue." + name)
+            mocked.start()
+            self.addCleanup(mocked.stop)
+
     def test_worker_recovers_after_database_disconnect(self):
         with patch("jobs.management.commands.run_mail_queue.deliver_one", side_effect=[OperationalError("private"), False]) as identity, \
              patch("jobs.management.commands.run_mail_queue.deliver_case_email", return_value=False), \

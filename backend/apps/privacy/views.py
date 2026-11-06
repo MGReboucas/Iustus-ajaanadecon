@@ -27,6 +27,8 @@ class RequestsView(CaseView):
         with transaction.atomic():
             item = PrivacyRequest.objects.create(owner=request.user, **data)
             audit(request.user, "PRIVACY_REQUESTED", request.portal, requestId=str(item.pk))
+            from jobs.transactional_mail import notify_privacy
+            notify_privacy(item)
         return Response(serialize(item), status=201)
 class ResolveView(CaseView):
     def post(self, request, pk):
@@ -41,4 +43,6 @@ class ResolveView(CaseView):
             item.resolved_at, item.resolved_by = timezone.now(), request.user
             item.save()
             audit(request.user, "PRIVACY_ANSWERED", request.portal, requestId=str(item.pk))
+            from jobs.transactional_mail import notify_privacy
+            notify_privacy(item)
         return Response(serialize(item))

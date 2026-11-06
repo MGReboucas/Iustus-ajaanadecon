@@ -8,6 +8,8 @@ from jobs.mail import deliver_one
 from jobs.communication import deliver_case_email, schedule_reminders
 from jobs.billing import process_payment
 from apps.billing.mercadopago import renew_due
+from jobs.transactional_mail import schedule_membership_notices
+from jobs.mail_health import update_mail_health
 class Command(BaseCommand):
     help = "Executa e-mails, lembretes, scanner e limpeza de exportações; --once executa um ciclo limitado."
     def add_arguments(self, parser):
@@ -22,6 +24,8 @@ class Command(BaseCommand):
                     for _ in range(10):
                         if not process_payment(): break
                 schedule_reminders()
+                schedule_membership_notices()
+                update_mail_health()
                 for _ in range(100):
                     identity = deliver_one()
                     case = deliver_case_email()

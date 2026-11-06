@@ -25,6 +25,9 @@ def action_is_current(body, recipient):
     user = token.user
     if not user or not user.is_active or user.email != recipient or user.auth_version != token.auth_version:
         return False
+    if token.purpose == "MEMBER":
+        from apps.billing.services import active_memberships
+        return user.role == User.Role.CLIENT and active_memberships(user).exists()
     if token.purpose == "INVITE":
         if user.email_verified_at or user.has_usable_password():
             return False
@@ -52,13 +55,18 @@ def deliver_one():
     # Efeito externo fora da transação. Entrega é at-least-once; token é de uso único.
     try:
         body = decrypt(item.encrypted_body)
-        if not action_is_current(body, item.recipient):
+        from jobs.transactional_mail import notice_is_current
+        if not action_is_current(body, item.recipient) or not notice_is_current(item):
             IdentityEmail.objects.filter(pk=item.pk, lease_id=lease).update(
                 cancelled_at=timezone.now(), lease_until=None, lease_id=None,
                 last_error="StaleActionToken", encrypted_body="",
             )
             return True
-        count = build_message(item.subject, body, [item.recipient]).send(fail_silently=False)
+        from email.utils import parseaddr
+        from django.conf import settings
+        domain = parseaddr(settings.DEFAULT_FROM_EMAIL)[1].split("@")[-1]
+        count = build_message(item.subject, body, [item.recipient],
+            headers={"Message-ID": f"<identity-{item.pk}@{domain}>"}).send(fail_silently=False)
         if count != 1:
             raise RuntimeError("MailNotAccepted")
     except Exception as exc:
@@ -68,6 +76,8 @@ def deliver_one():
             lease_until=None, lease_id=None, last_error=type(exc).__name__[:40],
             available_at=timezone.now() + timedelta(seconds=min(3600, 30 * 2 ** item.attempts)),
         )
+        if item.attempts >= 5:
+            logging.getLogger("jobs.mail").critical("Mail retries exhausted: queue=identity id=%s", item.pk)
     else:
         IdentityEmail.objects.filter(pk=item.pk, lease_id=lease).update(
             sent_at=timezone.now(), lease_until=None, lease_id=None, last_error="", encrypted_body="",

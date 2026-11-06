@@ -81,6 +81,15 @@ class BrandedMailTests(TestCase):
             call_command("check_mail", stdout=io.StringIO())
         message.assert_not_called()
 
+    def test_queued_operator_test_uses_worker_and_no_account_is_created(self):
+        with patch("jobs.management.commands.check_mail.build_message") as message:
+            call_command("check_mail", queue_test_to="operator@example.test", stdout=io.StringIO())
+        message.assert_not_called()
+        self.assertFalse(User.objects.exists())
+        self.assertTrue(deliver_one())
+        self.assertEqual(mail.outbox[0].to, ["operator@example.test"])
+        self.assertIn("teste autorizado", mail.outbox[0].body)
+
     def test_message_contains_text_html_and_inline_logo(self):
         body = "Pagamento confirmado.\n\nhttp://localhost:3000/acessar#member=synthetic"
         message = build_message("Sua conta", body, ["buyer@example.test"])

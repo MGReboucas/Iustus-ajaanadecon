@@ -8,6 +8,8 @@ class WorkerDeploymentTests(SimpleTestCase):
     def run_cycle(self, backend, local=False):
         with override_settings(DOCUMENT_STORAGE_BACKEND=backend, DOCUMENT_LOCAL_STORAGE_ENABLED=local), \
              patch("jobs.management.commands.run_operations.schedule_reminders"), \
+             patch("jobs.management.commands.run_operations.schedule_membership_notices"), \
+             patch("jobs.management.commands.run_operations.update_mail_health"), \
              patch("jobs.management.commands.run_operations.deliver_one", return_value=False), \
              patch("jobs.management.commands.run_operations.deliver_case_email", return_value=False), \
              patch("jobs.management.commands.run_operations.call_command"), \

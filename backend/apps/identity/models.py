@@ -114,6 +114,15 @@ class IdentityEmail(models.Model):
     attempts = models.PositiveIntegerField(default=0)
     last_error = models.CharField(max_length=40, blank=True)
 
+    # Durable deduplication and delivery-time validation for transactional notices.
+    source_key = models.CharField(max_length=160, null=True, unique=True)
+    context = models.JSONField(default=dict, db_default={})
+
+
+class MailWorkerHeartbeat(models.Model):
+    name = models.CharField(max_length=80, primary_key=True)
+    updated_at = models.DateTimeField()
+
 
 class IdentityAudit(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

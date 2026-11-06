@@ -4,6 +4,10 @@ from .models import Notification, CaseEmail
 
 
 EVENT_TITLES = {
+    "MESSAGE": "Você recebeu uma nova mensagem no seu atendimento",
+    "TASK_REMINDER": "Lembrete: há um compromisso do seu caso nas próximas 24 horas ou pendente",
+    "TASK_OVERDUE": "Um compromisso do seu caso está atrasado e precisa de atenção",
+    "UNASSIGNED": "Nova ocorrência aguardando advogado responsável",
     "PROPOSAL_PUBLISHED": "Uma proposta de atendimento está disponível",
     "PROPOSAL_ACCEPTED": "O cliente aceitou a proposta de atendimento",
     "PROPOSAL_DECLINED": "O cliente recusou a proposta de atendimento",

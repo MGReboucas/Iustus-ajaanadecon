@@ -247,6 +247,8 @@ def _reconcile_payment(order_id, provider_id=""):
                     sub.canceled_at = timezone.now()
         order.save()
         sub.save()
+        from jobs.transactional_mail import notify_payment
+        notify_payment(order)
     return order
 
 

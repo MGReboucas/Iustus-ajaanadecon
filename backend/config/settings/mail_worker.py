@@ -8,6 +8,10 @@ from .base import *  # noqa: F403
 from .base import BASE_DIR, env
 
 env.read_env(BASE_DIR / ".env")
+# base.py is imported before .env is read; reload the selectors used by notices.
+BILLING_PROVIDER = env("BILLING_PROVIDER", default="mercadopago")
+MERCADOPAGO_ENVIRONMENT = env("MERCADOPAGO_ENVIRONMENT", default="sandbox")
+PAGBANK_ENVIRONMENT = env("PAGBANK_ENVIRONMENT", default="sandbox")
 DEBUG = False
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 IDENTITY_ENCRYPTION_KEY = env("IDENTITY_ENCRYPTION_KEY")

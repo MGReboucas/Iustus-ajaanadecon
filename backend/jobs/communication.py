@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import uuid
+from email.utils import parseaddr
 from datetime import timedelta
 from django.conf import settings
 from jobs.branded_mail import build_message
@@ -30,21 +31,27 @@ def deliver_case_email():
     # Nenhuma mensagem é enviada após revogação conhecida ou opt-out.
     portal = "client" if user.role == "CLIENT" else "team"
     allowed = portal in settings.PORTAL_ORIGINS and user.is_active and user.email_verified_at and user.case_email_enabled and accessible(user, administrative=user.role == "ADMIN").filter(pk=notice.case_id).exists()
-    if notice.kind == "TASK_REMINDER":
+    if notice.kind in ("TASK_REMINDER", "TASK_OVERDUE"):
         allowed = allowed and LegalTask.objects.filter(pk=item.reminder_task_id, case_id=notice.case_id, due_at=item.reminder_due_at, completed_at__isnull=True,
             due_at__lte=timezone.now()+timedelta(hours=24)).exclude(case__state__in=[Case.State.CLOSED, Case.State.REJECTED]).exists()
     if not allowed:
         CaseEmail.objects.filter(pk=item.pk, lease_id=lease).update(cancelled_at=timezone.now(), lease_id=None, lease_until=None)
         return True
     portal = "client" if user.role == "CLIENT" else "team"
+    if notice.kind == "UNASSIGNED":
+        allowed = allowed and notice.case.lawyer_id is None
+        if not allowed:
+            CaseEmail.objects.filter(pk=item.pk, lease_id=lease).update(cancelled_at=timezone.now(), lease_id=None, lease_until=None)
+            return True
     path = "/cliente" if portal == "client" else "/advogado"
     url = settings.PORTAL_ORIGINS[portal] + path
     # Usar somente textos estáticos; títulos persistidos podem conter dados privados.
     title = EVENT_TITLES.get(notice.kind, "Há uma novidade ou pendência no seu atendimento Iustus.")
     body = title + "\n\nEntre no painel para consultar os detalhes com segurança:\n" + url + "\n\nVocê pode ajustar estes e-mails em Minha conta."
     try:
-        message = build_message("Iustus: atualização no atendimento", body, [user.email],
-                               headers={"Message-ID": f"<case-{notice.pk}@iustus.invalid>"})
+        domain = parseaddr(settings.DEFAULT_FROM_EMAIL)[1].split("@")[-1]
+        message = build_message("Iustus: " + title, body, [user.email],
+                               headers={"Message-ID": f"<case-{notice.pk}@{domain}>"})
         if message.send(fail_silently=False) != 1:
             raise RuntimeError("MailNotAccepted")
     except Exception as exc:
@@ -52,6 +59,8 @@ def deliver_case_email():
             extra={"status_code": getattr(exc, "http_status", None) or "-"})
         CaseEmail.objects.filter(pk=item.pk, lease_id=lease).update(lease_id=None, lease_until=None,
             last_error=type(exc).__name__[:40], available_at=timezone.now()+timedelta(seconds=min(3600,30*2**item.attempts)))
+        if item.attempts >= 5:
+            logging.getLogger("jobs.mail").critical("Mail retries exhausted: queue=case id=%s", item.pk)
     else:
         CaseEmail.objects.filter(pk=item.pk, lease_id=lease).update(sent_at=timezone.now(), lease_id=None, lease_until=None, last_error="")
     return True
@@ -75,4 +84,8 @@ def schedule_reminders():
                 create_notice(recipient_id=recipient, source_key=f"task:{fingerprint}", case=case,
                               task=task, kind="TASK_REMINDER", title="Um compromisso do seu caso precisa de atenção")
                 count += 1
+            # One escalation after 24h overdue, only to the responsible lawyer.
+            if task.due_at <= now - timedelta(hours=24) and case.lawyer_id:
+                create_notice(recipient_id=case.lawyer_id, source_key=f"overdue:{fingerprint}", case=case,
+                              task=task, kind="TASK_OVERDUE", title=EVENT_TITLES["TASK_OVERDUE"])
     return count

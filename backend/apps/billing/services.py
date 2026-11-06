@@ -8,7 +8,7 @@ from django.db import transaction
 from django.db.models import Max
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
-from apps.identity.models import User, IdentityEmail
+from apps.identity.models import User, IdentityEmail, ActionToken
 from apps.identity.security import IdentityError, encrypt, decrypt
 from apps.identity.services import issue_token, audit
 from integrations.pagbank.client import request_api
@@ -28,11 +28,15 @@ def membership_data(user):
     return {"active": bool(row), "expiresAt": row.expires_at.isoformat() if row else None}
 
 
+@transaction.atomic
 def send_access(user):
+    user = User.objects.select_for_update().get(pk=user.pk)
     if not user.has_usable_password() or not user.email_verified_at:
+        ActionToken.objects.filter(user=user, purpose="MEMBER", consumed_at__isnull=True).update(consumed_at=timezone.now())
         issue_token("MEMBER", user.email, "client", user)
     else:
         IdentityEmail.objects.create(recipient=user.email, subject="Iustus: associação ativada", available_at=timezone.now(),
+            context={"kind": "MEMBERSHIP_ACTIVE", "user_id": str(user.pk)},
             encrypted_body=encrypt("Seu pagamento foi confirmado e sua associação está ativa. Entre com sua conta para cadastrar ocorrências e acompanhar seus casos.\n\n" + settings.PORTAL_ORIGINS["client"] + "/acessar"))
 
 
@@ -110,4 +114,6 @@ def reconcile(order_id, provider_id):
         elif order.status not in ("PAID", "REVOKED"):
             order.status = "DECLINED" if charges and all(c.get("status") == "DECLINED" for c in charges) else "WAITING"
         order.save()
+        from jobs.transactional_mail import notify_payment
+        notify_payment(order)
     return order

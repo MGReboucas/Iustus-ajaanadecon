@@ -187,6 +187,8 @@ class MercadoPagoTests(TestCase):
         self.confirm(order, self.snapshot(order, "rejected"))
         self.assertEqual(Subscription.objects.get().status, "CANCELED")
         self.assertFalse(Membership.objects.exists())
+        self.confirm(order, self.snapshot(order, "rejected"))
+        self.assertEqual(IdentityEmail.objects.filter(source_key=f"payment:{order.pk}:DECLINED").count(), 1)
         new = start_order(body(), "new-session", "new-request-key-001")
         self.assertNotEqual(new.pk, order.pk)
 

@@ -1,4 +1,4 @@
-param([ValidateSet('start', 'stop', 'status', 'check')][string]$Action = 'status')
+param([ValidateSet('start', 'stop', 'status', 'check', 'install', 'uninstall')][string]$Action = 'status')
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $mailLocal = Join-Path $repoRoot '.local'
@@ -6,6 +6,25 @@ $mailPython = Join-Path $repoRoot 'backend\.venv\Scripts\python.exe'
 $mailBackend = Join-Path $repoRoot 'backend'
 $mailState = Join-Path $mailLocal 'mail-worker-process.json'
 $mailSettings = '--settings=config.settings.mail_worker'
+$mailTaskName = 'Iustus Mail Worker'
+
+if ($Action -eq 'install') {
+    $mailUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    $taskAction = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + $PSCommandPath + '" -Action start') -WorkingDirectory $repoRoot
+    $loginTrigger = New-ScheduledTaskTrigger -AtLogOn -User $mailUser
+    $retryTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 2)
+    $taskSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 1)
+    $principal = New-ScheduledTaskPrincipal -UserId $mailUser -LogonType Interactive -RunLevel Limited
+    Register-ScheduledTask -TaskName $mailTaskName -Action $taskAction -Trigger @($loginTrigger, $retryTrigger) -Settings $taskSettings -Principal $principal -Force | Out-Null
+    Start-ScheduledTask -TaskName $mailTaskName
+    Write-Host 'Email watchdog installed: starts at login and checks the process every two minutes. Computer must remain awake and online.'
+    exit 0
+}
+if ($Action -eq 'uninstall') {
+    Unregister-ScheduledTask -TaskName $mailTaskName -Confirm:$false -ErrorAction SilentlyContinue
+    Write-Host 'Email watchdog removed. Use stop to stop the current worker.'
+    exit 0
+}
 
 function Get-MailProcess {
     if (!(Test-Path -LiteralPath $mailState)) { return $null }

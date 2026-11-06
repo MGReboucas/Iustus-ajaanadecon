@@ -146,6 +146,8 @@ class MaintenanceTests(SimpleTestCase):
     def test_once_is_bounded_and_runs_maintenance(self):
         from django.core.management import call_command
         with patch("jobs.management.commands.run_operations.schedule_reminders") as schedule, \
+             patch("jobs.management.commands.run_operations.schedule_membership_notices"), \
+             patch("jobs.management.commands.run_operations.update_mail_health"), \
              patch("jobs.management.commands.run_operations.deliver_one", return_value=True) as identity, \
              patch("jobs.management.commands.run_operations.deliver_case_email", return_value=True) as cases, \
              patch("jobs.management.commands.run_operations.call_command") as cleanup:
