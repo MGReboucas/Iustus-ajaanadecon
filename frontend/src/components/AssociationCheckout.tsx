@@ -99,7 +99,7 @@ export default function AssociationCheckout() {
   }
 
   async function pay(card: CardData, customer: Buyer) {
-    if (!plan || submitting.current) return;
+    if (!plan?.available || !publicKey || !checkoutReady || status || submitting.current) return;
     if (!Number.isInteger(card.installments) || card.installments < 1 || card.installments > plan.installments) return;
     payment.current = { accepted: true, automaticRenewal: false, planVersion: plan.planVersion, policyVersion: plan.policyVersion, customer,
       card: { token: card.token, paymentMethodId: card.payment_method_id, issuerId: String(card.issuer_id), installments: card.installments } };
@@ -138,8 +138,10 @@ export default function AssociationCheckout() {
           </> : <button type="button" className="checkout-submit" disabled={busy} onClick={() => setConfirmReset(true)}>Encerrar tentativa e iniciar novo teste</button>}
         </div>}
         {status ? <div className="checkout-success" role="status"><h2>{status === "PAID" ? "Sua associação está ativa" : "Seu pagamento"}</h2><p>{statuses[status] || "Consultando seu pagamento…"}</p><Link className="back-home" href="/acessar">Entrar ou reenviar acesso</Link>{terminal.includes(status) && <button className="checkout-submit" onClick={retry}>Tentar novamente</button>}{status === "CREATING" && payment.current && <button className="checkout-submit" disabled={busy} onClick={submitPayment}>Reenviar a mesma tentativa</button>}{status === "CREATING" && !payment.current && <p>Aguarde a conferência desta tentativa. Se necessário, entre em contato com a associação.</p>}</div>
-        : plan && publicKey ? <UnifiedCardForm publicKey={publicKey} amount={amount} maxInstallments={installments} busy={busy} enabled={checkoutReady && plan.available} sandbox={plan.sandbox} onPay={pay} onError={setError} />
-        : <p className="checkout-notice" role="status">{plan && !plan.available ? "Pagamento indisponível no momento." : "Preparando checkout seguro…"}</p>}
+        : <>
+          {plan && !plan.available && <p className="checkout-notice" role="status">Pagamento indisponível no momento. Você pode preencher seus dados enquanto isso.</p>}
+          <UnifiedCardForm publicKey={publicKey} amount={amount} maxInstallments={installments} busy={busy} enabled={checkoutReady && !!plan?.available && !!publicKey} sandbox={plan?.sandbox ?? false} onPay={pay} onError={setError} />
+        </>}
       </section>
       <aside className="order-summary" aria-label="Resumo da adesão"><div className="summary-top"><span>ASSOCIAÇÃO ANUAL</span><b>Acompanhamento online</b></div><h2>Iustus</h2><div className="summary-price"><small>Associação anual</small><strong>{money(amount)}</strong><p>Escolha de 1 a {installments} parcelas, conforme as condições sem juros do cartão.</p></div><ul><li>Acesso aos recursos da plataforma</li><li>Cadastro e acompanhamento de ocorrências</li><li>Documentos e histórico no painel</li><li>Vigência de um ano</li><li>Renovação manual, sem cobranças automáticas</li></ul><p className="summary-description">Honorários e despesas à parte. Multas de trânsito e direito civil, exceto família e sucessões. O envio não garante aceite do caso.</p></aside>
     </div>
