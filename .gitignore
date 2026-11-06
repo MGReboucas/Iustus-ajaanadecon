@@ -54,3 +54,4 @@ backend/staticfiles/
 .vercel/
 test-results/
 playwright-report/
+test-results-*/
