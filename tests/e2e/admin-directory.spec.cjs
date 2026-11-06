@@ -26,6 +26,7 @@ test('admin filters people, confirms revocation and restores access', async ({ p
   });
   await page.goto('/advogado');
   await expect(page.getByRole('heading', { name: 'Pessoas e acessos' })).toBeVisible();
+  await page.getByRole('button', { name: /Aprovar profissional/ }).click();
   await page.getByLabel('E-mail do profissional').fill('new-lawyer@example.test');
   await page.getByRole('button', { name: 'Aprovar e enviar ativação' }).click();
   await expect(page.getByRole('status', { name: 'Resultado da gestão de usuários' })).toContainText('convite');

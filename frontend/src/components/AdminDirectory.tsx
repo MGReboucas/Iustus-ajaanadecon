@@ -27,6 +27,7 @@ export default function AdminDirectory() {
   const [reason, setReason] = useState("");
   const [actionError, setActionError] = useState("");
   const [email, setEmail] = useState("");
+  const [inviteOpen, setInviteOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     let current = true;
@@ -77,7 +78,18 @@ export default function AdminDirectory() {
       {loading ? <p role="status">Atualizando a lista…</p> : data && data.results.length === 0 ? <div className="case-empty-state"><h3>Nenhuma pessoa encontrada</h3><p>Tente outro nome, e-mail ou limpe os filtros.</p></div> : data && <div className="admin-table-wrap"><table><caption className="admin-sr-only">Usuários e permissões de acesso</caption><thead><tr><th scope="col">Pessoa</th><th scope="col">Perfil</th><th scope="col">Situação</th><th scope="col">Ações</th></tr></thead><tbody>{data.results.map(person => <tr key={person.id}><td><strong>{person.name || "Cadastro pendente"}</strong><span>{person.email}</span></td><td data-label="Perfil">{roles[person.role] || person.role}</td><td data-label="Situação"><span className={`admin-status ${!person.active ? "revoked" : person.activated ? "active" : "pending"}`}>{!person.active ? "Acesso revogado" : person.activated ? "Ativo" : "Aguardando ativação"}</span></td><td data-label="Ações"><button className="admin-secondary" disabled={busy} onClick={() => setDetailsId(person.id)}>Detalhes</button>{person.role === "ADMIN" ? <span className="dashboard-note">Gestão operacional</span> : <button className={person.active ? "admin-revoke" : "admin-approve"} disabled={busy} onClick={() => { setSelected(person); setReason(""); setActionError(""); }}>{person.active ? "Revogar acesso" : "Aprovar acesso"}</button>}</td></tr>)}</tbody></table></div>}
       <div className="admin-pagination"><span>Página {history.length + 1}</span><button className="admin-secondary" disabled={!history.length || loading || busy} onClick={() => { setCursor(history[history.length - 1]); setHistory(old => old.slice(0, -1)); }}>Anterior</button><button className="admin-secondary" disabled={!data?.nextCursor || loading || busy} onClick={() => { setHistory(old => [...old, cursor]); setCursor(data!.nextCursor!); }}>Próxima</button></div>
     </section>
-    <section className="dashboard-card admin-invite"><div><p className="dashboard-eyebrow">AMPLIE SUA EQUIPE</p><h3>Aprovar profissional</h3><p>Cadastre o e-mail do advogado para enviar o link de ativação. Para reenviar uma ativação pendente, use o mesmo e-mail.</p></div><form onSubmit={invite}><label>E-mail do profissional<input type="email" required maxLength={254} value={email} onChange={e => setEmail(e.target.value)} placeholder="advogado@exemplo.com" /></label><button disabled={busy}>Aprovar e enviar ativação</button></form></section>
+    <section className="dashboard-card admin-invite-disclosure">
+      <button type="button" className="admin-invite-toggle" aria-expanded={inviteOpen} aria-controls="admin-invite-form" onClick={() => setInviteOpen(open => !open)}>
+        <span><span className="dashboard-eyebrow">AMPLIE SUA EQUIPE</span><strong>Aprovar profissional</strong></span>
+        <span className="admin-invite-icon" aria-hidden="true">+</span>
+      </button>
+      <div id="admin-invite-form" className={`admin-invite-panel${inviteOpen ? " is-open" : ""}`} inert={!inviteOpen} aria-hidden={!inviteOpen}>
+        <div className="admin-invite-panel-inner"><div className="admin-invite-content">
+          <p>Cadastre o e-mail do advogado para enviar o link de ativação. Para reenviar uma ativação pendente, use o mesmo e-mail.</p>
+          <form onSubmit={invite}><label>E-mail do profissional<input type="email" required maxLength={254} value={email} onChange={e => setEmail(e.target.value)} placeholder="advogado@exemplo.com" /></label><button disabled={busy}>Aprovar e enviar ativação</button></form>
+        </div></div>
+      </div>
+    </section>
     {detailsId && <AdminPersonDetails key={detailsId} id={detailsId} onClose={() => setDetailsId(undefined)} />}
     <dialog className="admin-access-dialog" ref={dialog} onCancel={event => { if (busy) event.preventDefault(); }} onClose={() => setSelected(undefined)} aria-labelledby="access-dialog-title">
       {selected && <form onSubmit={changeAccess}><p className="dashboard-eyebrow">CONFIRMAR ALTERAÇÃO</p><h2 id="access-dialog-title">{selected.active ? "Revogar acesso" : "Aprovar acesso"}</h2><p><strong>{selected.name || selected.email}</strong><br />{selected.email}</p><p>{selected.active ? "Esta pessoa perderá o acesso ao sistema. As sessões e os links de ativação anteriores serão invalidados. Os registros serão preservados." : "O acesso será liberado. Isso não concede associação paga. Se a ativação estiver pendente, será necessário um novo link de ativação."}</p><label>Motivo da alteração<textarea autoFocus required minLength={10} maxLength={1000} value={reason} onChange={e => setReason(e.target.value)} /></label>{actionError && <p role="alert" className="dashboard-error">{actionError}</p>}<div className="case-actions"><button disabled={busy || reason.trim().length < 10}>Confirmar alteração de acesso</button><button type="button" className="admin-secondary" disabled={busy} onClick={close}>Cancelar</button></div></form>}

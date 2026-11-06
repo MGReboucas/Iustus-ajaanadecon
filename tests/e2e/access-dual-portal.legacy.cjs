@@ -77,6 +77,7 @@ test('administrador confirma MFA, convida advogado e usa recuperação uma vez',
   const page = await context.newPage();
   await signIn(page, teamOrigin, admin);
   const codes = await enroll(page);
+  await page.getByRole('button', { name: /Aprovar profissional/ }).click();
   await page.getByLabel('E-mail do profissional').fill(lawyer);
   await page.getByRole('button', { name: 'Enviar convite' }).click();
   await expect(page.getByRole('status')).toContainText('convite');
