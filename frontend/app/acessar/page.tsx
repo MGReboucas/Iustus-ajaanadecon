@@ -21,6 +21,7 @@ export default function Access() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [connectionUnavailable, setConnectionUnavailable] = useState(false);
 
   useEffect(() => {
     function readAction() {
@@ -34,7 +35,7 @@ export default function Access() {
     }
     readAction();
     window.addEventListener("hashchange", readAction);
-    api<Context>("auth/csrf").then(setContext).catch(reason => setError(reason.message));
+    api<Context>("auth/csrf").then(setContext).catch(() => setConnectionUnavailable(true));
     return () => window.removeEventListener("hashchange", readAction);
   }, []);
 
@@ -45,6 +46,7 @@ export default function Access() {
     event.preventDefault();
     setBusy(true); setError(""); setMessage("");
     try {
+      setConnectionUnavailable(false);
       if (mode === "login") {
         const result = await api<LoginResult>("auth/login", { email, password });
         setPassword("");
@@ -64,7 +66,9 @@ export default function Access() {
       } else if (mode === "memberResend") {
         const result = await api<{ message: string }>("billing/resend", { email }); setMessage(result.message);
       } else if (mode === "register") {
-        const result = await api<{ message: string }>("auth/register", { email, name, password, policyVersion: context!.policyVersion });
+        const currentContext = context ?? await api<Context>("auth/csrf");
+        setContext(currentContext);
+        const result = await api<{ message: string }>("auth/register", { email, name, password, policyVersion: currentContext.policyVersion });
         change("login"); setMessage(result.message);
       } else if (mode === "verify") {
         await api("auth/verify", { token }); setToken(""); change("login"); setMessage("E-mail confirmado. Entre com seu e-mail e senha.");
@@ -92,7 +96,7 @@ export default function Access() {
         <button className="auth-submit" onClick={() => dashboard()}>Guardei os códigos. Continuar</button>
       </div> : <>
         <form onSubmit={submit}>
-          <fieldset disabled={!context || busy} style={{ border: 0, padding: 0, margin: 0 }}>
+          <fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0 }}>
           {["invite", "register", "member"].includes(mode) && <label>Nome completo<input required minLength={2} maxLength={150} autoComplete="name" value={name} onChange={e => setName(e.target.value)} /></label>}
           {["login", "recovery", "register", "resend", "memberResend"].includes(mode) && <label>E-mail<input required type="email" autoComplete="email" maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label>}
           {["login", "reset", "invite", "register", "member"].includes(mode) && <label>{mode === "reset" ? "Nova senha" : "Senha"}<input required type="password" minLength={mode === "login" ? 1 : 8} maxLength={128} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} /></label>}
@@ -102,20 +106,21 @@ export default function Access() {
             {secret && <div className="mfa-setup"><p>No seu aplicativo autenticador, adicione uma chave de configuração por tempo (TOTP):</p><code data-testid="mfa-secret">{secret}</code><p>Depois, digite o código de seis dígitos gerado pelo aplicativo.</p></div>}
             <label>{secret ? "Código do autenticador" : "Código do autenticador ou de recuperação"}<input required autoComplete="one-time-code" value={code} maxLength={64} onChange={e => setCode(e.target.value)} /></label>
           </>}
-          <button className="auth-submit" disabled={busy || !context}>{busy ? "Aguarde…" : labels[mode]}</button>
+          <button className="auth-submit" disabled={busy}>{busy ? "Aguarde…" : labels[mode]}</button>
           </fieldset>
         </form>
         <div className="auth-links">
-          {mode === "login" && <><a className="auth-join" href="/#checkout"><span>Quero me associar</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></a><button disabled={!context || busy} onClick={() => change("memberResend")}>Já paguei: reenviar acesso</button></>}
-          {mode === "login" && <button disabled={!context || busy} onClick={() => change("recovery")}>Esqueci minha senha</button>}
+          {mode === "login" && <><a className="auth-join" href="/#checkout"><span>Quero me associar</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></a><button disabled={busy} onClick={() => change("memberResend")}>Já paguei: reenviar acesso</button></>}
+          {mode === "login" && <button disabled={busy} onClick={() => change("recovery")}>Esqueci minha senha</button>}
           {mode === "login" && context?.registrationAvailable && <>
             <button disabled={busy} onClick={() => change("register")}>Criar conta de cliente</button>
             <button disabled={busy} onClick={() => change("resend")}>Reenviar confirmação de e-mail</button>
           </>}
-          {mode !== "login" && <button disabled={!context || busy} onClick={() => change("login")}>Voltar para entrar</button>}
+          {mode !== "login" && <button disabled={busy} onClick={() => change("login")}>Voltar para entrar</button>}
         </div>
       </>}
       {error && <p className="auth-error" role="alert">{error}</p>}
+      {connectionUnavailable && <p className="auth-notice" role="status">Não foi possível conectar agora. Você pode preencher os campos; tentaremos novamente ao enviar.</p>}
       {message && <p className="auth-message" role="status">{message}</p>}
       <p className="auth-footer">{context?.mfaRequired ? "Acesso com senha e autenticador." : "Acesso com e-mail e senha."}</p>
     </section>

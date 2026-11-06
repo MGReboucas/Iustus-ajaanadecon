@@ -8,6 +8,19 @@ export class ApiError extends Error {
 }
 
 export async function api<T>(path: string, body?: object, options?: { method?: "POST" | "PATCH"; idempotencyKey?: string }): Promise<T> {
+  // Only retry the safe session-context read. Never repeat a submitted mutation.
+  const attempts = path === "auth/csrf" && body === undefined ? 3 : 1;
+  for (let attempt = 0; ; attempt++) {
+    try { return await request<T>(path, body, options); }
+    catch (error) {
+      const transient = error instanceof ApiError && (error.code === "NETWORK_ERROR" || [502, 503, 504].includes(error.httpStatus ?? 0));
+      if (!transient || attempt + 1 >= attempts) throw error;
+      await new Promise(resolve => setTimeout(resolve, 750 * (attempt + 1)));
+    }
+  }
+}
+
+async function request<T>(path: string, body?: object, options?: { method?: "POST" | "PATCH"; idempotencyKey?: string }): Promise<T> {
   let csrfToken: string | undefined;
   if (body !== undefined) {
     // Buscar por mutação evita reutilizar token anterior ao login/rotação de sessão.
@@ -18,6 +31,7 @@ export async function api<T>(path: string, body?: object, options?: { method?: "
   try {
     response = await fetch(`/api/v1/${path}`, {
       method: body === undefined ? "GET" : options?.method || "POST", credentials: "same-origin", cache: "no-store",
+      signal: path === "auth/csrf" ? AbortSignal.timeout(20000) : undefined,
       headers: body === undefined ? undefined : { "Content-Type": "application/json", "X-CSRFToken": csrfToken!, ...(options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
