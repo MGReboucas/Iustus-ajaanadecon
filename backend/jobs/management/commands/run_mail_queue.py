@@ -1,8 +1,9 @@
 """Mail-only worker suitable for sharing the existing web container."""
 import time
+import logging
 
 from django.core.management.base import BaseCommand
-from django.db import close_old_connections
+from django.db import close_old_connections, InterfaceError, OperationalError
 
 from jobs.mail import deliver_one
 from jobs.communication import deliver_case_email, schedule_reminders
@@ -25,6 +26,10 @@ class Command(BaseCommand):
                         case = deliver_case_email()
                         if not identity and not case:
                             break
+                except (InterfaceError, OperationalError):
+                    if options["once"]:
+                        raise
+                    logging.getLogger("jobs.mail").exception("Mail queue database temporarily unavailable")
                 finally:
                     close_old_connections()
                 if options["once"]:

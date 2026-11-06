@@ -113,6 +113,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File infra/mail-worker.ps1 -A
 
 Start valida SMTP antes de iniciar o processo oculto. O computador precisa ficar ligado, acordado e conectado. Logs ficam em `.local/mail-worker.error.log`. Nao ha inicializacao automatica com o Windows. A fila usa leases e ate cinco tentativas; apos esgotamento ou expiracao de links, usar reenviar acesso para gerar nova mensagem. O worker tambem agenda lembretes; nao executa pagamentos, scanner ou limpeza de documentos.
 
+Aplicar as migrations antes de iniciar uma nova versao do worker (`python manage.py migrate --settings=config.settings.mail_worker`). Links de identidade expirados, substituidos ou revogados sao cancelados antes do envio; o corpo criptografado e removido e a mensagem nao e marcada como enviada. `check_mail` exclui esses cancelamentos da contagem de pendentes. O processo continuo tenta novamente apos falhas temporarias de conexao com o banco; `--once` encerra com erro para permitir diagnostico pelo operador.
+
 O [Render gratuito](https://render.com/docs/free) bloqueia as portas SMTP 465 e 587. Manter o worker neste computador nesse caso. Em uma hospedagem que permita SMTP, `MAIL_WORKER_IN_WEB=true` pode executar a fila no mesmo container da API. O Blueprint render.yaml descreve dois servicos pagos e nao deve ser aplicado para essa opcao sem avaliar custos.
 
 Para conferir contagens sem envio, executar em backend `python manage.py check_mail --settings=config.settings.mail_worker`. `--connect` testa autenticacao sem enviar. Um teste de entrega explicitamente autorizado pode usar `--send-to ENDERECO`; conferir a caixa de entrada e spam, pois aceitacao SMTP nao comprova entrega final.

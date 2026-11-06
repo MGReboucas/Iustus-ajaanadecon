@@ -36,6 +36,7 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Email connection check failed.' }
     } else {
         if ($existing) { Write-Host 'Email worker already running.'; exit 0 }
+        New-Item -ItemType Directory -Path $mailLocal -Force | Out-Null
         & $mailPython manage.py check_mail --connect $mailSettings
         if ($LASTEXITCODE -ne 0) { throw 'Configure Gmail SMTP before starting the queue.' }
         $process = Start-Process -FilePath $mailPython -ArgumentList @('manage.py', 'run_mail_queue', $mailSettings) -WorkingDirectory $mailBackend -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $mailLocal 'mail-worker.log') -RedirectStandardError (Join-Path $mailLocal 'mail-worker.error.log')

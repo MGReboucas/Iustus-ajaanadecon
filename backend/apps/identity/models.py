@@ -107,6 +107,7 @@ class IdentityEmail(models.Model):
     encrypted_body = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(null=True)
+    cancelled_at = models.DateTimeField(null=True)
     available_at = models.DateTimeField()
     lease_until = models.DateTimeField(null=True)
     lease_id = models.UUIDField(null=True)

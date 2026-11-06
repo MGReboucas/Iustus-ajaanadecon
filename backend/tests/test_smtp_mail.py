@@ -1,16 +1,62 @@
 import io
+from datetime import timedelta
 from unittest.mock import patch
 from django.core import mail
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.utils import timezone
-from apps.identity.models import IdentityEmail
+from apps.identity.models import ActionToken, IdentityEmail, User
 from apps.identity.security import encrypt
+from apps.identity.services import issue_token
 from jobs.mail import deliver_one
 from jobs.branded_mail import build_message, render_email
 
 
 class BrandedMailTests(TestCase):
+    def test_replaced_invite_is_cancelled_and_only_latest_is_delivered(self):
+        admin = User.objects.create_user("admin@example.test", "synthetic", role="ADMIN")
+        lawyer = User(email="lawyer@example.test", role="LAWYER")
+        lawyer.set_unusable_password()
+        lawyer.save()
+        issue_token("INVITE", lawyer.email, "team", user=lawyer, created_by=admin)
+        old = IdentityEmail.objects.get()
+        ActionToken.objects.update(consumed_at=timezone.now())
+        issue_token("INVITE", lawyer.email, "team", user=lawyer, created_by=admin)
+        self.assertTrue(deliver_one())
+        old.refresh_from_db()
+        self.assertIsNotNone(old.cancelled_at)
+        self.assertIsNone(old.sent_at)
+        self.assertEqual(old.encrypted_body, "")
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertTrue(deliver_one())
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [lawyer.email])
+        self.assertIn("Ativar meu acesso", mail.outbox[0].alternatives[0].content)
+        self.assertFalse(deliver_one())
+
+    def test_expired_revoked_or_changed_identity_links_are_not_sent(self):
+        user = User.objects.create_user("client@example.test", "synthetic")
+        for scenario in ("expired", "revoked", "version", "missing"):
+            with self.subTest(scenario=scenario):
+                user.is_active = True
+                user.save()
+                issue_token("RESET", user.email, "client", user=user)
+                if scenario == "expired":
+                    ActionToken.objects.update(expires_at=timezone.now() - timedelta(seconds=1))
+                elif scenario == "revoked":
+                    user.is_active = False
+                    user.save()
+                elif scenario == "version":
+                    user.auth_version += 1
+                    user.save()
+                else:
+                    ActionToken.objects.all().delete()
+                self.assertTrue(deliver_one())
+                row = IdentityEmail.objects.latest("created_at")
+                self.assertIsNotNone(row.cancelled_at)
+                self.assertIsNone(row.sent_at)
+        self.assertEqual(len(mail.outbox), 0)
+
     @override_settings(PORTAL_ORIGINS={"client": "https://iustus.app", "team": "https://iustus.app"})
     def test_queued_legacy_link_uses_canonical_domain_and_preserves_token(self):
         message = build_message("Access", "https://iustus-defesa-juridica.vercel.app/acessar#member=synthetic", ["buyer@example.test"])

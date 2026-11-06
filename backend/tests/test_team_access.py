@@ -1,11 +1,14 @@
 from io import StringIO
+import re
 
 import pyotp
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.core import mail
 from django.test import TestCase, override_settings
 
 from apps.identity.models import User
+from jobs.mail import deliver_one
 from .test_identity import IdentityTests, PASSWORD
 
 
@@ -17,6 +20,21 @@ class TeamAccessTests(TestCase):
     user = IdentityTests.user
     login = IdentityTests.login
     email_token = IdentityTests.email_token
+
+    def test_delivered_invite_activates_lawyer_and_allows_login(self):
+        browser, _ = self.bootstrap()
+        self.assertEqual(self.post(browser, "admin/invitations", {"email": "delivered@example.test"}).status_code, 202)
+        while deliver_one():
+            pass
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        self.assertEqual(message.to, ["delivered@example.test"])
+        token = re.search(r"#invite=([^\s]+)", message.body)[1]
+        self.assertIn("Ativar meu acesso", message.alternatives[0].content)
+        accept = self.browser()
+        self.assertEqual(self.activate(accept, token).status_code, 201)
+        self.assertEqual(self.activate(accept, token).status_code, 400)
+        self.assertEqual(self.login(accept, User.objects.get(email="delivered@example.test")).status_code, 202)
 
     def activate(self, browser, token):
         return self.post(browser, "auth/invitations/accept", {

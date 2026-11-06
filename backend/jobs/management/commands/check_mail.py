@@ -17,7 +17,7 @@ class Command(BaseCommand):
         parser.add_argument("--send-to")
 
     def handle(self, *args, **options):
-        for name, query in (("identity", IdentityEmail.objects.filter(sent_at__isnull=True)),
+        for name, query in (("identity", IdentityEmail.objects.filter(sent_at__isnull=True, cancelled_at__isnull=True)),
                             ("case", CaseEmail.objects.filter(sent_at__isnull=True, cancelled_at__isnull=True))):
             self.stdout.write(f"{name}: pending={query.count()} exhausted={query.filter(attempts__gte=5).count()}")
         try:

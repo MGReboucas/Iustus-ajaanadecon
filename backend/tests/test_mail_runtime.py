@@ -2,11 +2,29 @@ from unittest.mock import MagicMock, patch
 
 from django.core.management import call_command
 from django.test import SimpleTestCase
+from django.db import OperationalError
 
 import start_web
 
 
 class MailRuntimeTests(SimpleTestCase):
+    def test_worker_recovers_after_database_disconnect(self):
+        with patch("jobs.management.commands.run_mail_queue.deliver_one", side_effect=[OperationalError("private"), False]) as identity, \
+             patch("jobs.management.commands.run_mail_queue.deliver_case_email", return_value=False), \
+             patch("jobs.management.commands.run_mail_queue.schedule_reminders"), \
+             patch("jobs.management.commands.run_mail_queue.close_old_connections") as connections, \
+             patch("jobs.management.commands.run_mail_queue.time.sleep", side_effect=[None, KeyboardInterrupt]), \
+             self.assertLogs("jobs.mail", level="ERROR"):
+            call_command("run_mail_queue")
+        self.assertEqual(identity.call_count, 2)
+        self.assertEqual(connections.call_count, 4)
+
+    def test_once_reports_database_failure_to_operator(self):
+        with patch("jobs.management.commands.run_mail_queue.deliver_one", side_effect=OperationalError), \
+             patch("jobs.management.commands.run_mail_queue.schedule_reminders"), \
+             self.assertRaises(OperationalError):
+            call_command("run_mail_queue", once=True)
+
     def test_both_queues_are_processed_in_one_cycle(self):
         with patch("jobs.management.commands.run_mail_queue.deliver_one", side_effect=[True, False]) as identity, \
              patch("jobs.management.commands.run_mail_queue.deliver_case_email", side_effect=[True, False]) as case, \
