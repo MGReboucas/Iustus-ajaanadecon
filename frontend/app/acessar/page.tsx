@@ -21,7 +21,6 @@ export default function Access() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [connectionUnavailable, setConnectionUnavailable] = useState(false);
 
   useEffect(() => {
     function readAction() {
@@ -35,7 +34,7 @@ export default function Access() {
     }
     readAction();
     window.addEventListener("hashchange", readAction);
-    api<Context>("auth/csrf").then(setContext).catch(() => setConnectionUnavailable(true));
+    api<Context>("auth/csrf").then(setContext).catch(() => { /* Exibir falhas de conexão somente ao enviar. */ });
     return () => window.removeEventListener("hashchange", readAction);
   }, []);
 
@@ -46,7 +45,6 @@ export default function Access() {
     event.preventDefault();
     setBusy(true); setError(""); setMessage("");
     try {
-      setConnectionUnavailable(false);
       if (mode === "login") {
         const result = await api<LoginResult>("auth/login", { email, password });
         setPassword("");
@@ -96,7 +94,7 @@ export default function Access() {
         <button className="auth-submit" onClick={() => dashboard()}>Guardei os códigos. Continuar</button>
       </div> : <>
         <form onSubmit={submit}>
-          <fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0 }}>
+          <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
           {["invite", "register", "member"].includes(mode) && <label>Nome completo<input required minLength={2} maxLength={150} autoComplete="name" value={name} onChange={e => setName(e.target.value)} /></label>}
           {["login", "recovery", "register", "resend", "memberResend"].includes(mode) && <label>E-mail<input required type="email" autoComplete="email" maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label>}
           {["login", "reset", "invite", "register", "member"].includes(mode) && <label>{mode === "reset" ? "Nova senha" : "Senha"}<input required type="password" minLength={mode === "login" ? 1 : 8} maxLength={128} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} /></label>}
@@ -120,7 +118,6 @@ export default function Access() {
         </div>
       </>}
       {error && <p className="auth-error" role="alert">{error}</p>}
-      {connectionUnavailable && <p className="auth-notice" role="status">Não foi possível conectar agora. Você pode preencher os campos; tentaremos novamente ao enviar.</p>}
       {message && <p className="auth-message" role="status">{message}</p>}
       <p className="auth-footer">{context?.mfaRequired ? "Acesso com senha e autenticador." : "Acesso com e-mail e senha."}</p>
     </section>

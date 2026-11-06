@@ -3,6 +3,24 @@ const { test, expect } = require('../../frontend/node_modules/@playwright/test')
 const context = { csrfToken: 'synthetic-csrf', portal: 'team', policyVersion: 'test', mfaRequired: false, registrationAvailable: false };
 const unavailable = { status: 503, json: { error: { code: 'SERVICE_UNAVAILABLE', message: 'Serviço temporariamente indisponível.' } } };
 
+test('login exibe falha somente ao acessar e mantém os campos editáveis', async ({ page }) => {
+  let reads = 0;
+  await page.route('**/api/v1/auth/csrf', route => { reads++; return route.fulfill(unavailable); });
+  await page.goto('/acessar');
+  await expect.poll(() => reads).toBe(3);
+  await expect(page.getByRole('status')).toHaveCount(0);
+  await expect(page.locator('.auth-error[role="alert"]')).toHaveCount(0);
+  await page.getByLabel('E-mail', { exact: true }).fill('synthetic@example.test');
+  await page.getByLabel('Senha', { exact: true }).fill('Synthetic-Passphrase-938!');
+  await page.getByRole('button', { name: 'Acessar plataforma' }).click();
+  await expect(page.getByRole('button', { name: 'Aguarde…' })).toBeDisabled();
+  await expect(page.getByLabel('E-mail', { exact: true })).toBeEnabled();
+  await expect(page.getByLabel('Senha', { exact: true })).toBeEnabled();
+  await expect(page.locator('.auth-error[role="alert"]')).toContainText('temporariamente indisponível');
+  await expect(page.getByLabel('Senha', { exact: true })).toHaveValue('Synthetic-Passphrase-938!');
+  await expect(page.getByRole('button', { name: 'Acessar plataforma' })).toBeEnabled();
+});
+
 test('convite continua editável offline e recupera sem perder o token ou os dados', async ({ page }) => {
   let online = false;
   await page.route('**/api/v1/auth/csrf', route => route.fulfill(online ? { json: context } : unavailable));
@@ -14,7 +32,8 @@ test('convite continua editável offline e recupera sem perder o token ou os dad
   await page.goto('/acessar#invite=synthetic-invite');
   await page.getByLabel('Nome completo').fill('Advogado Teste');
   await page.getByLabel('Senha', { exact: true }).fill('Synthetic-Passphrase-938!');
-  await expect(page.getByRole('status')).toContainText('Você pode preencher');
+  await expect(page.getByRole('status')).toHaveCount(0);
+  await expect(page.locator('.auth-error[role="alert"]')).toHaveCount(0);
   await page.getByRole('button', { name: 'Aceitar convite' }).click();
   await expect(page.locator('.auth-error[role="alert"]')).toContainText('temporariamente indisponível');
   await expect(page.getByLabel('Nome completo')).toHaveValue('Advogado Teste');
