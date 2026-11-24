@@ -1,6 +1,6 @@
 # Configurar armazenamento e antivírus
 
-Este roteiro usa AWS S3 e um Private Service no Render como referência. Os serviços ainda não foram criados ou homologados. Use bucket, contas e dados de homologação separados dos definitivos. Os exemplos não criam recursos automaticamente.
+O backend suporta AWS S3 com GuardDuty ou ClamAV. Para a implantação atual, use o roteiro [GuardDuty no Render](GUARDDUTY.md): não exige serviço ClamAV nem worker separado para os anexos. As seções ClamAV abaixo continuam como alternativa. Os exemplos não criam recursos automaticamente.
 
 ## 1. Bucket AWS S3
 
@@ -15,7 +15,7 @@ No console AWS, abra S3 e crie um bucket de uso geral:
 
 A AWS documenta [Object Ownership](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ensure-object-ownership.html) e [bloqueio de acesso público](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html). Criptografia e bucket privado não substituem política de backup/retenção; essa decisão permanece pendente antes de dados reais.
 
-Em Permissions → CORS, aplique [s3-cors.example.json](s3-cors.example.json), trocando os dois endereços pelos portais HTTPS reais. Não use `*`. Cliente e equipe precisam de hosts diferentes, previamente configurados no frontend e no backend.
+Em Permissions → CORS, aplique [s3-cors.example.json](s3-cors.example.json), usando as origens HTTPS reais e seus aliases. Não use `*`. O portal atual compartilha o domínio entre cliente e equipe; não são necessários hosts distintos.
 
 ## 2. Credenciais de serviço
 

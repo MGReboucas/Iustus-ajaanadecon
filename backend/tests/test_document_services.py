@@ -72,3 +72,24 @@ class DocumentServicesTests(SimpleTestCase):
     def test_missing_configuration_is_not_reported_as_success(self):
         with self.assertRaises(CommandError):
             self.run_check(only="storage")
+
+    @override_settings(PORTAL_ORIGINS={"client": "https://www.iustus.app", "team": "https://www.iustus.app"},
+                       IUSTUS_PORTAL_ALIASES=["https://iustus.app", "https://www.iustus.app"])
+    def test_shared_portal_and_aliases_are_supported(self):
+        client = self.storage_client()
+        client.get_bucket_cors.return_value["CORSRules"][0]["AllowedOrigins"] = ["https://iustus.app", "https://www.iustus.app"]
+        self.assertIn("storage: OK", self.run_check(client, only="storage")[0])
+
+    @override_settings(DOCUMENT_SCANNER_BACKEND="guardduty")
+    def test_guardduty_audit_requires_sample_and_explicit_clean_verdict(self):
+        with self.assertRaises(CommandError):
+            self.run_check(only="scanner")
+        for status in ("AVAILABLE", "QUARANTINED", "REJECTED", "ERROR"):
+            with self.subTest(status=status), patch("integrations.scanner.guardduty.verdict", return_value=(status, "")):
+                if status == "AVAILABLE":
+                    output, scanner = self.run_check(only="scanner", object_key="a" * 32)
+                    self.assertIn("scanner: OK", output)
+                    scanner.assert_not_called()
+                else:
+                    with self.assertRaises(CommandError):
+                        self.run_check(only="scanner", object_key="a" * 32)

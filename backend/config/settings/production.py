@@ -115,6 +115,11 @@ DOCUMENT_LOCAL_STORAGE_ENABLED = False
 
 # Ativação explícita; nenhuma credencial ou URL pública é enviada ao navegador.
 DOCUMENT_STORAGE_BACKEND = env("DOCUMENT_STORAGE_BACKEND", default="disabled")
+DOCUMENT_SCANNER_BACKEND = env("DOCUMENT_SCANNER_BACKEND", default="clamav")
+if DOCUMENT_SCANNER_BACKEND not in ("clamav", "guardduty"):
+    raise ImproperlyConfigured("DOCUMENT_SCANNER_BACKEND deve ser clamav ou guardduty.")
+if DOCUMENT_SCANNER_BACKEND == "guardduty" and DOCUMENT_STORAGE_BACKEND != "s3":
+    raise ImproperlyConfigured("GuardDuty exige armazenamento AWS S3.")
 if DOCUMENT_STORAGE_BACKEND not in ("disabled", "s3", "supabase"):
     raise ImproperlyConfigured("Use S3 privado, Supabase de demonstração ou armazenamento desabilitado.")
 if DOCUMENT_STORAGE_BACKEND == "s3":
@@ -130,10 +135,12 @@ if DOCUMENT_STORAGE_BACKEND == "s3":
         raise ImproperlyConfigured("O endpoint S3 exige HTTPS sem credenciais na URL.")
     if not DOCUMENT_S3_BUCKET or bool(DOCUMENT_S3_ACCESS_KEY) != bool(DOCUMENT_S3_SECRET_KEY):
         raise ImproperlyConfigured("Configure bucket privado e o par de chaves ou uma identidade IAM.")
-    DOCUMENT_SCANNER_HOST = env("DOCUMENT_SCANNER_HOST")
+    DOCUMENT_SCANNER_HOST = env("DOCUMENT_SCANNER_HOST", default="")
     DOCUMENT_SCANNER_PORT = env.int("DOCUMENT_SCANNER_PORT", default=3310)
-    if not DOCUMENT_SCANNER_HOST:
+    if DOCUMENT_SCANNER_BACKEND == "clamav" and not DOCUMENT_SCANNER_HOST:
         raise ImproperlyConfigured("Configure o scanner na rede privada antes de habilitar arquivos.")
+    if DOCUMENT_SCANNER_BACKEND == "guardduty" and DOCUMENT_S3_ENDPOINT:
+        raise ImproperlyConfigured("GuardDuty exige AWS S3 sem endpoint personalizado.")
 
     if DOCUMENT_S3_ADDRESSING_STYLE not in ("auto", "path", "virtual") or not 1 <= DOCUMENT_SCANNER_PORT <= 65535:
         raise ImproperlyConfigured("Estilo S3 ou porta de scanner inválidos.")

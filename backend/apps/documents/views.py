@@ -20,6 +20,11 @@ class DocumentsView(CaseView):
     def get(self, request, case_id):
         case = get_case(request.user, case_id)
         guard_demo(request.user, case)
+        if settings.DOCUMENT_SCANNER_BACKEND == "guardduty":
+            # Authorization precedes remote I/O. One due document per request;
+            # persisted leases and cooldowns also protect concurrent browsers.
+            from jobs.documents import scan_one
+            scan_one(case_id=case.pk)
         return self.listed(request, DocumentVersion.objects.filter(document__case=case), version_data)
 
     def post(self, request, case_id):
@@ -125,6 +130,14 @@ def downloadable(request, document_id, version_id):
         return item
     if item.status != DocumentVersion.Status.AVAILABLE:
         raise IdentityError("DOCUMENT_UNAVAILABLE", "O arquivo ainda não foi liberado para download.", 409)
+    if settings.DOCUMENT_SCANNER_BACKEND == "guardduty":
+        from integrations.scanner.guardduty import verdict
+        try:
+            status, _ = verdict(item.object_key)
+        except Exception:
+            status = "ERROR"
+        if status != "AVAILABLE":
+            raise IdentityError("DOCUMENT_UNAVAILABLE", "Não foi possível confirmar a verificação do arquivo. Tente novamente mais tarde.", 409)
     return item
 
 

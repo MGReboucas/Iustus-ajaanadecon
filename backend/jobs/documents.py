@@ -2,6 +2,7 @@ import uuid
 from datetime import timedelta
 
 from django.db import transaction
+from django.conf import settings
 from django.db.models import Q
 from django.utils import timezone
 
@@ -9,39 +10,49 @@ from apps.cases.models import Case
 from apps.cases.services import changed
 from apps.documents.models import DocumentVersion
 from integrations.scanner.clamav import scan
+from integrations.scanner.guardduty import verdict
 from integrations.storage.private import InvalidFile, inspect_file, open_object
 
 
-def scan_one():
+def scan_one(*, case_id=None):
+    guardduty = settings.DOCUMENT_SCANNER_BACKEND == "guardduty"
     now, lease = timezone.now(), uuid.uuid4()
     with transaction.atomic():
-        item = (DocumentVersion.objects.select_for_update(skip_locked=True)
-                .filter(Q(status="QUARANTINED") | Q(status="ERROR", attempts__lt=5) |
+        query = DocumentVersion.objects.select_for_update(skip_locked=True)
+        if case_id is not None:
+            query = query.filter(document__case_id=case_id)
+        errors = Q(status="ERROR") if guardduty else Q(status="ERROR", attempts__lt=5)
+        item = (query
+                .filter(Q(status="QUARANTINED") | errors |
                         Q(status="SCANNING", lease_until__lt=now))
-                .filter(available_at__lte=now).order_by("created_at").first())
+                .filter(available_at__lte=now).order_by("available_at", "created_at").first())
         if not item:
             return False
-        if item.attempts >= 5:
+        if item.attempts >= 5 and not guardduty:
             item.status, item.last_error = "ERROR", "ATTEMPTS_EXHAUSTED"
             item.lease_id = item.lease_until = None
             item.save(update_fields=["status", "last_error", "lease_id", "lease_until"])
             return True
         item.status, item.lease_id = "SCANNING", lease
         item.lease_until = now + timedelta(minutes=5)
-        item.attempts += 1
+        item.attempts = min(item.attempts + 1, 1000)
         item.save(update_fields=["status", "lease_id", "lease_until", "attempts"])
     status, error = "ERROR", ""
     try:
-        checksum, mime = inspect_file(item.object_key, item.size_bytes)
-        if checksum != item.sha256 or mime != item.detected_mime:
-            raise InvalidFile("integrity")
-        with open_object(item.object_key) as source:
-            status = "AVAILABLE" if scan(source) else "REJECTED"
+        if guardduty:
+            status, error = verdict(item.object_key)
+        if not guardduty or status == "AVAILABLE":
+            checksum, mime = inspect_file(item.object_key, item.size_bytes)
+            if checksum != item.sha256 or mime != item.detected_mime:
+                raise InvalidFile("integrity")
+            if not guardduty:
+                with open_object(item.object_key) as source:
+                    status = "AVAILABLE" if scan(source) else "REJECTED"
     except (InvalidFile, FileNotFoundError):
         status, error = "REJECTED", "INTEGRITY_FAILED"
     except Exception as exc:
         # Não persistir nomes/conteúdos nem a resposta livre do scanner em logs.
-        error = type(exc).__name__[:40]
+        status, error = "ERROR", type(exc).__name__[:40]
     with transaction.atomic():
         # Mesma ordem das mutações da API: caso, depois versão.
         case = Case.objects.select_for_update().get(pk=item.document.case_id)
@@ -50,7 +61,8 @@ def scan_one():
             return True
         current.status, current.last_error = status, error
         current.lease_id = current.lease_until = None
-        current.available_at = timezone.now() + timedelta(seconds=min(3600, 30 * 2 ** current.attempts))
+        delay = (15 if status == "QUARANTINED" else 60) if guardduty else min(3600, 30 * 2 ** min(current.attempts, 7))
+        current.available_at = timezone.now() + timedelta(seconds=delay)
         if status in ("AVAILABLE", "REJECTED"):
             current.scanned_at = timezone.now()
             changed(case, current.uploaded_by, "DOCUMENT_" + status,

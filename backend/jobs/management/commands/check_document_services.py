@@ -18,9 +18,9 @@ PUBLIC_FLAGS = ("BlockPublicAcls", "IgnorePublicAcls", "BlockPublicPolicy", "Res
 def check_storage():
     if settings.DOCUMENT_STORAGE_BACKEND != "s3" or not settings.DOCUMENT_S3_BUCKET:
         raise CommandError("Configure DOCUMENT_STORAGE_BACKEND=s3 e o bucket de homologação.")
-    origins = set(settings.PORTAL_ORIGINS.values())
-    if len(origins) != 2 or any(urlsplit(origin).scheme != "https" for origin in origins):
-        raise CommandError("Configure duas origens HTTPS distintas para os portais.")
+    origins = set(settings.PORTAL_ORIGINS.values()) | set(getattr(settings, "IUSTUS_PORTAL_ALIASES", []))
+    if not origins or any(urlsplit(origin).scheme != "https" for origin in origins):
+        raise CommandError("Configure as origens HTTPS dos portais.")
     client, bucket = s3_client(), settings.DOCUMENT_S3_BUCKET
     block = client.get_public_access_block(Bucket=bucket)["PublicAccessBlockConfiguration"]
     if not all(block.get(flag) is True for flag in PUBLIC_FLAGS):
@@ -41,15 +41,23 @@ def check_storage():
         allowed = set(rule.get("AllowedOrigins", []))
         headers = {value.lower() for value in rule.get("AllowedHeaders", [])}
         if not allowed or not allowed <= origins or set(rule.get("AllowedMethods", [])) != {"PUT"}:
-            raise CommandError("CORS deve permitir somente PUT nas duas origens dos portais.")
+            raise CommandError("CORS deve permitir somente PUT nas origens dos portais.")
         if not REQUIRED_HEADERS <= headers or any("*" in value for value in headers):
             raise CommandError("CORS deve permitir os quatro headers de upload sem curingas.")
         covered.update(allowed)
     if covered != origins:
-        raise CommandError("CORS incompleto: configure ambos os portais.")
+        raise CommandError("CORS incompleto: configure todas as origens dos portais.")
 
 
-def check_scanner():
+def check_scanner(object_key=None):
+    if settings.DOCUMENT_SCANNER_BACKEND == "guardduty":
+        from integrations.scanner.guardduty import verdict
+        if not object_key:
+            raise CommandError("GuardDuty: informe --object-key com a chave interna de um arquivo sintético já enviado; este comando não envia amostras.")
+        status, _ = verdict(object_key)
+        if status != "AVAILABLE":
+            raise CommandError("GuardDuty: amostra ainda não aprovada ou verificação indisponível.")
+        return
     # Amostra limpa e padrão inofensivo EICAR apenas em memória; não grava arquivo.
     clean = b"%PDF-1.4\\nIustus synthetic scanner check\\n%%EOF\\n"
     eicar = (b"X5O!P%@AP[4" + bytes([92]) + b"PZX54(P^)7CC)7}$"
@@ -61,15 +69,16 @@ def check_scanner():
 
 
 class Command(BaseCommand):
-    help = "Confere S3 privado/CORS e ClamAV, sem gravar objetos nem alterar configurações."
+    help = "Confere S3 privado/CORS e scanner, sem gravar objetos nem alterar configurações."
     requires_system_checks = []
 
     def add_arguments(self, parser):
         parser.add_argument("--only", choices=("storage", "scanner"))
+        parser.add_argument("--object-key", help="GuardDuty: chave interna (32 hex) de uma amostra sintética limpa.")
 
     def handle(self, *args, **options):
         failures = []
-        for name, check in (("storage", check_storage), ("scanner", check_scanner)):
+        for name, check in (("storage", check_storage), ("scanner", lambda: check_scanner(options["object_key"]))):
             if options["only"] and options["only"] != name:
                 continue
             try:

@@ -93,14 +93,15 @@ def remote_key(key):
     return prefix + "/" + key
 
 
-def s3_client():
+def s3_client(*, quick=False):
     import boto3
     from botocore.config import Config
     return boto3.client("s3", endpoint_url=settings.DOCUMENT_S3_ENDPOINT or None,
         region_name=settings.DOCUMENT_S3_REGION,
         aws_access_key_id=settings.DOCUMENT_S3_ACCESS_KEY or None,
         aws_secret_access_key=settings.DOCUMENT_S3_SECRET_KEY or None,
-        config=Config(signature_version="s3v4", connect_timeout=5, read_timeout=30, retries={"mode": "standard", "max_attempts": 2},
+        config=Config(signature_version="s3v4", connect_timeout=3 if quick else 5, read_timeout=3 if quick else 30,
+                      retries={"mode": "standard", "max_attempts": 0 if quick else 2},
                       s3={"addressing_style": settings.DOCUMENT_S3_ADDRESSING_STYLE}))
 
 

@@ -53,9 +53,9 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
   async function load(item: CaseItem) {
     setReason(""); setComplement(""); setAttachments([]); setChecks([false, false, false]);
     if (admin) { setSelected(item); setLawyer(item.lawyerId || ""); return; }
-    const [detail, pending, history, files] = await Promise.all([
+    const files = await api<Page<DocumentVersion>>(`cases/${item.id}/documents`);
+    const [detail, pending, history] = await Promise.all([
       api<CaseItem>(`cases/${item.id}`), api<Page<Pending>>(`cases/${item.id}/requests`), api<Page<Event>>(`cases/${item.id}/timeline`),
-      api<Page<DocumentVersion>>(`cases/${item.id}/documents`),
     ]);
     setSelected(detail); setTitle(detail.title || ""); setDescription(detail.description || ""); setOccurredOn(detail.occurredOn || "");
     setCategory(detail.category); setAck(!!detail.scopeAcknowledged); setRequests(pending); setEvents(history);
@@ -63,7 +63,9 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
   }
   async function refreshDocuments() {
     if (!selected) return;
-    const [files, detail, history] = await Promise.all([api<Page<DocumentVersion>>(`cases/${selected.id}/documents`), api<CaseItem>(`cases/${selected.id}`), api<Page<Event>>(`cases/${selected.id}/timeline`)]);
+    const files = await api<Page<DocumentVersion>>(`cases/${selected.id}/documents`);
+    // Scan completion advances the case version; fetch it after reconciliation.
+    const [detail, history] = await Promise.all([api<CaseItem>(`cases/${selected.id}`), api<Page<Event>>(`cases/${selected.id}/timeline`)]);
     setDocuments(files); setSelected(detail); setEvents(history); setAttachments([]);
   }
   async function run(action: () => Promise<void>) {
@@ -117,6 +119,8 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
   const draft = client && selected?.state === "RASCUNHO";
   const documentForm = selected && <CaseDocuments intake={draft} demo={catalog?.documentDemo ?? false} available={catalog?.documentsAvailable ?? false} key={selected.id} caseId={selected.id} versions={documents.results} busy={busy} readOnly={["RECUSADO", "ENCERRADO"].includes(selected.state)} run={run} refresh={refreshDocuments} hasMore={!!documents.nextCursor} more={async () => {
           const result = await api<Page<DocumentVersion>>(`cases/${selected.id}/documents?cursor=${encodeURIComponent(documents.nextCursor!)}`);
+          const detail = await api<CaseItem>(`cases/${selected.id}`);
+          setSelected(detail);
           setDocuments(old => ({ results: [...old.results, ...result.results], nextCursor: result.nextCursor }));
         }} />;
 

@@ -8,7 +8,7 @@ from jobs.documents import scan_one
 
 
 class Command(BaseCommand):
-    help = "Verifica documentos em quarentena pelo ClamAV. Falhas nunca liberam download."
+    help = "Verifica documentos com o scanner configurado (ClamAV ou GuardDuty). Falhas nunca liberam download."
 
     def add_arguments(self, parser):
         parser.add_argument("--once", action="store_true")

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DocumentVersion, downloadDocument, uploadDocument } from "@/lib/api/documents";
 
 type Props = {
@@ -13,6 +13,14 @@ export default function CaseDocuments({ intake = false, demo = false, available,
   const [target, setTarget] = useState("");
   const [inputKey, setInputKey] = useState(0);
   const [message, setMessage] = useState("");
+  const pending = versions.some(item => ["QUARANTINED", "SCANNING", "ERROR"].includes(item.status));
+  useEffect(() => {
+    if (demo || !available || busy || !pending) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void run(refresh);
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, [demo, available, busy, pending, versions, run, refresh]);
   // Paginação decrescente: a primeira versão vista de cada documento é a mais recente.
   const latest = versions.filter((item, index) => versions.findIndex(row => row.documentId === item.documentId) === index);
 
@@ -26,7 +34,7 @@ export default function CaseDocuments({ intake = false, demo = false, available,
         if (demo && file.size > 3 * 1024 * 1024) throw new Error("Na demonstração, use arquivos de até 3 MiB.");
         await uploadDocument(caseId, file, versions.find(item => item.id === target));
         setFile(undefined); setTarget(""); setInputKey(old => old + 1);
-        setMessage(demo ? "Arquivo de demonstração recebido, sem verificação por antivírus." : "Arquivo recebido. Aguarde a verificação e atualize a lista.");
+        setMessage(demo ? "Arquivo de demonstração recebido, sem verificação por antivírus." : "Arquivo recebido. A verificação será atualizada automaticamente.");
       } finally { await refresh(); }
     }); }}><fieldset disabled={busy}><legend>Enviar documento</legend>
       {!intake && <label>Destino do envio<select value={target} onChange={event => setTarget(event.target.value)}><option value="">Novo documento</option>{latest.map(item => <option key={item.id} value={item.id}>Nova versão de {item.filename}</option>)}</select></label>}

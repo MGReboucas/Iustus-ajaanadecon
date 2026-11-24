@@ -39,3 +39,48 @@ test('cadastro reúne anexos, salva antes de enviar e mostra análise sem blocos
   await expect(page.getByRole('heading', { name: 'Propostas de atendimento' })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Documentos do caso' })).not.toBeVisible();
 });
+
+test('verificação atualiza anexos e versão do caso antes de permitir o envio', async ({ page }) => {
+  const id = '00000000-0000-0000-0000-000000000002';
+  let reads = 0;
+  let submitted = false;
+  let item = { id, reference: 'ANEXO', title: 'Caso com documento', description: 'Relato da ocorrência para análise.', category: 'CIVIL', occurredOn: '2026-11-01', scopeAcknowledged: true, state: 'RASCUNHO', stateLabel: 'Rascunho', version: 1 };
+  await page.route('**/api/v1/**', async route => {
+    const req = route.request();
+    const path = new URL(req.url()).pathname.split('/api/v1/')[1];
+    const send = json => route.fulfill({ json });
+    if (path === 'auth/csrf') return send({ csrfToken: 'test' });
+    if (path === 'dashboard/client') return send({ user: { id, name: 'Teste', role: 'CLIENT' } });
+    if (path === 'dashboard/overview') return send({ totalCases: 1, attentionCount: 0, unreadCount: 0, states: [], attentionCases: [], recentActivity: [] });
+    if (path === 'cases/catalog') return send({ categories: [{ id: 'CIVIL', label: 'Civil' }], states: [], intakeRequired: true, documentsAvailable: true, submission: { canSubmit: true } });
+    if (path === 'cases') return send(req.method() === 'POST' ? item : { results: [], nextCursor: null });
+    if (path === `cases/${id}`) return send(item);
+    if (path === `cases/${id}/documents`) {
+      reads += 1;
+      if (reads >= 2) {
+        // Reconciliation finishes after the request starts, exposing parallel-read races.
+        await new Promise(resolve => setTimeout(resolve, 150));
+        item = { ...item, version: 2 };
+      }
+      return send({ results: [{ id, documentId: id, filename: 'prova.pdf', number: 1, sizeBytes: 100,
+        status: reads >= 2 ? 'AVAILABLE' : 'QUARANTINED', statusLabel: reads >= 2 ? 'Disponível' : 'Aguardando verificação', uploadedById: id }], nextCursor: null });
+    }
+    if (path === `cases/${id}/submit`) {
+      expect(req.postDataJSON().version).toBe(2);
+      submitted = true;
+      item = { ...item, state: 'SUBMETIDO', stateLabel: 'Enviado', version: 3 };
+      return send(item);
+    }
+    return send({ results: [], nextCursor: null });
+  });
+  await page.goto('/cliente#meus-casos');
+  await page.getByRole('button', { name: 'Cadastrar ocorrência', exact: true }).click();
+  const sendCase = page.getByRole('button', { name: 'Enviar ocorrência para análise' });
+  await expect(sendCase).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Baixar prova.pdf (v1)', exact: true })).toBeDisabled();
+  await expect(sendCase).toBeEnabled({ timeout: 25000 });
+  await expect(page.getByRole('button', { name: 'Baixar prova.pdf (v1)', exact: true })).toBeEnabled();
+  await sendCase.click();
+  await expect(page.locator('.case-detail .case-badge').first()).toHaveText('Em análise');
+  expect(submitted).toBe(true);
+});
