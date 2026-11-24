@@ -1,5 +1,51 @@
 const { test, expect } = require('../../frontend/node_modules/@playwright/test');
 
+test('dez anexos ficam na mesma caixa e a remoção preserva os demais', async ({ page }) => {
+  const id = '00000000-0000-0000-0000-000000000004';
+  const item = { id, reference: 'ANEXOS', title: 'Teste de anexos', description: 'Relato fictício para testar vários anexos.', category: 'CIVIL', occurredOn: '2026-11-01', scopeAcknowledged: true, state: 'RASCUNHO', stateLabel: 'Rascunho', version: 1 };
+  let versions = [];
+  let count = 0;
+  await page.route('**/api/v1/**', route => {
+    const req = route.request();
+    const path = new URL(req.url()).pathname.split('/api/v1/')[1];
+    const send = json => route.fulfill({ json });
+    if (path === 'auth/csrf') return send({ csrfToken: 'test' });
+    if (path === 'dashboard/client') return send({ user: { id, name: 'Teste', role: 'CLIENT' } });
+    if (path === 'dashboard/overview') return send({ totalCases: 0, attentionCount: 0, unreadCount: 0, states: [], attentionCases: [], recentActivity: [] });
+    if (path === 'cases/catalog') return send({ categories: [{ id: 'CIVIL', label: 'Civil' }], states: [], intakeRequired: true, documentsAvailable: true, submission: { canSubmit: true } });
+    if (path === 'cases') return send(req.method() === 'POST' ? item : { results: [], nextCursor: null });
+    if (path === `cases/${id}`) return send(item);
+    if (path === `cases/${id}/documents`) return send({ results: versions, nextCursor: null });
+    if (path === `cases/${id}/documents/uploads`) {
+      const uid = `00000000-0000-0000-0000-${String(++count).padStart(12, '0')}`;
+      versions.push({ id: uid, documentId: uid, filename: req.postDataJSON().filename, number: 1, sizeBytes: 100, status: 'AVAILABLE', statusLabel: 'Disponível', uploadedById: id });
+      return send({ uploadId: uid, uploadUrl: `/api/v1/uploads/${uid}/content`, directUpload: false });
+    }
+    if (path.startsWith('uploads/') && path.endsWith('/content')) return route.fulfill({ status: 204 });
+    if (path.startsWith('uploads/') && path.endsWith('/complete')) return send({ status: 'QUARANTINED' });
+    if (path.endsWith('/remove')) { versions = versions.filter(v => v.id !== path.split('/')[3]); return route.fulfill({ status: 204 }); }
+    return send({ results: [], nextCursor: null });
+  });
+  await page.goto('/cliente#meus-casos');
+  await page.getByRole('button', { name: 'Cadastrar ocorrência', exact: true }).click();
+  await page.getByLabel('Arquivo para anexar').setInputFiles(Array.from({ length: 10 }, (_, i) => ({ name: `arquivo-${i + 1}.pdf`, mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') })));
+  await expect(page.locator('.document-chips li')).toHaveCount(10);
+  await expect(page.locator('.document-box')).toHaveCount(1);
+  await expect(page.locator('.document-remove').last()).toBeEnabled();
+  await page.locator('.document-box').screenshot({ path: '../.local/documents-e2e/anexos-compactos-desktop.png' });
+  const box = await page.locator('.document-box').boundingBox();
+  expect(box.height).toBeLessThan(350);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('.document-box').screenshot({ path: '../.local/documents-e2e/anexos-compactos-mobile.png' });
+  const chip = page.locator('.document-chips li').first();
+  const close = await chip.locator('.document-remove').boundingBox();
+  const bounds = await chip.boundingBox();
+  expect(close.x + close.width).toBeLessThanOrEqual(bounds.x + bounds.width);
+  await page.getByRole('button', { name: 'Remover arquivo-1.pdf (v1)', exact: true }).click();
+  await expect(page.locator('.document-chips li')).toHaveCount(9);
+  await expect(page.getByRole('button', { name: 'Remover arquivo-10.pdf (v1)', exact: true })).toBeVisible();
+});
+
 test('cliente anexa automaticamente e remove cada arquivo pelo ícone', async ({ page }) => {
   const id = '00000000-0000-0000-0000-000000000003';
   let removed = false;
