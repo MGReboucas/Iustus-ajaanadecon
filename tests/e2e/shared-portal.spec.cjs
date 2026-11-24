@@ -35,7 +35,6 @@ test('shared origin: customer registration, approval, case assignment and lawyer
   await cp.getByRole('link', { name: 'Casos', exact: true }).click();
   await cp.getByRole('button',{name:'Cadastrar ocorrência',exact:true}).click();
   await cp.getByLabel('Título do caso').fill('Caso sintético da jornada');
-  await cp.getByLabel('Categoria',{exact:true}).selectOption('CONSUMER');
   await cp.getByLabel('Descrição do que aconteceu',{exact:true}).fill('Relato fictício completo para validar o atendimento entre cliente e advogado.');
   await cp.getByLabel(/Estou ciente/).check();
   await cp.getByRole('button',{name:'Salvar rascunho',exact:true}).click();

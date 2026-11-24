@@ -13,6 +13,7 @@ class WorkerDeploymentTests(SimpleTestCase):
              patch("jobs.management.commands.run_operations.deliver_one", return_value=False), \
              patch("jobs.management.commands.run_operations.deliver_case_email", return_value=False), \
              patch("jobs.management.commands.run_operations.call_command"), \
+             patch("jobs.management.commands.run_operations.purge_removed_one"), \
              patch("jobs.management.commands.run_operations.close_old_connections") as connections, \
              patch("jobs.management.commands.run_operations.scan_one") as scanner:
             call_command("run_operations", once=True)

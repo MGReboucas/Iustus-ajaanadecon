@@ -43,7 +43,6 @@ test('associado paga, ativa, envia ocorrência; advogado aprova e solicita procu
   await cp.getByRole('button', { name: 'Cadastrar ocorrência', exact: true }).click();
   const title = 'Ocorrência sintética ' + randomUUID().slice(0, 8);
   await cp.getByLabel('Título do caso').fill(title);
-  await cp.getByLabel('Categoria', { exact: true }).selectOption('CONSUMER');
   await cp.getByLabel('Data do ocorrido').fill('2026-01-10');
   await cp.getByLabel('Descrição do que aconteceu').fill('Relato fictício detalhado para testar análise e procuração específica.');
   await cp.getByLabel(/Estou ciente/).check();

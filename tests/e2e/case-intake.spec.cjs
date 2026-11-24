@@ -144,7 +144,7 @@ test('cadastro reúne anexos, salva antes de enviar e mostra análise sem blocos
   await expect(page.getByRole('button', { name: 'Salvar rascunho' })).toHaveCount(0);
   for (const name of ['Propostas de atendimento', 'Conversa do caso', 'Documentos do caso', 'Histórico']) await expect(page.getByRole('heading', { name, exact: true })).toHaveCount(0);
   await page.getByLabel('Título do caso').fill('Problema com viagem');
-  await page.getByLabel('Categoria', { exact: true }).selectOption('CIVIL');
+  await expect(page.getByLabel('Categoria', { exact: true })).toHaveCount(0);
   await page.getByLabel('Data do ocorrido').fill('2026-11-01');
   await page.getByLabel('Descrição do que aconteceu').fill('Meu voo foi cancelado e preciso de atendimento.');
   await page.getByRole('checkbox').check();

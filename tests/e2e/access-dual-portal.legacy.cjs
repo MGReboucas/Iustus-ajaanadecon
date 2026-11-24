@@ -131,7 +131,6 @@ test('caso percorre liberação, triagem, procuração, peça, protocolo e encer
   await signIn(clientPage, clientOrigin, clientEmail);
   await clientPage.getByRole('button', { name: 'Cadastrar ocorrência', exact: true }).click();
   await clientPage.getByLabel('Título do caso').fill('Cobrança contratual fictícia');
-  await clientPage.getByLabel('Categoria', { exact: true }).selectOption('CONTRACTS');
   await clientPage.getByLabel('Descrição do que aconteceu', { exact: true }).fill('Informação privada de um contrato inteiramente fictício para testar a triagem.');
   await clientPage.getByLabel('Estou ciente de que família e sucessões não fazem parte do serviço.').check();
   await clientPage.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();

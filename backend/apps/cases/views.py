@@ -112,8 +112,8 @@ class SubmitView(CaseView):
                 return Response(case_data(item, detail=True))
             expect_version(item, data["version"])
             expect_state(item, Case.State.DRAFT)
-            if not item.title.strip() or len(item.description.strip()) < 20 or not item.category or not item.scope_acknowledged:
-                raise IdentityError("INCOMPLETE_CASE", "Preencha título, categoria, relato de pelo menos 20 caracteres e ciência do escopo.", 422)
+            if not item.title.strip() or len(item.description.strip()) < 20 or not item.scope_acknowledged:
+                raise IdentityError("INCOMPLETE_CASE", "Preencha título, relato de pelo menos 20 caracteres e ciência do escopo.", 422)
             User.objects.select_for_update().get(pk=request.user.pk)
             if settings.CASE_INTAKE_REQUIRED:
                 if not item.occurred_on or item.occurred_on > timezone.localdate():

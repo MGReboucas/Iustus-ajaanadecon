@@ -86,6 +86,14 @@ class CaseTests(TestCase):
         self.assertEqual(self.submit(item).json()["error"]["code"], "INCOMPLETE_CASE")
         self.assertEqual(CaseEvent.objects.count(), 1)
 
+    def test_submission_without_client_category(self):
+        item = self.draft()
+        Case.objects.filter(pk=item["id"]).update(category="")
+        response = self.submit(item)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["category"], "")
+        self.assertEqual(response.json()["state"], "SUBMETIDO")
+
     def test_submission_idempotency_and_foreign_owner(self):
         item, key = self.draft(), str(uuid4())
         self.assertEqual(self.submit(item, self.other, key).status_code, 404)
