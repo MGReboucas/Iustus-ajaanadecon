@@ -1,9 +1,11 @@
 const { test, expect } = require('../../frontend/node_modules/@playwright/test');
 
-test('cliente remove anexo do rascunho e limpa seleção antes do upload', async ({ page }) => {
+test('cliente anexa automaticamente e remove cada arquivo pelo ícone', async ({ page }) => {
   const id = '00000000-0000-0000-0000-000000000003';
   let removed = false;
   let removalAttempts = 0;
+  let uploadCount = 0;
+  let filename = 'teste.pdf';
   const item = { id, reference: 'RASCUNHO', title: 'Teste', description: 'Relato fictício para testar anexos.', category: 'CIVIL', occurredOn: '2026-11-01', scopeAcknowledged: true, state: 'RASCUNHO', stateLabel: 'Rascunho', version: 1 };
   await page.route('**/api/v1/**', route => {
     const req = route.request();
@@ -15,7 +17,14 @@ test('cliente remove anexo do rascunho e limpa seleção antes do upload', async
     if (path === 'cases/catalog') return send({ categories: [{ id: 'CIVIL', label: 'Civil' }], states: [], intakeRequired: true, documentsAvailable: true, submission: { canSubmit: true } });
     if (path === 'cases') return send(req.method() === 'POST' ? item : { results: [], nextCursor: null });
     if (path === `cases/${id}`) return send({ ...item, version: removed ? 2 : 1 });
-    if (path === `cases/${id}/documents`) return send({ results: removed ? [] : [{ id, documentId: id, filename: 'teste.pdf', number: 1, sizeBytes: 100, status: 'AVAILABLE', statusLabel: 'Disponível', uploadedById: id }], nextCursor: null });
+    if (path === `cases/${id}/documents`) return send({ results: removed ? [] : [{ id, documentId: id, filename, number: 1, sizeBytes: 100, status: 'AVAILABLE', statusLabel: 'Disponível', uploadedById: id }], nextCursor: null });
+    if (path === `cases/${id}/documents/uploads`) {
+      filename = req.postDataJSON().filename;
+      uploadCount += 1;
+      return send({ uploadId: id, uploadUrl: `/api/v1/uploads/${id}/content`, directUpload: false });
+    }
+    if (path === `uploads/${id}/content`) return route.fulfill({ status: 204 });
+    if (path === `uploads/${id}/complete`) { removed = false; return send({ status: 'QUARANTINED' }); }
     if (path === `documents/${id}/versions/${id}/remove`) {
       removalAttempts += 1;
       if (removalAttempts === 1) return route.fulfill({ status: 404, json: { error: { code: 'NOT_FOUND', message: 'Recurso não encontrado.' } } });
@@ -44,8 +53,18 @@ test('cliente remove anexo do rascunho e limpa seleção antes do upload', async
   await expect(page.getByText('Nenhum documento enviado neste caso.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Enviar ocorrência para análise' })).toBeDisabled();
   await page.getByLabel('Arquivo para anexar').setInputFiles({ name: 'selecionado.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') });
-  await page.getByRole('button', { name: 'Limpar seleção' }).click();
-  await expect(page.getByRole('button', { name: 'Enviar arquivo', exact: true })).toBeDisabled();
+  const uploaded = page.getByRole('button', { name: 'Remover selecionado.pdf (v1)', exact: true });
+  await expect(uploaded).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Enviar arquivo', exact: true })).toHaveCount(0);
+  expect(uploadCount).toBe(1);
+  await uploaded.click();
+  await expect(page.getByText('Nenhum documento enviado neste caso.')).toBeVisible();
+  // Choosing the same file again must fire a fresh upload, not keep a stale selection.
+  await page.getByLabel('Arquivo para anexar').setInputFiles({ name: 'selecionado.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') });
+  await expect(uploaded).toBeVisible();
+  expect(uploadCount).toBe(2);
+  await uploaded.click();
+  await expect(page.getByText('Nenhum documento enviado neste caso.')).toBeVisible();
   expect(removed).toBe(true);
 });
 

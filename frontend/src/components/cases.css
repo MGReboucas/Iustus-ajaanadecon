@@ -10,6 +10,16 @@
 
 .mandate-generator, .case-export {margin-block: 1.5rem; padding: 1rem; border: 1px solid #65738a; border-radius: .5rem; min-width: 0;}
 .mandate-generator code {overflow-wrap: anywhere;}
+.dashboard .document-picker {position:relative;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px;border:1px dashed #62718a;border-radius:10px;background:#0b1525;cursor:pointer;}
+.dashboard .document-picker input[type=file] {position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;opacity:0;cursor:pointer;}
+.document-picker>span {display:inline-flex;align-items:center;gap:8px;color:#e5c184;font-weight:600;}
+.document-picker-plus {font-size:24px;line-height:1;font-weight:400;}
+.document-picker small {color:#a6b4c8;font-size:13px;}
+.dashboard .document-picker:focus-within {outline:2px solid #e5b869;outline-offset:3px;}
+.dashboard .document-picker:hover {border-color:#e5b869;background:#111e32;}
+.dashboard fieldset:disabled .document-picker {opacity:.55;cursor:wait;}
+.dashboard fieldset:disabled .document-picker input {cursor:wait;}
+.case-documents .document-picker-hint {font-size:13px;color:#a6b4c8;margin:10px 0 0;}
 .document-list li {position:relative;}
 .document-list li:has(.document-remove) {padding-right:54px;}
 .dashboard .document-list .document-remove {position:absolute;top:8px;right:8px;display:grid;place-items:center;width:32px;height:32px;min-width:32px;padding:0;margin:0;border:0;border-radius:6px;background:transparent;color:#a6b4c8;font-size:24px;font-weight:400;line-height:1;box-shadow:none;}
