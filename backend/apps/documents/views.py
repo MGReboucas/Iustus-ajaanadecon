@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.core import signing
 from django.conf import settings
 from django.db import transaction
@@ -5,7 +7,7 @@ from django.http import FileResponse, Http404
 from django.utils import timezone
 from rest_framework.response import Response
 
-from apps.cases.services import changed, get_case
+from apps.cases.services import changed, get_case, expect_state
 from apps.cases.views import CaseView
 from apps.identity.security import IdentityError, digest
 from apps.identity.services import audit
@@ -25,7 +27,9 @@ class DocumentsView(CaseView):
             # persisted leases and cooldowns also protect concurrent browsers.
             from jobs.documents import scan_one
             scan_one(case_id=case.pk)
-        return self.listed(request, DocumentVersion.objects.filter(document__case=case), version_data)
+        from jobs.documents import purge_removed_one
+        purge_removed_one(case_id=case.pk)
+        return self.listed(request, DocumentVersion.objects.filter(document__case=case).exclude(status="REMOVED"), version_data)
 
     def post(self, request, case_id):
         self.limited(request)
@@ -47,6 +51,31 @@ class VersionsView(CaseView):
             case = get_case(request.user, document.case_id, locked=True)
             result = create_upload(case, request.user, data, document)
         return Response(result, status=201)
+
+
+class RemoveVersionView(CaseView):
+    def post(self, request, document_id, version_id):
+        self.limited(request)
+        with transaction.atomic():
+            case, item = get_version(request.user, version_id, locked=True)
+            if item.document_id != document_id or case.owner_id != request.user.pk or item.uploaded_by_id != request.user.pk:
+                raise Http404
+            expect_state(case, "RASCUNHO")
+            if item.status == "REMOVED":
+                return Response(status=204)
+            # Keep a tombstone: previously signed PUTs cannot resurrect the attachment.
+            item.status = "REMOVED"
+            item.lease_id = item.lease_until = None
+            item.last_error = "REMOVAL_PENDING"
+            item.available_at = item.expires_at + timedelta(minutes=5)
+            item.save(update_fields=["status", "lease_id", "lease_until", "last_error", "available_at"])
+            changed(case, request.user, "DOCUMENT_REMOVED", "Anexo removido do rascunho.", versionId=str(item.pk))
+        from integrations.storage.private import delete_object
+        try:
+            delete_object(item.object_key)
+        except Exception:
+            pass  # Durable cleanup retries after all signed upload URLs expire.
+        return Response(status=204)
 
 
 class ContentView(CaseView):
@@ -91,6 +120,8 @@ class CompleteView(CaseView):
             case, item = get_version(request.user, upload_id, locked=True)
             if item.uploaded_by_id != request.user.pk:
                 raise Http404
+            if item.status == "REMOVED":
+                raise IdentityError("UPLOAD_CLOSED", "Este anexo foi removido. Inicie um novo envio.", 409)
             # Retry da confirmação é idempotente, mas não pode trocar o checksum.
             if item.status != DocumentVersion.Status.UPLOADING:
                 if item.sha256 and item.sha256 == data["checksum"]:

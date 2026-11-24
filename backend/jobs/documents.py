@@ -11,7 +11,28 @@ from apps.cases.services import changed
 from apps.documents.models import DocumentVersion
 from integrations.scanner.clamav import scan
 from integrations.scanner.guardduty import verdict
-from integrations.storage.private import InvalidFile, inspect_file, open_object
+from integrations.storage.private import InvalidFile, inspect_file, open_object, delete_object
+
+
+def purge_removed_one(*, case_id=None):
+    """Retry deletion after signed PUTs have expired, including late uploads."""
+    with transaction.atomic():
+        query = DocumentVersion.objects.select_for_update(skip_locked=True).filter(
+            status="REMOVED", last_error="REMOVAL_PENDING", available_at__lte=timezone.now())
+        if case_id is not None:
+            query = query.filter(document__case_id=case_id)
+        item = query.order_by("available_at").first()
+        if not item:
+            return False
+        try:
+            delete_object(item.object_key)
+        except Exception:
+            item.available_at = timezone.now() + timedelta(minutes=5)
+            item.save(update_fields=["available_at"])
+            return False
+        item.last_error = ""
+        item.save(update_fields=["last_error"])
+        return True
 
 
 def scan_one(*, case_id=None):

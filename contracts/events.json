@@ -30,5 +30,6 @@
     "DOCUMENT_DEMO_RECEIVED": "Arquivo de demonstração recebido — não verificado",
     "DOCUMENT_UPLOAD_STARTED":  "Envio de documento iniciado",
     "DOCUMENT_AVAILABLE":  "Documento disponível",
-    "DOCUMENT_REJECTED":  "Documento recusado"
+    "DOCUMENT_REJECTED":  "Documento recusado",
+    "DOCUMENT_REMOVED": "Anexo removido do rascunho"
 }

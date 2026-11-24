@@ -34,7 +34,13 @@ O navegador envia por PUT assinado com checksum, tamanho e condição de não so
 
 O backend consulta **um documento pendente por listagem autorizada do caso**, com lease persistente e intervalo mínimo de 15 segundos (60 segundos em erro). A interface atualiza a cada 15 segundos enquanto houver pendências e a aba estiver visível. Não há worker obrigatório: a AWS analisa mesmo com a página fechada; a atualização do estado no banco ocorre na próxima consulta. `scan_documents`/`run_operations` também podem reconciliar os resultados se houver worker no futuro. Essa mudança não substitui workers de outros módulos.
 
-Documentos enviados antes da ativação do GuardDuty podem não ter etiqueta; envie uma nova versão. Erros são consultados novamente sem liberar o arquivo por timeout. Sem resultado, o arquivo permanece bloqueado. Não há migração de banco nesta mudança.
+Documentos enviados antes da ativação do GuardDuty podem não ter etiqueta; envie uma nova versão. Erros são consultados novamente sem liberar o arquivo por timeout. Sem resultado, o arquivo permanece bloqueado.
+
+## Remoção de anexos do rascunho
+
+O titular pode remover suas versões enquanto o caso estiver em `RASCUNHO`, inclusive uploads incompletos. Após a submissão, a API bloqueia a remoção. O registro recebe o estado `REMOVED`, sai da lista e das exportações, deixa de contar como comprovante e não permite download nem confirmação tardia. A lease do scanner é revogada na mesma transação do caso.
+
+O objeto é excluído imediatamente quando o armazenamento está acessível. Uma limpeza posterior, após o prazo máximo das URLs assinadas, remove eventual upload que tenha chegado atrasado. Ela ocorre na consulta ao caso, no worker operacional se existente, ou por `python manage.py purge_removed_documents`. Sem novas consultas nem worker, a limpeza pendente precisa desse comando; o anexo continua inacessível pela aplicação. Buckets com versionamento preservam versões anteriores conforme sua política de retenção. A migração `documents.0003` registra a nova opção de status sem apagar dados existentes.
 
 ## Validação após deploy (ainda necessária na AWS real)
 

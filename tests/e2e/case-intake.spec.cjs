@@ -1,5 +1,40 @@
 const { test, expect } = require('../../frontend/node_modules/@playwright/test');
 
+test('cliente remove anexo do rascunho e limpa seleção antes do upload', async ({ page }) => {
+  const id = '00000000-0000-0000-0000-000000000003';
+  let removed = false;
+  const item = { id, reference: 'RASCUNHO', title: 'Teste', description: 'Relato fictício para testar anexos.', category: 'CIVIL', occurredOn: '2026-11-01', scopeAcknowledged: true, state: 'RASCUNHO', stateLabel: 'Rascunho', version: 1 };
+  await page.route('**/api/v1/**', route => {
+    const req = route.request();
+    const path = new URL(req.url()).pathname.split('/api/v1/')[1];
+    const send = json => route.fulfill({ json });
+    if (path === 'auth/csrf') return send({ csrfToken: 'test' });
+    if (path === 'dashboard/client') return send({ user: { id, name: 'Teste', role: 'CLIENT' } });
+    if (path === 'dashboard/overview') return send({ totalCases: 0, attentionCount: 0, unreadCount: 0, states: [], attentionCases: [], recentActivity: [] });
+    if (path === 'cases/catalog') return send({ categories: [{ id: 'CIVIL', label: 'Civil' }], states: [], intakeRequired: true, documentsAvailable: true, submission: { canSubmit: true } });
+    if (path === 'cases') return send(req.method() === 'POST' ? item : { results: [], nextCursor: null });
+    if (path === `cases/${id}`) return send({ ...item, version: removed ? 2 : 1 });
+    if (path === `cases/${id}/documents`) return send({ results: removed ? [] : [{ id, documentId: id, filename: 'teste.pdf', number: 1, sizeBytes: 100, status: 'AVAILABLE', statusLabel: 'Disponível', uploadedById: id }], nextCursor: null });
+    if (path === `documents/${id}/versions/${id}/remove`) {
+      expect(req.method()).toBe('POST');
+      expect(req.headers()['x-csrftoken']).toBe('test');
+      removed = true;
+      return route.fulfill({ status: 204 });
+    }
+    return send({ results: [], nextCursor: null });
+  });
+  await page.goto('/cliente#meus-casos');
+  await page.getByRole('button', { name: 'Cadastrar ocorrência', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Enviar ocorrência para análise' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Remover teste.pdf (v1)', exact: true }).click();
+  await expect(page.getByText('Nenhum documento enviado neste caso.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Enviar ocorrência para análise' })).toBeDisabled();
+  await page.getByLabel('Arquivo para anexar').setInputFiles({ name: 'selecionado.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') });
+  await page.getByRole('button', { name: 'Limpar seleção' }).click();
+  await expect(page.getByRole('button', { name: 'Enviar arquivo', exact: true })).toBeDisabled();
+  expect(removed).toBe(true);
+});
+
 test('cadastro reúne anexos, salva antes de enviar e mostra análise sem blocos vazios', async ({ page }) => {
   const id = '00000000-0000-0000-0000-000000000001';
   let item = { id, reference: 'OCORRENCIA', title: '', description: '', category: '', state: 'RASCUNHO', stateLabel: 'Rascunho', version: 1 };

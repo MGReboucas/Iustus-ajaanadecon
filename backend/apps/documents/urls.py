@@ -9,5 +9,6 @@ urlpatterns = [
     path("uploads/<uuid:upload_id>/content", views.ContentView.as_view()),
     path("uploads/<uuid:upload_id>/complete", views.CompleteView.as_view()),
     path("documents/<uuid:document_id>/versions/<uuid:version_id>/download", views.DownloadView.as_view()),
+    path("documents/<uuid:document_id>/versions/<uuid:version_id>/remove", views.RemoveVersionView.as_view()),
     path("documents/<uuid:document_id>/versions/<uuid:version_id>/content", views.DownloadContentView.as_view()),
 ]

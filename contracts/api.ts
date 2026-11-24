@@ -73,7 +73,7 @@ export type Notice = {
   id: string; caseId: string; reference: string; kind: string; title: string;
   createdAt: string; readAt: string | null;
 };
-export type DocumentStatus = 'DEMO_UNVERIFIED' | 'UPLOADING' | 'QUARANTINED' | 'SCANNING' | 'AVAILABLE' | 'REJECTED' | 'ERROR';
+export type DocumentStatus = 'REMOVED' | 'DEMO_UNVERIFIED' | 'UPLOADING' | 'QUARANTINED' | 'SCANNING' | 'AVAILABLE' | 'REJECTED' | 'ERROR';
 export type DocumentVersion = {
   id: string; documentId: string; uploadedById: string; number: number; filename: string;
   sizeBytes: number; status: DocumentStatus; statusLabel: string; createdAt: string;

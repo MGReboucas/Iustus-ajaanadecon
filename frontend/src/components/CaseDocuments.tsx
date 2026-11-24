@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DocumentVersion, downloadDocument, uploadDocument } from "@/lib/api/documents";
+import { DocumentVersion, downloadDocument, uploadDocument, removeDocument } from "@/lib/api/documents";
 
 type Props = {
   intake?: boolean; demo?: boolean; available: boolean; caseId: string; versions: DocumentVersion[]; busy: boolean; readOnly: boolean; hasMore: boolean;
@@ -40,12 +40,18 @@ export default function CaseDocuments({ intake = false, demo = false, available,
       {!intake && <label>Destino do envio<select value={target} onChange={event => setTarget(event.target.value)}><option value="">Novo documento</option>{latest.map(item => <option key={item.id} value={item.id}>Nova versão de {item.filename}</option>)}</select></label>}
       <label>Arquivo para anexar<input key={inputKey} type="file" required accept=".pdf,.jpg,.jpeg,.png" onChange={event => setFile(event.target.files?.[0])} /></label>
       <button disabled={!file}>Enviar arquivo</button>
+      {file && <button type="button" onClick={() => { setFile(undefined); setInputKey(old => old + 1); }}>Limpar seleção</button>}
     </fieldset></form>}
     {message && <p role="status">{message}</p>}
     {!versions.length && <p>Nenhum documento enviado neste caso.</p>}
     <ul className="document-list">{versions.map(item => <li key={item.id}>
       <div><strong>{item.filename}</strong><span>Versão {item.number} · {Math.max(1, Math.ceil(item.sizeBytes / 1024))} KiB</span><span className="case-badge">{item.statusLabel}</span></div>
       <button disabled={busy || (item.status !== "AVAILABLE" && !(demo && item.status === "DEMO_UNVERIFIED"))} onClick={() => void run(() => downloadDocument(item))}>Baixar {item.filename} (v{item.number})</button>
+      {intake && !readOnly && <button disabled={busy} onClick={() => void run(async () => {
+        await removeDocument(item);
+        setMessage("Anexo removido do rascunho.");
+        await refresh();
+      })}>Remover {item.filename} (v{item.number})</button>}
       {item.status === "ERROR" && <p>A verificação está indisponível. O arquivo continua bloqueado; a equipe pode acompanhar a falha.</p>}
       {item.status === "REJECTED" && <p>O arquivo não foi liberado. Confira o conteúdo e envie uma nova versão.</p>}
       {item.status === "UPLOADING" && <p>Envio incompleto. Se houve uma interrupção, selecione uma nova versão e envie novamente.</p>}

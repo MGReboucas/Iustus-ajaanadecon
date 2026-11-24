@@ -39,7 +39,7 @@ def json_bytes(value):
 
 
 def build_export(item, output):
-    versions = bounded(DocumentVersion.objects.filter(document__case=item).order_by("created_at", "id"))
+    versions = bounded(DocumentVersion.objects.filter(document__case=item).exclude(status="REMOVED").order_by("created_at", "id"))
     files = [row for row in versions if row.status == DocumentVersion.Status.AVAILABLE]
     if len(files) > 200 or sum(row.size_bytes for row in files) > MAX_BYTES:
         raise IdentityError("EXPORT_TOO_LARGE", "A exportação aceita até 200 arquivos e 100 MiB de documentos.", 422)

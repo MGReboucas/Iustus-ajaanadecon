@@ -48,3 +48,7 @@ export async function downloadDocument(item: DocumentVersion) {
   document.body.appendChild(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(local), 10000);
 }
+
+export async function removeDocument(item: DocumentVersion) {
+  await api(`documents/${item.documentId}/versions/${item.id}/remove`, {});
+}

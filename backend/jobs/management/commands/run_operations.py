@@ -1,7 +1,7 @@
 import time
 from django.conf import settings
 from django.db import close_old_connections
-from jobs.documents import scan_one
+from jobs.documents import scan_one, purge_removed_one
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from jobs.mail import deliver_one
@@ -34,6 +34,7 @@ class Command(BaseCommand):
                 # Um documento por ciclo mantém espaço para processar e-mails.
                 if settings.DOCUMENT_STORAGE_BACKEND == "s3" or settings.DOCUMENT_LOCAL_STORAGE_ENABLED:
                     scan_one()
+                    purge_removed_one()
                 close_old_connections()
                 if options["once"]: break
                 time.sleep(30)
