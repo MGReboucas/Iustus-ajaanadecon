@@ -4,11 +4,11 @@ import { api, Profile } from "@/lib/api/client";
 
 import type { ServiceProposal as Proposal, Page as ApiPage, ProposalInput, ProposalDecisionInput, ProposalResult } from "../../../contracts/api";
 type Page = ApiPage<Proposal>;
-type Props = { caseId: string; version: number; state: string; user: Profile; onChange: () => Promise<void> };
+type Props = { compact?: boolean; caseId: string; version: number; state: string; user: Profile; onChange: () => Promise<void> };
 const labels = { OPEN: "Aguardando decisão", ACCEPTED: "Aceita", DECLINED: "Recusada", SUPERSEDED: "Substituída" };
 const money = (cents: number) => (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-export default function CaseProposals({ caseId, version, state, user, onChange }: Props) {
+export default function CaseProposals({ compact = false, caseId, version, state, user, onChange }: Props) {
   const [page, setPage] = useState<Page>({ results: [], nextCursor: null });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -65,7 +65,8 @@ export default function CaseProposals({ caseId, version, state, user, onChange }
     } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : "Não foi possível carregar mais propostas."); }
     finally { pending.current = false; if (mounted.current) setBusy(false); }
   }
-  return <section className="legal-workflow" aria-label="Propostas de atendimento">
+  if (compact && !page.results.length && !error) return null;
+  const content = <section className="legal-workflow" aria-label="Propostas de atendimento">
     <div className="cases-heading"><h4>Propostas de atendimento</h4><button type="button" disabled={busy || loading} onClick={() => setRefresh(n => n + 1)}>Atualizar propostas</button></div>
     <p>A assinatura dá acesso à plataforma. Honorários, custas, audiências e outras despesas são contratados separadamente por caso.</p>
     {error && <p role="alert" className="dashboard-error">{error}</p>}
@@ -101,4 +102,5 @@ export default function CaseProposals({ caseId, version, state, user, onChange }
       <button type="submit">Apresentar proposta ao cliente</button>
     </fieldset></form>}
   </section>;
+  return compact ? <details className="case-proposal-notice"><summary>{error ? "Não foi possível consultar a resposta — abrir para tentar novamente" : page.results.some(row => row.status === "OPEN" && Date.parse(row.validUntil) > Date.now()) ? "Você recebeu uma proposta de atendimento — ver e responder" : "Consultar resposta sobre o atendimento"}</summary>{content}</details> : content;
 }

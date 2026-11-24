@@ -4,11 +4,11 @@ import { useState } from "react";
 import { DocumentVersion, downloadDocument, uploadDocument } from "@/lib/api/documents";
 
 type Props = {
-  demo?: boolean; available: boolean; caseId: string; versions: DocumentVersion[]; busy: boolean; readOnly: boolean; hasMore: boolean;
+  intake?: boolean; demo?: boolean; available: boolean; caseId: string; versions: DocumentVersion[]; busy: boolean; readOnly: boolean; hasMore: boolean;
   run: (action: () => Promise<void>) => Promise<void>; refresh: () => Promise<void>; more: () => Promise<void>;
 };
 
-export default function CaseDocuments({ demo = false, available, caseId, versions, busy, readOnly, hasMore, run, refresh, more }: Props) {
+export default function CaseDocuments({ intake = false, demo = false, available, caseId, versions, busy, readOnly, hasMore, run, refresh, more }: Props) {
   const [file, setFile] = useState<File>();
   const [target, setTarget] = useState("");
   const [inputKey, setInputKey] = useState(0);
@@ -17,7 +17,7 @@ export default function CaseDocuments({ demo = false, available, caseId, version
   const latest = versions.filter((item, index) => versions.findIndex(row => row.documentId === item.documentId) === index);
 
   return <section className="case-documents" aria-labelledby="case-documents-title">
-    <div className="cases-heading"><h4 id="case-documents-title">Documentos do caso</h4><button disabled={busy} onClick={() => void run(refresh)}>Atualizar documentos</button></div>
+    <div className="cases-heading"><h4 id="case-documents-title">{intake ? "Documentos comprobatórios" : "Documentos do caso"}</h4><button disabled={busy} onClick={() => void run(refresh)}>Atualizar documentos</button></div>
     {demo && <p role="status"><strong>Demonstração restrita: use apenas arquivos fictícios, até 3 MiB.</strong> Não há verificação por antivírus. Os anexos não liberam o envio da ocorrência para análise.</p>}
     <p>Arquivos compartilhados entre o cliente e o advogado responsável. PDF, JPEG ou PNG, até {demo ? "3" : "20"} MiB por arquivo. {demo ? "Download de teste, sem verificação por antivírus." : "O download fica disponível após a verificação."}</p>
     {!available && <p role="status">O envio de documentos está indisponível neste momento. Você pode salvar o rascunho e completar os anexos quando o serviço estiver disponível.</p>}
@@ -29,7 +29,7 @@ export default function CaseDocuments({ demo = false, available, caseId, version
         setMessage(demo ? "Arquivo de demonstração recebido, sem verificação por antivírus." : "Arquivo recebido. Aguarde a verificação e atualize a lista.");
       } finally { await refresh(); }
     }); }}><fieldset disabled={busy}><legend>Enviar documento</legend>
-      <label>Destino do envio<select value={target} onChange={event => setTarget(event.target.value)}><option value="">Novo documento</option>{latest.map(item => <option key={item.id} value={item.id}>Nova versão de {item.filename}</option>)}</select></label>
+      {!intake && <label>Destino do envio<select value={target} onChange={event => setTarget(event.target.value)}><option value="">Novo documento</option>{latest.map(item => <option key={item.id} value={item.id}>Nova versão de {item.filename}</option>)}</select></label>}
       <label>Arquivo para anexar<input key={inputKey} type="file" required accept=".pdf,.jpg,.jpeg,.png" onChange={event => setFile(event.target.files?.[0])} /></label>
       <button disabled={!file}>Enviar arquivo</button>
     </fieldset></form>}

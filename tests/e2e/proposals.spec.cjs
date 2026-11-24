@@ -31,6 +31,7 @@ async function setup(page, role) {
   });
   await page.goto(role === 'CLIENT' ? '/cliente#meus-casos' : '/advogado#meus-casos');
   await page.getByRole('button', { name: /CASO-TESTE/ }).click();
+  if (role === 'CLIENT') await page.getByText('Você recebeu uma proposta de atendimento — ver e responder', { exact: true }).click();
   await expect(page.getByRole('region', { name: 'Propostas de atendimento' })).toBeVisible();
   return writes;
 }

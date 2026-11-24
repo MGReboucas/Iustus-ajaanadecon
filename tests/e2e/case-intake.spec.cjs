@@ -1,0 +1,41 @@
+const { test, expect } = require('../../frontend/node_modules/@playwright/test');
+
+test('cadastro reúne anexos, salva antes de enviar e mostra análise sem blocos vazios', async ({ page }) => {
+  const id = '00000000-0000-0000-0000-000000000001';
+  let item = { id, reference: 'OCORRENCIA', title: '', description: '', category: '', state: 'RASCUNHO', stateLabel: 'Rascunho', version: 1 };
+  const writes = [];
+  await page.route('**/api/v1/**', route => {
+    const req = route.request();
+    const path = new URL(req.url()).pathname.split('/api/v1/')[1];
+    const send = json => route.fulfill({ json });
+    if (path === 'auth/csrf') return send({ csrfToken: 'test' });
+    if (path === 'dashboard/client') return send({ user: { id, name: 'Teste', role: 'CLIENT' } });
+    if (path === 'dashboard/overview') return send({ totalCases: 0, attentionCount: 0, unreadCount: 0, states: [], attentionCases: [], recentActivity: [] });
+    if (path === 'cases/catalog') return send({ categories: [{ id: 'CIVIL', label: 'Civil' }], states: [], intakeRequired: true, documentsAvailable: true, submission: { canSubmit: true } });
+    if (path === 'cases') return send(req.method() === 'POST' ? item : { results: [], nextCursor: null });
+    if (path === `cases/${id}`) {
+      if (req.method() === 'PATCH') { writes.push('save'); item = { ...item, ...req.postDataJSON(), version: 2 }; }
+      return send(item);
+    }
+    if (path === `cases/${id}/submit`) {
+      writes.push('submit'); expect(req.postDataJSON().version).toBe(2);
+      item = { ...item, state: 'SUBMETIDO', stateLabel: 'Enviado para distribuição', version: 3 }; return send(item);
+    }
+    if (path === `cases/${id}/documents`) return send({ results: [{ id, documentId: id, filename: 'comprovante.pdf', number: 1, sizeBytes: 100, status: 'AVAILABLE', statusLabel: 'Disponível', uploadedById: id }], nextCursor: null });
+    return send({ results: [], nextCursor: null });
+  });
+  await page.goto('/cliente#meus-casos');
+  await page.getByRole('button', { name: 'Cadastrar ocorrência', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Documentos comprobatórios' })).toBeVisible();
+  for (const name of ['Propostas de atendimento', 'Conversa do caso', 'Documentos do caso', 'Histórico']) await expect(page.getByRole('heading', { name, exact: true })).toHaveCount(0);
+  await page.getByLabel('Título do caso').fill('Problema com viagem');
+  await page.getByLabel('Categoria', { exact: true }).selectOption('CIVIL');
+  await page.getByLabel('Data do ocorrido').fill('2026-11-01');
+  await page.getByLabel('Descrição do que aconteceu').fill('Meu voo foi cancelado e preciso de atendimento.');
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Enviar ocorrência para análise' }).click();
+  await expect(page.locator('.case-detail .case-badge').first()).toHaveText('Em análise');
+  expect(writes).toEqual(['save', 'submit']);
+  await expect(page.getByRole('heading', { name: 'Propostas de atendimento' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Documentos do caso' })).not.toBeVisible();
+});

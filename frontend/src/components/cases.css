@@ -11,3 +11,5 @@
 .mandate-generator, .case-export {margin-block: 1.5rem; padding: 1rem; border: 1px solid #65738a; border-radius: .5rem; min-width: 0;}
 .mandate-generator code {overflow-wrap: anywhere;}
 .mandate-generator form, .mandate-generator details {margin-block: 1rem;}
+
+.case-detail > details{margin-top:20px;padding:16px;border:1px solid #415777;border-radius:10px}.case-detail > details > summary{cursor:pointer;font-weight:600;color:#e5c184}.case-proposal-notice{background:#17263b}.case-detail > button{margin-right:12px;margin-top:12px}

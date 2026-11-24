@@ -102,30 +102,45 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
   }
   function submit() {
     if (!selected) return;
-    if (submission.current?.id !== selected.id || submission.current?.version !== selected.version) submission.current = { id: selected.id, version: selected.version, key: crypto.randomUUID() };
-    const key = submission.current.key;
-    void run(() => change(`cases/${selected.id}/submit`, { version: selected.version }, undefined, key));
+    void run(async () => {
+      const saved = dirty ? await api<CaseItem>(`cases/${selected.id}`, { version: selected.version, title, description, category, occurredOn: occurredOn || null, scopeAcknowledged: ack }, { method: "PATCH" }) : selected;
+      setSelected(saved);
+      if (submission.current?.id !== saved.id || submission.current?.version !== saved.version) submission.current = { id: saved.id, version: saved.version, key: crypto.randomUUID() };
+      await change(`cases/${saved.id}/submit`, { version: saved.version }, undefined, submission.current.key);
+      setNotice("Ocorrência enviada para análise. Você receberá um aviso quando houver uma resposta.");
+    });
   }
+
   const dirty = selected && (occurredOn !== (selected.occurredOn || "") || title !== (selected.title || "") || description !== (selected.description || "") || category !== selected.category || ack !== !!selected.scopeAcknowledged);
+
+  const stateLabel = (item: CaseItem) => client && ["SUBMETIDO", "EM_TRIAGEM"].includes(item.state) ? "Em análise" : item.stateLabel;
+  const draft = client && selected?.state === "RASCUNHO";
+  const documentForm = selected && <CaseDocuments intake={draft} demo={catalog?.documentDemo ?? false} available={catalog?.documentsAvailable ?? false} key={selected.id} caseId={selected.id} versions={documents.results} busy={busy} readOnly={["RECUSADO", "ENCERRADO"].includes(selected.state)} run={run} refresh={refreshDocuments} hasMore={!!documents.nextCursor} more={async () => {
+          const result = await api<Page<DocumentVersion>>(`cases/${selected.id}/documents?cursor=${encodeURIComponent(documents.nextCursor!)}`);
+          setDocuments(old => ({ results: [...old.results, ...result.results], nextCursor: result.nextCursor }));
+        }} />;
 
   return <section id="meus-casos" className="cases-workspace" aria-labelledby="cases-title">
     <div className="cases-heading"><div><h2 id="cases-title">{admin ? "Distribuição de casos" : client ? "Meus casos" : "Casos atribuídos"}</h2><p>{admin ? "A fila mostra apenas referência, categoria, estado e responsável. Relatos ficam restritos ao cliente e ao advogado atribuído." : "Multas de trânsito e direito civil, exceto família e sucessões."}</p></div>
-      {client && <button disabled={busy} onClick={() => void run(async () => { const item = await api<CaseItem>("cases", {}); onChange(); setFilter(""); await list(""); await load(item); })}>Cadastrar ocorrência</button>}
+      {client && !selected && <button disabled={busy} onClick={() => void run(async () => { const item = await api<CaseItem>("cases", {}); onChange(); setFilter(""); await list(""); await load(item); })}>Cadastrar ocorrência</button>}
     </div>
     <p className="dashboard-note">Cada ocorrência é analisada individualmente. Após o aceite, a associação envia a procuração específica deste caso para sua assinatura.</p>
     {client && <p className="case-access">{catalog?.submission?.message}</p>}
     {error && <p role="alert" className="dashboard-error">{error} <button disabled={busy} onClick={() => void run(async () => { await list(); if (selected) await load(selected); })}>Atualizar dados</button></p>}
     {notice && <p role="status">{notice}</p>}
+    {client && selected && <button disabled={busy} onClick={() => setSelected(undefined)}>Voltar aos meus casos</button>}
+    <div hidden={client && !!selected}>
     <label className="case-filter">Filtrar por estado<select value={filter} disabled={busy} onChange={e => { const state = e.target.value; setFilter(state); setSelected(undefined); void run(() => list(state)); }}><option value="">Todos</option>{catalog?.states.filter(s => !admin || s.id !== "RASCUNHO").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
     {busy && <p aria-live="polite">Carregando…</p>}
     {!busy && !error && rows.length === 0 && <div className="case-empty-state"><h3>{filter ? "Nenhum caso nesta situação" : client ? "Seu primeiro caso começa aqui" : "Nenhum caso por aqui ainda"}</h3><p>{filter ? "Escolha outra situação ou volte a ver todos os casos." : client ? "Use Cadastrar ocorrência para contar o que aconteceu. O rascunho só será enviado para análise quando você confirmar o envio." : "Os casos aparecerão nesta lista assim que estiverem disponíveis para você."}</p>{filter && <button onClick={() => { setFilter(""); void run(() => list("")); }}>Limpar filtro</button>}</div>}
     <div className="case-list">{rows.map(item => <button className="case-row" aria-pressed={selected?.id === item.id} key={item.id} disabled={busy} onClick={() => void run(() => load(item))}>
-      <span><strong>{admin ? `Caso ${item.reference}` : item.title || "Rascunho sem título"}</strong><small>{item.categoryLabel || "Categoria não informada"} · {item.reference}</small></span><span className="case-badge">{item.stateLabel}{admin && !item.lawyerId ? " · Sem responsável" : ""}</span>
+      <span><strong>{admin ? `Caso ${item.reference}` : item.title || "Rascunho sem título"}</strong><small>{item.categoryLabel || "Categoria não informada"} · {item.reference}</small></span><span className="case-badge">{stateLabel(item)}{admin && !item.lawyerId ? " · Sem responsável" : ""}</span>
     </button>)}</div>
     {cursor && <button disabled={busy} onClick={() => void run(() => list(filter, cursor))}>Mais casos</button>}
 
+    </div>
     {selected && <article className="case-detail" aria-labelledby="case-detail-title">
-      <div className="cases-heading"><h3 id="case-detail-title">Caso {selected.reference}</h3><span className="case-badge">{selected.stateLabel}</span></div>
+      <div className="cases-heading"><h3 id="case-detail-title">Caso {selected.reference}</h3><span className="case-badge">{stateLabel(selected)}</span></div>
       {admin ? <form onSubmit={e => { e.preventDefault(); void run(() => change(`cases/${selected.id}/assignment`, { version: selected.version, lawyerId: lawyer, reason })); }}>
         <fieldset disabled={busy || ["RECUSADO", "ENCERRADO"].includes(selected.state)}><legend>Atribuir ou transferir responsável</legend>
           <label htmlFor="case-lawyer">Advogado responsável</label><select id="case-lawyer" required value={lawyer} onChange={e => setLawyer(e.target.value)}><option value="">Selecione</option>{lawyers.results.map(row => <option key={row.id} value={row.id}>{row.name || row.email} — {row.email}</option>)}</select>
@@ -134,21 +149,20 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
         </fieldset>
       </form> : <>
         {client && selected.state === "RASCUNHO" ? <>
-          <form onSubmit={save}><fieldset disabled={busy}><legend>Dados do rascunho</legend>
+          <form id="case-intake" onSubmit={save}><fieldset disabled={busy}><legend>Cadastrar ocorrência</legend>
             <label>Título do caso<input maxLength={160} value={title} onChange={e => setTitle(e.target.value)} /></label>
             <label htmlFor="case-category">Categoria</label><select id="case-category" value={category} onChange={e => setCategory(e.target.value)}><option value="">Selecione</option>{catalog?.categories.map(row => <option key={row.id} value={row.id}>{row.label}</option>)}</select>
             <label>Data do ocorrido<input type="date" value={occurredOn} onChange={e => setOccurredOn(e.target.value)} /></label>
             <label>Descrição do que aconteceu<textarea rows={7} maxLength={20000} value={description} onChange={e => setDescription(e.target.value)} /></label>
             <label className="case-check"><input type="checkbox" checked={ack} onChange={e => setAck(e.target.checked)} />Estou ciente de que família e sucessões não fazem parte do serviço.</label>
-            <button>Salvar rascunho</button>
+
           </fieldset></form>
-          <p>Salve os dados antes de enviar. Anexe os documentos comprobatórios abaixo e aguarde a verificação. O envio encaminha a ocorrência para análise; não garante aceite.</p>
-          <div className="case-submit-checklist" aria-label="Antes de enviar para análise"><strong>Antes de enviar</strong><ul>
-            <li>{dirty ? "Salve as alterações do rascunho." : "As alterações do rascunho estão salvas."}</li>
-            {catalog?.intakeRequired && <><li>{occurredOn ? "Data do ocorrido preenchida." : "Preencha a data do ocorrido."}</li><li>{documents.results.some(file => file.status === "AVAILABLE" && file.uploadedById === user.id) ? "Documento verificado e disponível." : "Anexe um documento abaixo e aguarde a verificação."}</li></>}
-            {!catalog?.submission?.canSubmit && <li>{catalog?.submission?.message || "O envio ainda não está liberado para sua conta."}</li>}
-          </ul></div>
-          <button disabled={busy || !!dirty || !catalog?.submission?.canSubmit || (catalog?.intakeRequired && (!occurredOn || !documents.results.some(file => file.status === "AVAILABLE" && file.uploadedById === user.id)))} onClick={submit}>Enviar ocorrência para análise</button>
+          {documentForm}
+          <button form="case-intake" disabled={busy}>Salvar rascunho</button>
+          <p>Envie o relato e os documentos para análise. Você será avisado quando houver uma resposta.</p>
+          {catalog?.intakeRequired && !documents.results.some(file => file.status === "AVAILABLE" && file.uploadedById === user.id) && <p role="status">Anexe um documento comprobatório e aguarde a verificação para enviar.</p>}
+          <button disabled={busy || !occurredOn || !title.trim() || !description.trim() || !category || !ack || !catalog?.submission?.canSubmit || (catalog?.intakeRequired && (!occurredOn || !documents.results.some(file => file.status === "AVAILABLE" && file.uploadedById === user.id)))} onClick={submit}>Enviar ocorrência para análise</button>
+
         </> : <><h4>{selected.title}</h4><p>{selected.categoryLabel}</p><p>Data do ocorrido: {selected.occurredOn ? selected.occurredOn.split("-").reverse().join("/") : "Não informada"}</p><p className="case-narrative">{selected.description}</p></>}
         {user.role === "LAWYER" && selected.state === "SUBMETIDO" && <button disabled={busy} onClick={() => void run(() => change(`cases/${selected.id}/transitions`, { version: selected.version, targetState: "EM_TRIAGEM" }))}>Iniciar triagem</button>}
         {user.role === "LAWYER" && selected.state === "EM_TRIAGEM" && <fieldset disabled={busy}><legend>Decisão de triagem</legend>
@@ -159,12 +173,11 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
           <label>Informações a complementar<textarea maxLength={4000} value={complement} onChange={e => setComplement(e.target.value)} /></label><button disabled={complement.trim().length < 5} onClick={() => void run(() => change(`cases/${selected.id}/requests`, { version: selected.version, description: complement }))}>Solicitar complemento</button>
         </fieldset>}
         {["ACEITO", "AGUARDANDO_PROCURACAO", "EM_PREPARACAO", "EM_ACOMPANHAMENTO", "ENCERRADO"].includes(selected.state) && <LegalWorkflow key={`workflow-${selected.id}`} caseId={selected.id} version={selected.version} user={user} documents={documents.results} onChange={async () => {onChange(); await list(); await load(selected);}} />}
-        <CaseProposals key={`proposals-${selected.id}`} caseId={selected.id} version={selected.version} state={selected.state} user={user} onChange={async () => {onChange(); await list(); await load(selected);}} />
-        <CaseMessages key={`messages-${selected.id}`} caseId={selected.id} user={user} available={!!selected.lawyerId && !["RASCUNHO", "RECUSADO", "ENCERRADO"].includes(selected.state)} onChange={onChange} />
-        <CaseDocuments demo={catalog?.documentDemo ?? false} available={catalog?.documentsAvailable ?? false} key={selected.id} caseId={selected.id} versions={documents.results} busy={busy} readOnly={["RECUSADO", "ENCERRADO"].includes(selected.state)} run={run} refresh={refreshDocuments} hasMore={!!documents.nextCursor} more={async () => {
-          const result = await api<Page<DocumentVersion>>(`cases/${selected.id}/documents?cursor=${encodeURIComponent(documents.nextCursor!)}`);
-          setDocuments(old => ({ results: [...old.results, ...result.results], nextCursor: result.nextCursor }));
-        }} />
+        {(!client || !draft) && <CaseProposals compact={client} key={`proposals-${selected.id}`} caseId={selected.id} version={selected.version} state={selected.state} user={user} onChange={async () => {onChange(); await list(); await load(selected);}} />}
+        {client && ["SUBMETIDO", "EM_TRIAGEM"].includes(selected.state) && <p className="case-access" role="status">Sua ocorrência está em análise. Avisaremos quando houver uma resposta ou precisarmos de mais informações.</p>}
+        {(!client || (!!selected.lawyerId && !["RASCUNHO", "RECUSADO", "ENCERRADO"].includes(selected.state))) && (client ? <details><summary>Ver mensagens do atendimento</summary><CaseMessages key={`messages-${selected.id}`} caseId={selected.id} user={user} available={!!selected.lawyerId && !["RASCUNHO", "RECUSADO", "ENCERRADO"].includes(selected.state)} onChange={onChange} /></details> : <CaseMessages key={`messages-${selected.id}`} caseId={selected.id} user={user} available={!!selected.lawyerId && !["RASCUNHO", "RECUSADO", "ENCERRADO"].includes(selected.state)} onChange={onChange} />)}
+
+        {!draft && (client ? <details><summary>Ver documentos enviados</summary>{documentForm}</details> : documentForm)}
         {requests.results.length > 0 && <section><h4>Complementos</h4>{requests.results.map(row => <div className="case-pending" key={row.id}><p className="case-narrative"><strong>Solicitação: </strong>{row.description}</p>{row.response && <p className="case-narrative"><strong>Resposta: </strong>{row.response}</p>}{row.resolved && <p>Conferido: {row.resolution}</p>}
           {row.attachments?.map(item => <button key={item.id} disabled={busy} onClick={() => void run(() => downloadDocument(item))}>Anexo: {item.filename} (v{item.number})</button>)}
           {!row.resolved && client && !row.responded && <form onSubmit={e => { e.preventDefault(); void run(() => change(`cases/${selected.id}/requests/${row.id}/response`, { version: selected.version, text: complement, documentVersionIds: attachments })); }}><fieldset disabled={busy}><label>Sua resposta<textarea required minLength={5} maxLength={10000} value={complement} onChange={e => setComplement(e.target.value)} /></label>
@@ -173,10 +186,10 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
           {!row.resolved && row.responded && <p>Aguardando conferência pelo responsável.</p>}
           {!row.resolved && row.responded && user.role === "LAWYER" && <form onSubmit={e => { e.preventDefault(); void run(() => change(`cases/${selected.id}/requests/${row.id}/resolve`, { version: selected.version, reason })); }}><fieldset disabled={busy}><label>Resultado da conferência<textarea required minLength={5} maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} /></label><button>Conferir e retomar triagem</button></fieldset></form>}
         </div>)}{requests.nextCursor && <button disabled={busy} onClick={() => void run(async () => { const result = await api<Page<Pending>>(`cases/${selected.id}/requests?cursor=${encodeURIComponent(requests.nextCursor!)}`); setRequests({ results: [...requests.results, ...result.results], nextCursor: result.nextCursor }); })}>Mais complementos</button>}</section>}
-        {catalog?.documentsAvailable && !catalog?.documentDemo && <CaseExport key={`export-${selected.id}`} caseId={selected.id} version={selected.version} />}
-        <section><h4>Histórico</h4><ol className="case-history">{events.results.map(row => <li key={row.id}><strong>{labels[row.action] || "Atualização do caso"}</strong><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString("pt-BR")}</time>{row.reason && <p className="case-narrative">{row.reason}</p>}</li>)}</ol>
+        {!client && catalog?.documentsAvailable && !catalog?.documentDemo && <CaseExport key={`export-${selected.id}`} caseId={selected.id} version={selected.version} />}
+        {!draft && <details open={!client}><summary>Histórico da ocorrência</summary><section><h4>Histórico</h4><ol className="case-history">{events.results.map(row => <li key={row.id}><strong>{labels[row.action] || "Atualização do caso"}</strong><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString("pt-BR")}</time>{row.reason && <p className="case-narrative">{row.reason}</p>}</li>)}</ol>
           {events.nextCursor && <button disabled={busy} onClick={() => void run(async () => { const result = await api<Page<Event>>(`cases/${selected.id}/timeline?cursor=${encodeURIComponent(events.nextCursor!)}`); setEvents({ results: [...events.results, ...result.results], nextCursor: result.nextCursor }); })}>Mais eventos</button>}
-        </section>
+        </section></details>}
       </>}
     </article>}
   </section>;
