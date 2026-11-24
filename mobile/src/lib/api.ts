@@ -46,7 +46,7 @@ export async function request<T>(path: string, token?: string, body?: object, op
       throw new ApiError(data?.error?.code || 'REQUEST_FAILED',
         data?.error?.message || 'Não foi possível concluir. Tente novamente.', response.status);
     }
-    if (!data || typeof data !== 'object') throw new ApiError('INVALID_RESPONSE', 'O serviço está indisponível. Tente novamente.');
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new ApiError('INVALID_RESPONSE', 'O serviço está indisponível. Tente novamente.');
     return data as T;
   } catch (error) {
     if (error instanceof ApiError) throw error;

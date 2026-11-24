@@ -2,7 +2,9 @@
   "expo": {
     "name": "Íustus",
     "slug": "iustus-mobile",
-    "version": "0.1.0",
+    "version": "1.0.0",
+    "icon": "./assets/icon.png",
+    "backgroundColor": "#070e1b",
     "scheme": "iustus",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -14,14 +16,28 @@
       }
     },
     "android": {
-      "package": "br.org.ajaanadecon.iustus"
+      "package": "br.org.ajaanadecon.iustus",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b1b2f"
+      },
+      "blockedPermissions": ["android.permission.RECORD_AUDIO"],
+      "softwareKeyboardLayoutMode": "resize"
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       "expo-font",
       "expo-sharing",
-      ["expo-image-picker", { "cameraPermission": "Permitir que o Íustus fotografe documentos que você deseja anexar ao caso.", "microphonePermission": false, "photosPermission": "Permitir selecionar imagens para anexar ao seu caso." }]
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Permitir que o Íustus fotografe documentos que você deseja anexar ao caso.",
+          "microphonePermission": false,
+          "photosPermission": "Permitir selecionar imagens para anexar ao seu caso."
+        }
+      ],
+      ["expo-splash-screen", { "backgroundColor": "#070e1b", "image": "./assets/icon.png", "imageWidth": 160 }]
     ],
     "web": {
       "bundler": "metro",

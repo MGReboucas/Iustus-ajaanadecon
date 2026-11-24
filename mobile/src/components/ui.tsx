@@ -6,7 +6,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 export const colors = { background: '#070e1b', card: '#111e32', line: '#26364e', text: '#f2f4f8', muted: '#a8b5c9', gold: '#e5b869', success: '#97dfbf', error: '#ffb1ae' };
 
 export function Screen({ children, ...props }: PropsWithChildren<ScrollViewProps>) {
-  return <SafeAreaView style={s.fill} edges={['top', 'left', 'right']}><ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled" {...props}>{children}</ScrollView></SafeAreaView>;
+  return <SafeAreaView style={s.fill} edges={['top', 'bottom', 'left', 'right']}><ScrollView contentContainerStyle={s.page} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="on-drag" {...props}>{children}</ScrollView></SafeAreaView>;
 }
 export function Brand({ compact = false }: { compact?: boolean }) {
   return <View style={s.brand}><Image source={require('../../assets/iustus.png')} style={{ width: compact ? 52 : 78, height: compact ? 52 : 78 }} accessibilityLabel="Íustus" /><View><Text style={s.brandName}>ÍUSTUS</Text><Text style={s.caption}>Sua defesa, ao seu alcance.</Text></View></View>;
@@ -21,7 +21,7 @@ export function Card({ children }: PropsWithChildren) { return <View style={s.ca
 export function Button({ title, onPress, busy = false, secondary = false, disabled = false }: { title: string; onPress: () => void; busy?: boolean; secondary?: boolean; disabled?: boolean }) {
   return <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy || disabled, busy }} onPress={onPress} disabled={busy || disabled}
     style={({ pressed }) => [s.button, secondary && s.secondary, (busy || disabled || pressed) && { opacity: .65 }]}>
-    {busy ? <ActivityIndicator color={secondary ? colors.gold : colors.background} /> : <Text style={[s.buttonText, secondary && { color: colors.gold }]}>{title}</Text>}
+    {busy && <ActivityIndicator color={secondary ? colors.gold : colors.background} />}<Text style={[s.buttonText, secondary && { color: colors.gold }]}>{title}</Text>
   </Pressable>;
 }
 export function Field({ label, ...props }: TextInputProps & { label: string }) {

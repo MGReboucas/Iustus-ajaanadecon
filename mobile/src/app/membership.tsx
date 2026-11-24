@@ -1,6 +1,8 @@
 import { useSession } from '../auth/SessionProvider';
 import SubscriptionSettings from '../components/SubscriptionSettings';
-import { useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { AppState } from 'react-native';
 import { errorMessage, request } from '../lib/api';
 import { openPortal } from '../lib/links';
 import type { BillingPlan, MobileContext } from '../lib/types';
@@ -9,13 +11,21 @@ export default function Membership() {
   const { signedIn } = useSession();
   const [data, setData] = useState<{ plan: BillingPlan; context: MobileContext }>();
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    let active = true;
-    Promise.all([request<BillingPlan>('billing/plan'), request<MobileContext>('auth/context')]).then(([plan, context]) => { if (active) setData({ plan, context }); }).catch(e => { if (active) setError(errorMessage(e)); });
-    return () => { active = false; };
+  const generation = useRef(0);
+  const load = useCallback(async () => {
+      const run = ++generation.current; setError('');
+      try {
+        const [plan, context] = await Promise.all([request<BillingPlan>('billing/plan'), request<MobileContext>('auth/context')]);
+        if (run === generation.current) setData({ plan, context });
+      } catch (e) { if (run === generation.current) { setData(undefined); setError(errorMessage(e)); } }
   }, []);
+  useFocusEffect(useCallback(() => {
+    void load();
+    const subscription = AppState.addEventListener('change', state => { if (state === 'active') void load(); });
+    return () => { generation.current++; subscription.remove(); };
+  }, [load]));
   async function open() { setBusy(true); setError(''); try { await openPortal('/checkout'); } catch (e) { setError(errorMessage(e)); } finally { setBusy(false); } }
-  return <Screen><Title>Minha associação</Title><ErrorNotice message={error} />{!data ? !error && <Loading /> : <Card>
+  return <Screen><Title>Minha associação</Title><ErrorNotice message={error} retry={() => void load()} />{!data ? !error && <Loading /> : <Card>
     <Body>A associação dá acesso aos recursos da plataforma. Honorários, custas, audiências e despesas são contratados separadamente por caso.</Body>
     {data.context.checkoutAvailable && data.plan.available ? <>
       <Body>Plano anual: {(data.plan.amount / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}, em {data.plan.installments} parcelas. Vigência de um ano, sem renovação automática. Para renovar, faça uma nova compra.</Body>

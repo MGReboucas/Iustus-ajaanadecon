@@ -38,6 +38,7 @@ export function CaseConversation({ caseId, canMessage }: { caseId: string; canMe
   }, [api, path]);
 
   useFocusEffect(useCallback(() => {
+    setSending(false);
     void load();
     return () => { generation.current++; reading.current = false; writing.current = false; };
   }, [load]));

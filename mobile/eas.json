@@ -2,13 +2,18 @@
   "cli": { "appVersionSource": "remote" },
   "build": {
     "preview": {
+      "node": "24.14.1",
       "distribution": "internal",
       "android": { "buildType": "apk" },
-      "environment": "preview"
+      "environment": "preview",
+      "env": { "EXPO_PUBLIC_API_ORIGIN": "https://www.iustus.app" }
     },
     "production": {
+      "node": "24.14.1",
       "autoIncrement": true,
-      "environment": "production"
+      "environment": "production",
+      "android": { "buildType": "app-bundle" },
+      "env": { "EXPO_PUBLIC_API_ORIGIN": "https://www.iustus.app" }
     }
   }
 }

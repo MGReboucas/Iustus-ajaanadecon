@@ -1,6 +1,6 @@
 {
   "name": "iustus-mobile",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -9,16 +9,18 @@
     "@react-navigation/native-stack": "^7.20.0",
     "expo": "~57.0.27",
     "expo-constants": "~57.0.21",
-    "expo-crypto": "~57.0.3",
+    "expo-crypto": "~57.0.4",
     "expo-document-picker": "~57.0.3",
     "expo-file-system": "~57.0.7",
     "expo-font": "~57.0.4",
-    "expo-image-picker": "~57.0.20",
+    "expo-image-picker": "~57.0.21",
     "expo-linking": "~57.0.12",
     "expo-router": "~57.0.25",
     "expo-secure-store": "~57.0.4",
-    "expo-sharing": "~57.0.22",
+    "expo-sharing": "~57.0.25",
+    "expo-splash-screen": "~57.0.11",
     "expo-status-bar": "~57.0.1",
+    "expo-system-ui": "~57.0.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
@@ -44,7 +46,14 @@
     "lint": "expo lint",
     "test": "node --test tests/*.test.cjs",
     "export:check": "expo export --platform all",
-    "test:ui": "playwright test"
+    "test:ui": "playwright test",
+    "build:check": "node scripts/check-build.cjs",
+    "service:check": "node scripts/check-service.cjs",
+    "release:check": "npm run build:check && npm run typecheck && npm run lint && npm test && npm run export:check",
+    "eas-build-post-install": "node scripts/check-build.cjs",
+    "build:android:preview": "npx eas-cli@latest build --platform android --profile preview",
+    "build:android": "npx eas-cli@latest build --platform android --profile production",
+    "build:ios": "npx eas-cli@latest build --platform ios --profile production"
   },
   "private": true
 }

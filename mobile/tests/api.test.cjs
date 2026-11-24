@@ -71,6 +71,7 @@ test('preserves session expiry and reports malformed responses or network errors
   await assert.rejects(expired.request('dashboard', 'synthetic'), err => err.status === 401 && err.code === 'AUTH_REQUIRED');
   const invalid = load(async () => new Response('<html>internal debug</html>'));
   await assert.rejects(invalid.request('dashboard'), err => err.code === 'INVALID_RESPONSE' && !err.message.includes('debug'));
+  await assert.rejects(load(async () => Response.json([])).request('dashboard'), err => err.code === 'INVALID_RESPONSE');
   const offline = load(async () => { throw new Error('internal network detail'); });
   await assert.rejects(offline.request('dashboard'), err => err.code === 'NETWORK_ERROR' && !err.message.includes('internal'));
 });

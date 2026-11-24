@@ -21,7 +21,7 @@ export default function Register() {
     if (busy) return; setBusy(true); setError('');
     try { await action(); } catch (e) { setError(errorMessage(e)); } finally { setBusy(false); }
   }
-  return <Screen><Title>Primeiro acesso</Title><ErrorNotice message={error} retry={() => void load()} />{!context ? <Loading /> : <>
+  return <Screen><Title>Primeiro acesso</Title><ErrorNotice message={error} retry={() => void load()} />{!context ? !error && <Loading /> : <>
     {context.registrationAvailable ? <Card><Field label="Nome completo" value={name} onChangeText={setName} maxLength={150} editable={!busy} />
       <Field label="E-mail de cadastro" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" editable={!busy} />
       <Field label="Criar senha" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" maxLength={128} editable={!busy} />

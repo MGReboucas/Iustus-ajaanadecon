@@ -1,11 +1,19 @@
 import { useState } from 'react';
+import { useURL } from 'expo-linking';
 import { router } from 'expo-router';
 import { errorMessage, request } from '../lib/api';
 import { readAccessLink } from '../lib/links';
 import { Body, Button, ErrorNotice, Field, Screen, Title } from '../components/ui';
 
 export default function Access() {
-  const [link, setLink] = useState('');
+  const incoming = useURL();
+  let initialLink = '';
+  try { if (incoming) { readAccessLink(incoming); initialLink = incoming; } } catch { /* Normal navigation. */ }
+  return <AccessForm key={initialLink} initialLink={initialLink} />;
+}
+
+function AccessForm({ initialLink }: { initialLink: string }) {
+  const [link, setLink] = useState(initialLink);
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -18,9 +26,10 @@ export default function Access() {
     if (busy) return; setBusy(true); setError('');
     try {
       const action = readAccessLink(link);
+      if (action.mode === 'member' && name.trim().length < 2) throw new Error('Informe seu nome completo.');
       if (action.mode !== 'verify' && (password.length < 8 || password !== confirmation)) throw new Error('Use uma senha de pelo menos 8 caracteres e confirme a mesma senha.');
       await request(action.mode === 'member' ? 'billing/activate' : `auth/${action.mode}`, undefined,
-        { token: action.token, ...(action.mode !== 'verify' ? { password } : {}), ...(action.mode === 'member' ? { name } : {}) });
+        { token: action.token, ...(action.mode !== 'verify' ? { password } : {}), ...(action.mode === 'member' ? { name: name.trim() } : {}) });
       setLink(''); setPassword(''); setConfirmation(''); setDone(true);
     } catch (e) { setError(errorMessage(e)); } finally { setBusy(false); }
   }

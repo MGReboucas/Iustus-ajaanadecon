@@ -12,7 +12,7 @@ export async function readSession(): Promise<Session | null> {
   if (!raw) return null;
   try {
     const data = JSON.parse(raw);
-    if (typeof data.origin !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(data.token) || !Number.isFinite(Date.parse(data.expiresAt))) return null;
+    if (!data || typeof data.origin !== 'string' || typeof data.token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(data.token) || typeof data.expiresAt !== 'string' || !Number.isFinite(Date.parse(data.expiresAt))) return null;
     return data;
   } catch { return null; }
 }

@@ -1,0 +1,23 @@
+# EAS builds need only the native client and dependency-free shared contracts.
+/*
+!/mobile/
+!/contracts/
+!/package.json
+!/package-lock.json
+!/.easignore
+**/node_modules/
+**/.env*
+**/.expo/
+**/dist/
+**/test-results/
+**/playwright-report/
+**/*.log
+**/*.tsbuildinfo
+**/credentials.json
+**/*.jks
+**/*.keystore
+**/*.p12
+**/*.mobileprovision
+/mobile/android/
+/mobile/ios/
+/mobile/tests/

@@ -1,5 +1,18 @@
 # Íustus mobile — jornada do associado
 
+## Build 1.0.0 — preparação em 09/11/2026
+
+Veja [BUILD.md](BUILD.md) para vincular sua conta Expo e gerar APK, AAB ou a
+build iOS. A origem pública já está nos perfis EAS; ícones, splash e validação
+automática dos arquivos necessários à build estão configurados.
+
+Esta revisão corrige recuperação de falhas na associação, paginação após
+retorno às telas, validação de links de acesso, estados de envio da conversa,
+teclado e solicitação de exclusão sem justificativa obrigatória. Os testes de
+interface também cobrem ativação, redefinição, atualização de perfil e avisos.
+As notas de 08/10 abaixo são históricas; o estado atual de geração e as
+dependências externas estão descritos em BUILD.md.
+
 Aplicativo do associado em Expo SDK 57, React Native e TypeScript. Android e iOS compartilham a base em `src/`. O site e o dashboard web continuam em `../frontend`; identidade, associação e casos usam o mesmo Django/PostgreSQL.
 
 ## Implementado
@@ -93,7 +106,7 @@ A tela Associação consulta o plano do servidor. A continuidade para `/checkout
 2. Homologar armazenamento privado, CORS do envio direto, scanner real e entrega de e-mails no ambiente de destino.
 3. Definir o enquadramento da adesão nas lojas e habilitar o checkout externo somente no canal apropriado.
 4. Push externo: a revisão automática rejeitou a inclusão do worker que enviaria tokens de aparelhos e identificadores de casos ao Expo. Nenhum worker, cadastro de dispositivo ou chamada a esse provedor foi adicionado. Requer autorização específica. A aba Avisos já funciona sem esse envio externo.
-5. Consolidar os textos institucionais aprovados (prestador/controlador, canal público, retenção e cobertura); as páginas informativas não certificam revisão jurídica. O fluxo de exclusão registra uma solicitação para tratamento pela operação, não apaga registros automaticamente. Preparar ícone de loja em alta resolução, splash e validar acessibilidade em aparelhos.
+5. Consolidar os textos institucionais aprovados (prestador/controlador, canal público, retenção e cobertura); as páginas informativas não certificam revisão jurídica. O fluxo de exclusão registra uma solicitação para tratamento pela operação, não apaga registros automaticamente. Ícone e splash estão preparados; validar acessibilidade em aparelhos.
 6. Builds assinadas e distribuição de teste; publicação só depois de homologação e revisão das lojas.
 
 `eas.json` prepara perfis de preview interno e produção. Ainda é necessário vincular o projeto EAS e as contas Apple/Google da organização, configurar a origem por ambiente e validar os identificadores propostos `br.org.ajaanadecon.iustus` antes da primeira publicação. Nenhum projeto externo, cobrança, build em nuvem ou publicação foi criado nesta entrega.
