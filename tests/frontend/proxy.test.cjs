@@ -15,6 +15,29 @@ async function call(response, path = 'auth/csrf') {
   request.nextUrl = new URL(request.url);
   return handler(response)(request, { params: Promise.resolve({ path: path.split('/') }) });
 }
+
+test('draft attachment removal reaches backend with session, CSRF and exact route', async () => {
+  const id = '00000000-0000-0000-0000-000000000001';
+  const path = `documents/${id}/versions/${id}/remove`;
+  const request = new Request('https://app.example.test/api/v1/' + path, {
+    method: 'POST', headers: { host: 'app.example.test', 'content-type': 'application/json',
+      cookie: 'session=synthetic', 'x-csrftoken': 'synthetic-csrf' }, body: '{}',
+  });
+  request.nextUrl = new URL(request.url);
+  let forwarded = false;
+  const result = await handler(new Response(null, { status: 204 }), (url, options) => {
+    forwarded = true;
+    assert.equal(String(url), 'https://api.example.test/api/v1/' + path);
+    assert.equal(options.method, 'POST');
+    assert.equal(options.headers.get('cookie'), 'session=synthetic');
+    assert.equal(options.headers.get('x-csrftoken'), 'synthetic-csrf');
+  })(request, { params: Promise.resolve({ path: path.split('/') }) });
+  assert.equal(result.status, 204);
+  assert.equal(forwarded, true);
+  for (const invalid of [`documents/${id}/versions/${id}/erase`, `documents/invalid/versions/${id}/remove`, `${path}/extra`]) {
+    assert.equal((await call(Response.json({}), invalid)).status, 404);
+  }
+});
 test('proxy hides debug text and HTML even when upstream returns 400', async () => {
   for (const type of ['text/plain', 'text/html']) {
     const result = await call(new Response('DisallowedHost INTERNAL_DETAILS', { status: 400, headers: { 'content-type': type } }));

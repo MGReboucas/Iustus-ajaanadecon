@@ -75,7 +75,6 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
       if (e instanceof ApiError && e.code === "AUTH_REQUIRED") window.location.replace("/acessar");
       else {
         setError(e instanceof Error ? e.message : "Não foi possível concluir.");
-        if (e instanceof ApiError && e.code === "NOT_FOUND") setSelected(undefined);
       }
     } finally { setBusy(false); }
   }

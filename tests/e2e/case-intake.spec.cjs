@@ -3,6 +3,7 @@ const { test, expect } = require('../../frontend/node_modules/@playwright/test')
 test('cliente remove anexo do rascunho e limpa seleção antes do upload', async ({ page }) => {
   const id = '00000000-0000-0000-0000-000000000003';
   let removed = false;
+  let removalAttempts = 0;
   const item = { id, reference: 'RASCUNHO', title: 'Teste', description: 'Relato fictício para testar anexos.', category: 'CIVIL', occurredOn: '2026-11-01', scopeAcknowledged: true, state: 'RASCUNHO', stateLabel: 'Rascunho', version: 1 };
   await page.route('**/api/v1/**', route => {
     const req = route.request();
@@ -16,6 +17,8 @@ test('cliente remove anexo do rascunho e limpa seleção antes do upload', async
     if (path === `cases/${id}`) return send({ ...item, version: removed ? 2 : 1 });
     if (path === `cases/${id}/documents`) return send({ results: removed ? [] : [{ id, documentId: id, filename: 'teste.pdf', number: 1, sizeBytes: 100, status: 'AVAILABLE', statusLabel: 'Disponível', uploadedById: id }], nextCursor: null });
     if (path === `documents/${id}/versions/${id}/remove`) {
+      removalAttempts += 1;
+      if (removalAttempts === 1) return route.fulfill({ status: 404, json: { error: { code: 'NOT_FOUND', message: 'Recurso não encontrado.' } } });
       expect(req.method()).toBe('POST');
       expect(req.headers()['x-csrftoken']).toBe('test');
       removed = true;
@@ -26,7 +29,18 @@ test('cliente remove anexo do rascunho e limpa seleção antes do upload', async
   await page.goto('/cliente#meus-casos');
   await page.getByRole('button', { name: 'Cadastrar ocorrência', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Enviar ocorrência para análise' })).toBeEnabled();
-  await page.getByRole('button', { name: 'Remover teste.pdf (v1)', exact: true }).click();
+  const remove = page.getByRole('button', { name: 'Remover teste.pdf (v1)', exact: true });
+  await expect(remove).toHaveText('×');
+  await expect(remove).toHaveCSS('width', '32px');
+  await expect(remove).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await page.screenshot({ path: '../.local/documents-e2e/remover-anexo-desktop.png', fullPage: true });
+  await remove.click();
+  await expect(page.getByText('Recurso não encontrado.', { exact: false })).toBeVisible();
+  await expect(remove).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await remove.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: '../.local/documents-e2e/remover-anexo-mobile.png' });
+  await remove.click();
   await expect(page.getByText('Nenhum documento enviado neste caso.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Enviar ocorrência para análise' })).toBeDisabled();
   await page.getByLabel('Arquivo para anexar').setInputFiles({ name: 'selecionado.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') });

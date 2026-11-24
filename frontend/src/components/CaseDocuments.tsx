@@ -47,11 +47,11 @@ export default function CaseDocuments({ intake = false, demo = false, available,
     <ul className="document-list">{versions.map(item => <li key={item.id}>
       <div><strong>{item.filename}</strong><span>Versão {item.number} · {Math.max(1, Math.ceil(item.sizeBytes / 1024))} KiB</span><span className="case-badge">{item.statusLabel}</span></div>
       <button disabled={busy || (item.status !== "AVAILABLE" && !(demo && item.status === "DEMO_UNVERIFIED"))} onClick={() => void run(() => downloadDocument(item))}>Baixar {item.filename} (v{item.number})</button>
-      {intake && !readOnly && <button disabled={busy} onClick={() => void run(async () => {
+      {intake && !readOnly && <button type="button" className="document-remove" aria-label={`Remover ${item.filename} (v${item.number})`} title="Remover anexo" disabled={busy} onClick={() => void run(async () => {
         await removeDocument(item);
         setMessage("Anexo removido do rascunho.");
         await refresh();
-      })}>Remover {item.filename} (v{item.number})</button>}
+      })}><span aria-hidden="true">×</span></button>}
       {item.status === "ERROR" && <p>A verificação está indisponível. O arquivo continua bloqueado; a equipe pode acompanhar a falha.</p>}
       {item.status === "REJECTED" && <p>O arquivo não foi liberado. Confira o conteúdo e envie uma nova versão.</p>}
       {item.status === "UPLOADING" && <p>Envio incompleto. Se houve uma interrupção, selecione uma nova versão e envie novamente.</p>}
