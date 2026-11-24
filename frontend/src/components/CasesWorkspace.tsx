@@ -2,7 +2,7 @@
 import eventLabels from "../../../contracts/events.json";
 import CaseProposals from "./CaseProposals";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiError, Profile } from "@/lib/api/client";
 import { DocumentVersion, downloadDocument } from "@/lib/api/documents";
 import CaseDocuments from "./CaseDocuments";
@@ -42,6 +42,12 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
   const [checks, setChecks] = useState([false, false, false]);
   const submission = useRef<{ id: string; version: number; key: string } | null>(null);
   const admin = user.role === "ADMIN", client = user.role === "CLIENT";
+  const [saveStatus, setSaveStatus] = useState("");
+  const saving = useRef<Promise<CaseItem | undefined> | null>(null);
+  const current = useRef({ selected, title, description, occurredOn, category, ack });
+  current.current = { selected, title, description, occurredOn, category, ack };
+  const persisted = useRef("");
+  const draftKey = (value: { title: string; description: string; occurredOn: string; category: string; ack: boolean }) => JSON.stringify([value.title, value.description, value.occurredOn, value.category, value.ack]);
 
   async function list(state = filter, next?: string) {
     const query = new URLSearchParams();
@@ -57,6 +63,8 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
     const [detail, pending, history] = await Promise.all([
       api<CaseItem>(`cases/${item.id}`), api<Page<Pending>>(`cases/${item.id}/requests`), api<Page<Event>>(`cases/${item.id}/timeline`),
     ]);
+    persisted.current = draftKey({ title: detail.title || "", description: detail.description || "", occurredOn: detail.occurredOn || "", category: detail.category, ack: !!detail.scopeAcknowledged });
+    setSaveStatus("");
     setSelected(detail); setTitle(detail.title || ""); setDescription(detail.description || ""); setOccurredOn(detail.occurredOn || "");
     setCategory(detail.category); setAck(!!detail.scopeAcknowledged); setRequests(pending); setEvents(history);
     setDocuments(files);
@@ -97,14 +105,65 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
     onChange();
     await list(); await load(result); setNotice("Alteração registrada.");
   }
-  function save(event: FormEvent) {
-    event.preventDefault(); if (!selected) return;
-    void run(() => change(`cases/${selected.id}`, { version: selected.version, title, description, category, occurredOn: occurredOn || null, scopeAcknowledged: ack }, "PATCH"));
+  async function saveDraft(): Promise<CaseItem | undefined> {
+    if (saving.current) return saving.current;
+    const task = async () => {
+      let item = current.current.selected;
+      try {
+        while (item?.state === "RASCUNHO" && current.current.selected?.id === item.id && draftKey(current.current) !== persisted.current) {
+          const snapshot = { ...current.current };
+          const key = draftKey(snapshot);
+          setSaveStatus("Salvando…");
+          const body = { title: snapshot.title, description: snapshot.description, category: snapshot.category, occurredOn: snapshot.occurredOn || null, scopeAcknowledged: snapshot.ack };
+          const patch = (version: number) => api<CaseItem>(`cases/${item!.id}`, { ...body, version }, { method: "PATCH" });
+          let saved: CaseItem;
+          try { saved = await patch(item.version); }
+          catch (e) {
+            if (!(e instanceof ApiError) || e.code !== "VERSION_CONFLICT") throw e;
+            const fresh = await api<CaseItem>(`cases/${item.id}`);
+            if (fresh.state !== "RASCUNHO") throw e;
+            saved = await patch(fresh.version);
+          }
+          persisted.current = key;
+          item = saved;
+          if (current.current.selected?.id === saved.id) {
+            current.current.selected = saved;
+            setSelected(old => old?.id === saved.id && old.version <= saved.version ? saved : old);
+          }
+          setRows(old => old.map(row => row.id === saved.id ? saved : row));
+        }
+        setSaveStatus("Rascunho salvo");
+        return item;
+      } catch (e) {
+        setSaveStatus("Não foi possível salvar o rascunho. Suas alterações continuam nesta tela.");
+        throw e;
+      }
+    };
+    saving.current = task();
+    try { return await saving.current; }
+    finally { saving.current = null; }
   }
+  useEffect(() => {
+    if (!client || busy || selected?.state !== "RASCUNHO" || draftKey(current.current) === persisted.current) return;
+    setSaveStatus("Salvando…");
+    const timer = window.setTimeout(() => { void saveDraft().catch(() => {}); }, 600);
+    return () => window.clearTimeout(timer);
+  }, [title, description, occurredOn, category, ack, selected?.id, busy]);
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if (current.current.selected?.state === "RASCUNHO" && draftKey(current.current) !== persisted.current) { event.preventDefault(); event.returnValue = ""; }
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      if (current.current.selected?.state === "RASCUNHO") void saveDraft().catch(() => {});
+    };
+  }, []);
   function submit() {
     if (!selected) return;
     void run(async () => {
-      const saved = dirty ? await api<CaseItem>(`cases/${selected.id}`, { version: selected.version, title, description, category, occurredOn: occurredOn || null, scopeAcknowledged: ack }, { method: "PATCH" }) : selected;
+      const saved = await saveDraft();
+      if (!saved) return;
       setSelected(saved);
       if (submission.current?.id !== saved.id || submission.current?.version !== saved.version) submission.current = { id: saved.id, version: saved.version, key: crypto.randomUUID() };
       await change(`cases/${saved.id}/submit`, { version: saved.version }, undefined, submission.current.key);
@@ -112,7 +171,6 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
     });
   }
 
-  const dirty = selected && (occurredOn !== (selected.occurredOn || "") || title !== (selected.title || "") || description !== (selected.description || "") || category !== selected.category || ack !== !!selected.scopeAcknowledged);
 
   const stateLabel = (item: CaseItem) => client && ["SUBMETIDO", "EM_TRIAGEM"].includes(item.state) ? "Em análise" : item.stateLabel;
   const draft = client && selected?.state === "RASCUNHO";
@@ -131,7 +189,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
     {client && <p className="case-access">{catalog?.submission?.message}</p>}
     {error && <p role="alert" className="dashboard-error">{error} <button disabled={busy} onClick={() => void run(async () => { await list(); if (selected) await load(selected); })}>Atualizar dados</button></p>}
     {notice && <p role="status">{notice}</p>}
-    {client && selected && <button disabled={busy} onClick={() => setSelected(undefined)}>Voltar aos meus casos</button>}
+    {client && selected && <button disabled={busy} onClick={() => void run(async () => { await saveDraft(); setSelected(undefined); })}>Voltar aos meus casos</button>}
     <div hidden={client && !!selected}>
     <label className="case-filter">Filtrar por estado<select value={filter} disabled={busy} onChange={e => { const state = e.target.value; setFilter(state); setSelected(undefined); void run(() => list(state)); }}><option value="">Todos</option>{catalog?.states.filter(s => !admin || s.id !== "RASCUNHO").map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
     {busy && <p aria-live="polite">Carregando…</p>}
@@ -152,7 +210,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
         </fieldset>
       </form> : <>
         {client && selected.state === "RASCUNHO" ? <>
-          <form id="case-intake" onSubmit={save}><fieldset disabled={busy}><legend>Cadastrar ocorrência</legend>
+          <form id="case-intake" onSubmit={e => e.preventDefault()}><fieldset disabled={busy}><legend>Cadastrar ocorrência</legend>
             <label>Título do caso<input maxLength={160} value={title} onChange={e => setTitle(e.target.value)} /></label>
             <label htmlFor="case-category">Categoria</label><select id="case-category" value={category} onChange={e => setCategory(e.target.value)}><option value="">Selecione</option>{catalog?.categories.map(row => <option key={row.id} value={row.id}>{row.label}</option>)}</select>
             <label>Data do ocorrido<input type="date" value={occurredOn} onChange={e => setOccurredOn(e.target.value)} /></label>
@@ -161,7 +219,7 @@ export default function CasesWorkspace({ user, openCase, onChange }: { user: Pro
 
           </fieldset></form>
           {documentForm}
-          <button form="case-intake" disabled={busy}>Salvar rascunho</button>
+          <p aria-live="polite">{saveStatus}{saveStatus.startsWith("Não foi") && <button type="button" disabled={busy} onClick={() => void run(async () => { await saveDraft(); })}>Tentar novamente</button>}</p>
           <p>Envie o relato e os documentos para análise. Você será avisado quando houver uma resposta.</p>
           {catalog?.intakeRequired && !documents.results.some(file => file.status === "AVAILABLE" && file.uploadedById === user.id) && <p role="status">Anexe um documento comprobatório e aguarde a verificação para enviar.</p>}
           <button disabled={busy || !occurredOn || !title.trim() || !description.trim() || !category || !ack || !catalog?.submission?.canSubmit || (catalog?.intakeRequired && (!occurredOn || !documents.results.some(file => file.status === "AVAILABLE" && file.uploadedById === user.id)))} onClick={submit}>Enviar ocorrência para análise</button>

@@ -53,7 +53,7 @@ export default function CaseDocuments({ intake = false, demo = false, available,
   }
 
   return <section className="case-documents" aria-labelledby="case-documents-title">
-    <div className="cases-heading"><h4 id="case-documents-title">{intake ? "Documentos comprobatórios" : "Documentos do caso"}</h4></div>
+    <div className="cases-heading"><h4 id="case-documents-title">{intake ? "Documentos que comprovam a ocorrência" : "Documentos do caso"}</h4></div>
     {demo && <p role="status"><strong>Demonstração restrita: use apenas arquivos fictícios, até 3 MiB.</strong> Não há verificação por antivírus. Os anexos não liberam o envio da ocorrência para análise.</p>}
     <p>Arquivos compartilhados entre o cliente e o advogado responsável. PDF, JPEG ou PNG, até {demo ? "3" : "20"} MiB por arquivo. {demo ? "Download de teste, sem verificação por antivírus." : "O download fica disponível após a verificação."}</p>
     {!available && <p role="status">O envio de documentos está indisponível neste momento. Você pode salvar o rascunho e completar os anexos quando o serviço estiver disponível.</p>}

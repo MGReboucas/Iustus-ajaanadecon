@@ -140,7 +140,8 @@ test('cadastro reúne anexos, salva antes de enviar e mostra análise sem blocos
   });
   await page.goto('/cliente#meus-casos');
   await page.getByRole('button', { name: 'Cadastrar ocorrência', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Documentos comprobatórios' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Documentos que comprovam a ocorrência' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Salvar rascunho' })).toHaveCount(0);
   for (const name of ['Propostas de atendimento', 'Conversa do caso', 'Documentos do caso', 'Histórico']) await expect(page.getByRole('heading', { name, exact: true })).toHaveCount(0);
   await page.getByLabel('Título do caso').fill('Problema com viagem');
   await page.getByLabel('Categoria', { exact: true }).selectOption('CIVIL');
@@ -197,4 +198,48 @@ test('verificação atualiza anexos e versão do caso antes de permitir o envio'
   await sendCase.click();
   await expect(page.locator('.case-detail .case-badge').first()).toHaveText('Em análise');
   expect(submitted).toBe(true);
+});
+
+test('autosave preserva edicoes durante resposta lenta e permite tentar novamente', async ({ page }) => {
+  const id = '00000000-0000-0000-0000-000000000009';
+  let item = { id, reference: 'AUTO', title: '', description: '', category: '', state: 'RASCUNHO', stateLabel: 'Rascunho', version: 1 };
+  let patches = 0, fail = false;
+  await page.route('**/api/v1/**', async route => {
+    const req = route.request(), path = new URL(req.url()).pathname.split('/api/v1/')[1];
+    const send = json => route.fulfill({ json });
+    if (path === 'auth/csrf') return send({ csrfToken: 'test' });
+    if (path === 'dashboard/client') return send({ user: { id, name: 'Teste', role: 'CLIENT' } });
+    if (path === 'dashboard/overview') return send({ totalCases: 0, attentionCount: 0, unreadCount: 0, states: [], attentionCases: [], recentActivity: [] });
+    if (path === 'cases/catalog') return send({ categories: [], states: [], documentsAvailable: true, submission: { canSubmit: true } });
+    if (path === 'cases') return send(req.method() === 'POST' ? item : { results: [item], nextCursor: null });
+    if (path === `cases/${id}`) {
+      if (req.method() === 'PATCH') {
+        patches++;
+        if (fail) return route.fulfill({ status: 503, json: { error: { code: 'UNAVAILABLE', message: 'Falha temporaria' } } });
+        await new Promise(resolve => setTimeout(resolve, 900));
+        item = { ...item, ...req.postDataJSON(), version: item.version + 1 };
+      }
+      return send(item);
+    }
+    return send({ results: [], nextCursor: null });
+  });
+  await page.goto('/cliente#meus-casos');
+  await page.getByRole('button', { name: /Cadastrar ocorr/, exact: false }).click();
+  const title = page.locator('#case-intake input').first();
+  await title.fill('Primeira versao');
+  await expect.poll(() => patches).toBe(1);
+  await title.fill('Ultima versao');
+  await expect(page.getByText('Rascunho salvo', { exact: true })).toBeVisible();
+  expect(item.title).toBe('Ultima versao');
+  await expect(title).toHaveValue('Ultima versao');
+  fail = true;
+  await title.fill('Preservar em falha');
+  await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible();
+  await expect(title).toHaveValue('Preservar em falha');
+  fail = false;
+  await page.getByRole('button', { name: 'Tentar novamente' }).click();
+  await expect(page.getByText('Rascunho salvo', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Voltar aos meus casos' }).click();
+  await page.getByRole('button', { name: /Preservar em falha/ }).click();
+  await expect(title).toHaveValue('Preservar em falha');
 });
