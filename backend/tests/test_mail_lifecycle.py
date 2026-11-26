@@ -154,7 +154,10 @@ class MailLifecycleTests(TestCase):
             self.assertTrue(deliver_case_email())
             message = mail.outbox[-1]
             self.assertIn(title, message.body)
-            self.assertNotIn("PRIVATE", message.body)
+            if kind == "SUBMITTED":
+                self.assertIn(case.title, message.body)
+            else:
+                self.assertNotIn("PRIVATE", message.body)
             self.assertIn("/cliente", message.body)
 
     def test_overdue_escalation_is_once_and_only_to_lawyer(self):

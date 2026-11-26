@@ -45,6 +45,9 @@ class MessagesView(CaseView):
                 recipient_id = item.lawyer_id if request.user.role == "CLIENT" else item.owner_id
                 create_notice(recipient_id=recipient_id, case=item, source_key=f"message:{message.pk}",
                     kind="MESSAGE", title="Você recebeu uma mensagem no caso")
+            else:
+                create_notice(recipient_id=request.user.pk, case=item, source_key=f"message:{message.pk}",
+                    kind="INTERNAL_MESSAGE", title="Nota interna registrada no caso")
         return Response(message_data(message), status=201)
 
 

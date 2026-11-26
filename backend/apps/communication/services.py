@@ -4,6 +4,18 @@ from .models import Notification, CaseEmail
 
 
 EVENT_TITLES = {
+    "DRAFT_CREATED": "Rascunho da ocorrência criado",
+    "DRAFT_UPDATED": "Rascunho da ocorrência atualizado",
+    "DOCUMENT_UPLOAD_STARTED": "Envio de documento iniciado no seu caso",
+    "DOCUMENT_QUARANTINED": "Documento recebido e aguardando verificação",
+    "DOCUMENT_DEMO_RECEIVED": "Documento de demonstração recebido sem verificação",
+    "DOCUMENT_AVAILABLE": "Documento verificado e disponível no seu caso",
+    "DOCUMENT_REJECTED": "Um documento foi recusado: confira o envio",
+    "DOCUMENT_REMOVED": "Documento removido do rascunho",
+    "MANDATE_GENERATED": "Procuração gerada no seu caso",
+    "LEGAL_DRAFT": "Minuta interna do caso atualizada",
+    "INTERNAL_MESSAGE": "Nota interna registrada no caso",
+    "LAWYER_CHANGED": "O advogado responsável pelo seu caso foi atualizado",
     "MESSAGE": "Você recebeu uma nova mensagem no seu atendimento",
     "TASK_REMINDER": "Lembrete: há um compromisso do seu caso nas próximas 24 horas ou pendente",
     "TASK_OVERDUE": "Um compromisso do seu caso está atrasado e precisa de atenção",
@@ -33,11 +45,26 @@ EVENT_TITLES = {
 
 
 def notify_event(event, item):
-    title = EVENT_TITLES.get(event.action)
-    if not title:
-        return
-    recipient_id = item.lawyer_id if event.action in ("ASSIGNED", "INFORMATION_RESPONDED", "LEGAL_SIGN", "PROPOSAL_ACCEPTED", "PROPOSAL_DECLINED") else item.owner_id
-    if recipient_id and (recipient_id != event.actor_id or event.action == "SUBMITTED"):
+    title = EVENT_TITLES.get(event.action, "Nova movimentação registrada no seu caso")
+    if event.action == "ASSIGNED":
+        recipients = [item.lawyer_id]
+        create_notice(recipient_id=item.owner_id, source_key=f"assignment:{event.pk}", case=item,
+                      kind="LAWYER_CHANGED", title=EVENT_TITLES["LAWYER_CHANGED"])
+    elif not event.public:
+        recipients = [item.lawyer_id]
+    elif item.state == "RASCUNHO" or event.action.startswith("DRAFT_"):
+        recipients = [item.owner_id]
+    elif event.action.startswith("DOCUMENT_"):
+        # The uploader also needs the asynchronous validation result.
+        recipients = [item.owner_id, item.lawyer_id]
+    elif event.action in ("INFORMATION_RESPONDED", "LEGAL_SIGN", "PROPOSAL_ACCEPTED", "PROPOSAL_DECLINED"):
+        recipients = [item.lawyer_id]
+    else:
+        recipient_id = item.owner_id
+        if event.actor_id == item.owner_id and event.action != "SUBMITTED":
+            recipient_id = item.lawyer_id or item.owner_id
+        recipients = [recipient_id]
+    for recipient_id in set(filter(None, recipients)):
         create_notice(recipient_id=recipient_id, source_key=f"event:{event.pk}", case=item, kind=event.action, title=title)
 
 

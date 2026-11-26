@@ -44,6 +44,14 @@ class CommunicationTests(TestCase):
         note = self.send(self.lawyer, text="Estratégia interna", visibility="INTERNAL")
         self.assertEqual(note.status_code, 201)
         self.assertEqual(len(self.notices()), 1)
+        from django.core import mail
+        from jobs.communication import deliver_case_email
+        self.assertTrue(deliver_case_email())
+        self.assertTrue(deliver_case_email())
+        self.assertFalse(deliver_case_email())
+        self.assertCountEqual([message.to for message in mail.outbox], [[self.owner.email], [self.lawyer_user.email]])
+        self.assertTrue(Notification.objects.filter(recipient=self.lawyer_user, kind="INTERNAL_MESSAGE").exists())
+        self.assertFalse(Notification.objects.filter(recipient=self.owner, kind="INTERNAL_MESSAGE").exists())
         self.assertNotIn("Estratégia", str(self.notices()) + str(self.overview()))
         self.assertEqual(len(self.client.get(f"/api/v1/{self.path}").json()["results"]), 1)
         self.assertEqual(len(self.lawyer.get(f"/api/v1/{self.path}").json()["results"]), 2)

@@ -230,7 +230,7 @@ class AssociationTests(TestCase):
             case.refresh_from_db(); assigned.append(case.lawyer_id)
             self.assertEqual(Notification.objects.filter(case=case, kind="ASSIGNED", recipient=case.lawyer).count(), 1)
             self.assertEqual(Notification.objects.filter(case=case, kind="SUBMITTED", recipient=user).count(), 1)
-            self.assertEqual(CaseEmail.objects.filter(notification__case=case).count(), 2)
+            self.assertEqual(CaseEmail.objects.filter(notification__case=case).count(), 3)
         self.assertEqual(set(assigned), {lawyer.pk for lawyer in lawyers})
 
     def test_no_lawyer_falls_back_to_administrative_queue(self):
@@ -240,6 +240,33 @@ class AssociationTests(TestCase):
         self.assertEqual(self.submit(browser, case).status_code, 200)
         case.refresh_from_db(); self.assertIsNone(case.lawyer_id)
         self.assertTrue(Notification.objects.filter(recipient=admin, kind="UNASSIGNED").exists())
+
+    def test_submission_delivers_receipt_and_assignment_once(self):
+        from django.core import mail
+        from jobs.communication import deliver_case_email
+        browser, user = self.activate()
+        lawyer = self.user(role="LAWYER", email="lawyer@example.test")
+        case = self.draft(user)
+        case.description = 'Relato enviado pelo cliente. <script>alert(1)</script>'
+        case.save()
+        self.document(case, user)
+        for _ in range(2):
+            self.assertEqual(self.submit(browser, case).status_code, 200)
+        self.assertEqual(CaseEmail.objects.filter(notification__case=case).count(), 3)
+        mail.outbox.clear()
+        self.assertTrue(deliver_case_email())
+        self.assertTrue(deliver_case_email())
+        self.assertTrue(deliver_case_email())
+        self.assertFalse(deliver_case_email())
+        self.assertEqual(len(mail.outbox), 3)
+        receipt = next(message for message in mail.outbox if message.to == [user.email])
+        assignment = next(message for message in mail.outbox if message.to == [lawyer.email])
+        self.assertIn(case.description, receipt.body)
+        self.assertIn(case.occurred_on.strftime('%d/%m/%Y'), receipt.body)
+        self.assertNotIn('<script>', receipt.alternatives[0].content)
+        self.assertIn(str(case.pk)[:8].upper(), assignment.body)
+        self.assertNotIn(case.description, assignment.body)
+        self.assertEqual(CaseEmail.objects.filter(sent_at__isnull=False).count(), 3)
 
     def test_approved_case_has_its_own_mandate_and_cannot_skip_signature(self):
         browser, user = self.activate()

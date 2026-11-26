@@ -43,11 +43,22 @@ def deliver_case_email():
         if not allowed:
             CaseEmail.objects.filter(pk=item.pk, lease_id=lease).update(cancelled_at=timezone.now(), lease_id=None, lease_until=None)
             return True
-    path = "/cliente" if portal == "client" else "/advogado"
+    path = "/cliente" if portal == "client" else ("/admin" if user.role == "ADMIN" else "/advogado")
     url = settings.PORTAL_ORIGINS[portal] + path
     # Usar somente textos estáticos; títulos persistidos podem conter dados privados.
     title = EVENT_TITLES.get(notice.kind, "Há uma novidade ou pendência no seu atendimento Iustus.")
     body = title + "\n\nEntre no painel para consultar os detalhes com segurança:\n" + url + "\n\nVocê pode ajustar estes e-mails em Minha conta."
+    if notice.kind == "SUBMITTED" and user.pk == notice.case.owner_id:
+        case = notice.case
+        details = [f"Referência: {str(case.pk)[:8].upper()}", f"Título: {case.title}",
+                   f"Categoria: {case.get_category_display()}"]
+        if case.occurred_on:
+            details.append(f"Data da ocorrência: {case.occurred_on:%d/%m/%Y}")
+        # Include the client's own report only in their submission receipt.
+        # Keep the trusted portal link first for the HTML call to action.
+        body += "\n\n" + "\n".join(details) + "\n\nDescrição da ocorrência enviada:\n" + case.description
+    elif notice.kind == "ASSIGNED":
+        body += f"\n\nNovo caso recebido. Referência: {str(notice.case_id)[:8].upper()}. Consulte o relato e os documentos no painel."
     try:
         domain = parseaddr(settings.DEFAULT_FROM_EMAIL)[1].split("@")[-1]
         message = build_message("Iustus: " + title, body, [user.email],
