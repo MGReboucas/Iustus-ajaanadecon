@@ -26,12 +26,12 @@ export default function DashboardOverview({ user, revision, openCase, showCases 
   useEffect(() => {
     let current = true;
     setBusy(true); setError("");
-    Promise.all([api<Overview>("dashboard/overview"), api<Notices>(`notifications?unread=${unreadOnly}`)])
+    Promise.all([api<Overview>("dashboard/overview"), user.role === "CLIENT" ? Promise.resolve<Notices>({ results: [], nextCursor: null }) : api<Notices>(`notifications?unread=${unreadOnly}`)])
       .then(([summary, notifications]) => { if (current) { setOverview(summary); setNotices(notifications); } })
       .catch(reason => { if (current) { setOverview(undefined); setNotices({ results: [], nextCursor: null }); setError(reason.message); if (reason instanceof ApiError && reason.code === "AUTH_REQUIRED") window.location.replace("/acessar"); } })
       .finally(() => { if (current) setBusy(false); });
     return () => { current = false; };
-  }, [user.id, revision, refresh, unreadOnly]);
+  }, [user.id, user.role, revision, refresh, unreadOnly]);
   async function markRead(item: Notice) {
     setBusy(true); setError("");
     try { await api(`notifications/${item.id}/read`, {}); setRefresh(value => value + 1); }
@@ -46,25 +46,22 @@ export default function DashboardOverview({ user, revision, openCase, showCases 
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Não foi possível carregar avisos."); }
     finally { setBusy(false); }
   }
+  if (user.role === "CLIENT") return <section className="dashboard-overview" aria-label="Resumo dos casos" aria-busy={busy}>
+    {error && <p role="alert" className="dashboard-error">{error}</p>}
+    {!overview && busy && <p role="status">Carregando resumo...</p>}
+    {overview && <CaseStatusChart states={overview.states} showCases={showCases} />}
+  </section>;
   return <section className="dashboard-overview" aria-label="Resumo do atendimento">
     <div className="overview-heading"><h2>Visão geral</h2><button disabled={busy} onClick={() => setRefresh(value => value + 1)}>Atualizar painel</button></div>
     {error && <p role="alert" className="dashboard-error">{error}</p>}
     {busy && <p aria-live="polite">Atualizando resumo…</p>}
     {overview && <>
-      {user.role === "CLIENT" && <section className="dashboard-next-action" aria-labelledby="next-action-title">
-        <div><p className="dashboard-eyebrow">SEU PRÓXIMO PASSO</p>
-          <h3 id="next-action-title">{overview.totalCases === 0 ? "Vamos começar seu atendimento?" : overview.attentionCount > 0 ? "Há casos precisando de você" : "Seu atendimento em um só lugar"}</h3>
-          <p>{overview.totalCases === 0 ? "Conte o que aconteceu e reúna seus documentos. Você pode salvar um rascunho antes de enviar para análise." : overview.attentionCount > 0 ? "Confira os rascunhos e as solicitações do advogado para dar continuidade ao atendimento." : "Acompanhe seus casos ou cadastre uma nova ocorrência. As novidades aparecem na central de avisos."}</p>
-        </div>
-        <button onClick={() => overview.attentionCases[0] ? openCase(overview.attentionCases[0].id) : showCases()}>{overview.totalCases === 0 ? "Começar meu atendimento" : overview.attentionCases.length > 0 ? "Ver próxima pendência" : "Acessar meus casos"}<span aria-hidden="true"> →</span></button>
-        {overview.totalCases === 0 && <ol className="dashboard-start-steps"><li><strong>1. Conte o que aconteceu</strong><span>Cadastre uma ocorrência na seção Casos.</span></li><li><strong>2. Envie para análise</strong><span>Revise os dados e anexe os documentos solicitados.</span></li><li><strong>3. Acompanhe por aqui</strong><span>Se o caso for aceito, siga as orientações para assinar a procuração.</span></li></ol>}
-      </section>}
       <div className="dashboard-metrics">
         <article><span>{admin ? "Casos recebidos" : "Seus casos"}</span><strong>{overview.totalCases}</strong><small>{admin ? "Fila do escritório" : "No seu acompanhamento"}</small></article>
-        <article><span>{admin ? "Sem responsável" : "Precisam de você"}</span><strong>{overview.attentionCount}</strong><small>{admin ? "Aguardando distribuição" : user.role === "CLIENT" ? "Rascunhos, documentos e complementos" : "Triagens, preparação e compromissos vencidos"}</small></article>
+        <article><span>{admin ? "Sem responsável" : "Precisam de você"}</span><strong>{overview.attentionCount}</strong><small>{admin ? "Aguardando distribuição" : "Triagens, preparação e compromissos vencidos"}</small></article>
         {!admin && <article><span>Avisos não lidos</span><strong>{overview.unreadCount}</strong><small>Novidades dos seus casos</small></article>}
       </div>
-      {user.role === "CLIENT" ? <CaseStatusChart states={overview.states} /> : <div className="overview-states" aria-label="Casos por estado">{overview.states.filter(state => state.count > 0).map(state => <span key={state.id}>{state.label} <strong>{state.count}</strong></span>)}</div>}
+      {<div className="overview-states" aria-label="Casos por estado">{overview.states.filter(state => state.count > 0).map(state => <span key={state.id}>{state.label} <strong>{state.count}</strong></span>)}</div>}
       <div className="dashboard-grid overview-panels">
         <section className="dashboard-card"><h3>{admin ? "Para distribuir" : "Próximos passos"}</h3>
           {overview.attentionCases.length === 0 ? <p>Nenhuma ação pendente neste momento.</p> : <><p>{overview.attentionCount > 5 ? "Mostrando os 5 casos que aguardam há mais tempo." : "Abra um caso para continuar o atendimento."}</p><ul className="overview-list">{overview.attentionCases.map(item => <li key={item.id}><button onClick={() => openCase(item.id)}><strong>{item.title || `Caso ${item.reference}`}</strong><small>{item.stateLabel} · {item.reference}</small></button></li>)}</ul></>}
