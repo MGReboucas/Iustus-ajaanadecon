@@ -1,6 +1,7 @@
 """Shared multipart email design with an embedded logo and a plain-text fallback."""
 import re
 from email.mime.image import MIMEImage
+from email.utils import formataddr, parseaddr
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -38,7 +39,8 @@ def render_email(subject, body):
 
 def build_message(subject, body, recipients, headers=None):
     body = canonical_body(body)
-    message = EmailMultiAlternatives(subject, body, None, recipients, headers=headers)
+    sender = formataddr(("Iustus - Aja anadecon", parseaddr(settings.DEFAULT_FROM_EMAIL)[1]))
+    message = EmailMultiAlternatives(subject, body, sender, recipients, headers=headers)
     message.attach_alternative(render_email(subject, body), "text/html")
     message.mixed_subtype = "related"
     logo = MIMEImage((ROOT / "assets" / "iustus-logo.png").read_bytes(), _subtype="png")
