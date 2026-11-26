@@ -44,6 +44,19 @@ EVENT_TITLES = {
 }
 
 
+# Only milestones and communications in the actual case handling trigger email.
+# Technical events remain in the timeline/dashboard, without email delivery.
+CASE_EMAIL_KINDS = frozenset({
+    "SUBMITTED", "ASSIGNED", "LAWYER_CHANGED", "UNASSIGNED", "MESSAGE",
+    "TRIAGE_STARTED", "TRIAGE_DECISION", "INFORMATION_REQUESTED",
+    "INFORMATION_RESPONDED", "INFORMATION_RESOLVED", "PROPOSAL_PUBLISHED",
+    "PROPOSAL_ACCEPTED", "PROPOSAL_DECLINED", "LEGAL_START", "LEGAL_SIGN",
+    "LEGAL_RETURN_MANDATE", "LEGAL_VERIFY", "LEGAL_PUBLISH", "LEGAL_FILE",
+    "LEGAL_TASK", "LEGAL_RESCHEDULE", "LEGAL_COMPLETE", "LEGAL_UPDATE",
+    "LEGAL_CLOSE", "TASK_REMINDER", "TASK_OVERDUE",
+})
+
+
 def notify_event(event, item):
     title = EVENT_TITLES.get(event.action, "Nova movimentação registrada no seu caso")
     if event.action == "ASSIGNED":
@@ -90,7 +103,7 @@ def message_data(item):
 def create_notice(*, recipient_id, source_key, case, kind, title, task=None):
     notice, created = Notification.objects.get_or_create(recipient_id=recipient_id, source_key=source_key,
                                                        defaults={"case": case, "kind": kind, "title": title})
-    if created:
+    if created and kind in CASE_EMAIL_KINDS:
         CaseEmail.objects.create(notification=notice, available_at=timezone.now(),
                                  reminder_task=task, reminder_due_at=task.due_at if task else None)
     return notice

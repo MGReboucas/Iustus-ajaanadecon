@@ -11,7 +11,7 @@ from django.utils import timezone
 from apps.cases.models import Case
 from apps.cases.services import accessible
 from apps.communication.models import CaseEmail
-from apps.communication.services import create_notice, EVENT_TITLES
+from apps.communication.services import create_notice, EVENT_TITLES, CASE_EMAIL_KINDS
 from apps.legal.models import LegalTask
 
 
@@ -27,6 +27,11 @@ def deliver_case_email():
         item.attempts += 1
         item.save(update_fields=["lease_id", "lease_until", "attempts"])
     notice = item.notification
+    if notice.kind not in CASE_EMAIL_KINDS:
+        CaseEmail.objects.filter(pk=item.pk, lease_id=lease).update(
+            cancelled_at=timezone.now(), lease_id=None, lease_until=None,
+            last_error="NotCaseMovement")
+        return True
     user = notice.recipient
     # Nenhuma mensagem é enviada após revogação conhecida ou opt-out.
     portal = "client" if user.role == "CLIENT" else "team"

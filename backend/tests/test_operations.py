@@ -27,7 +27,7 @@ class OperationsTests(TestCase):
         self.lawyer, self.lawyer_user, *_ = self.team_login("LAWYER", "lawyer@example.test")
         self.case = Case.objects.create(owner=self.owner, lawyer=self.lawyer_user, state=Case.State.TRACKING, title="Segredo")
     def notice(self, recipient=None, key="event:synthetic"):
-        return create_notice(recipient_id=(recipient or self.owner).pk, source_key=key, case=self.case, kind="TEST", title="Segredo no título")
+        return create_notice(recipient_id=(recipient or self.owner).pk, source_key=key, case=self.case, kind="LEGAL_UPDATE", title="Segredo no título")
     def test_delivery_is_generic_deduplicated_and_honors_opt_out(self):
         self.notice(); self.notice()
         self.assertEqual(CaseEmail.objects.count(), 1)

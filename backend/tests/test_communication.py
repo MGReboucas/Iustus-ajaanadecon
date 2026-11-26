@@ -47,9 +47,8 @@ class CommunicationTests(TestCase):
         from django.core import mail
         from jobs.communication import deliver_case_email
         self.assertTrue(deliver_case_email())
-        self.assertTrue(deliver_case_email())
         self.assertFalse(deliver_case_email())
-        self.assertCountEqual([message.to for message in mail.outbox], [[self.owner.email], [self.lawyer_user.email]])
+        self.assertCountEqual([message.to for message in mail.outbox], [[self.owner.email]])
         self.assertTrue(Notification.objects.filter(recipient=self.lawyer_user, kind="INTERNAL_MESSAGE").exists())
         self.assertFalse(Notification.objects.filter(recipient=self.owner, kind="INTERNAL_MESSAGE").exists())
         self.assertNotIn("Estratégia", str(self.notices()) + str(self.overview()))

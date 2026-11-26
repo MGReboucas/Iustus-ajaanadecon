@@ -33,7 +33,7 @@ class EventMailCoverageTests(TestCase):
 
     def test_every_public_legal_movement_reaches_client(self):
         for action in ('TRIAGE_STARTED', 'TRIAGE_DECISION', 'INFORMATION_REQUESTED',
-                       'INFORMATION_RESOLVED', 'PROPOSAL_PUBLISHED', 'MANDATE_GENERATED',
+                       'INFORMATION_RESOLVED', 'PROPOSAL_PUBLISHED',
                        'LEGAL_START', 'LEGAL_RETURN_MANDATE', 'LEGAL_VERIFY', 'LEGAL_PUBLISH',
                        'LEGAL_FILE', 'LEGAL_TASK', 'LEGAL_RESCHEDULE', 'LEGAL_COMPLETE',
                        'LEGAL_UPDATE', 'LEGAL_CLOSE'):
@@ -45,30 +45,31 @@ class EventMailCoverageTests(TestCase):
             with self.subTest(action=action):
                 self.deliver_event(action, self.owner, [self.lawyer.email])
 
-    def test_document_lifecycle_reaches_both_parties_including_uploader(self):
+    def test_document_lifecycle_never_sends_email(self):
         for action in ('DOCUMENT_UPLOAD_STARTED', 'DOCUMENT_QUARANTINED', 'DOCUMENT_DEMO_RECEIVED',
                        'DOCUMENT_AVAILABLE', 'DOCUMENT_REJECTED'):
             with self.subTest(action=action):
-                self.deliver_event(action, self.owner, [self.owner.email, self.lawyer.email])
+                self.deliver_event(action, self.owner, [])
 
-    def test_drafts_only_reach_owner(self):
+    def test_drafts_never_send_email(self):
         self.case.state = Case.State.DRAFT
         self.case.lawyer = None
         self.case.save()
         for action in ('DRAFT_CREATED', 'DRAFT_UPDATED', 'DOCUMENT_REMOVED', 'DOCUMENT_AVAILABLE'):
             with self.subTest(action=action):
-                self.deliver_event(action, self.owner, [self.owner.email])
+                self.deliver_event(action, self.owner, [])
 
     def test_private_movement_only_reaches_lawyer_even_for_unknown_action(self):
-        for action in ('LEGAL_DRAFT', 'FUTURE_PRIVATE_EVENT'):
-            self.deliver_event(action, self.lawyer, [self.lawyer.email], public=False)
+        for action in ('LEGAL_DRAFT', 'INTERNAL_MESSAGE', 'FUTURE_PRIVATE_EVENT'):
+            self.deliver_event(action, self.lawyer, [], public=False)
         self.assertFalse(Notification.objects.filter(recipient=self.owner).exists())
 
     def test_assignment_reaches_new_lawyer_and_client(self):
         self.deliver_event('ASSIGNED', self.owner, [self.owner.email, self.lawyer.email], public=False)
 
-    def test_future_public_event_is_not_silently_dropped(self):
-        self.deliver_event('FUTURE_PUBLIC_EVENT', self.lawyer, [self.owner.email])
+    def test_unreviewed_events_do_not_send_email(self):
+        self.deliver_event('FUTURE_PUBLIC_EVENT', self.lawyer, [])
+        self.deliver_event('MANDATE_GENERATED', self.lawyer, [])
 
     def test_rollback_never_sends_event(self):
         with self.assertRaises(RuntimeError), transaction.atomic():
@@ -76,3 +77,14 @@ class EventMailCoverageTests(TestCase):
             raise RuntimeError('rollback')
         self.assertFalse(deliver_case_email())
         self.assertFalse(Notification.objects.exists())
+
+    def test_previously_queued_document_email_is_cancelled(self):
+        notice = Notification.objects.create(recipient=self.owner, case=self.case,
+            source_key='old-document', kind='DOCUMENT_AVAILABLE', title='Document verified')
+        queued = CaseEmail.objects.create(notification=notice, available_at=timezone.now())
+        self.assertTrue(deliver_case_email())
+        queued.refresh_from_db()
+        self.assertIsNotNone(queued.cancelled_at)
+        self.assertIsNone(queued.sent_at)
+        self.assertEqual(queued.last_error, 'NotCaseMovement')
+        self.assertEqual(len(mail.outbox), 0)

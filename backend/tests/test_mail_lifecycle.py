@@ -18,7 +18,7 @@ from jobs.mail import deliver_one
 from jobs.mail_health import update_mail_health
 from jobs.transactional_mail import notify_payment, notify_privacy, schedule_membership_notices
 from apps.cases.models import Case
-from apps.communication.services import EVENT_TITLES, create_notice
+from apps.communication.services import EVENT_TITLES, CASE_EMAIL_KINDS, create_notice
 from jobs.communication import deliver_case_email, schedule_reminders
 from apps.legal.models import LegalTask
 
@@ -148,7 +148,7 @@ class MailLifecycleTests(TestCase):
         self.user.save()
         case = Case.objects.create(owner=self.user, state=Case.State.TRACKING, title="PRIVATE CASE")
         for kind, title in EVENT_TITLES.items():
-            if kind in ("TASK_REMINDER", "TASK_OVERDUE"):
+            if kind not in CASE_EMAIL_KINDS or kind in ("TASK_REMINDER", "TASK_OVERDUE"):
                 continue
             create_notice(recipient_id=self.user.pk, source_key=kind, case=case, kind=kind, title="PRIVATE EVENT")
             self.assertTrue(deliver_case_email())
