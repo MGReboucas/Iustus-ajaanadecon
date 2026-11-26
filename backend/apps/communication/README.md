@@ -8,22 +8,22 @@ O resumo do dashboard aplica o mesmo escopo de casos do domínio. Notificações
 
 | Movimentação | Destinatário |
 | --- | --- |
-| Criação/edição de rascunho e documentos antes da submissão | Cliente |
+| Rascunhos e processamento/verificação de documentos | Sem e-mail |
 | Submissão | Cliente, com relato, categoria, data e referência |
 | Atribuição ou troca de advogado | Cliente e novo advogado |
 | Caso sem advogado elegível | Administradores ativos e verificados |
 | Triagem, decisão, solicitação/conferência de complemento | Cliente |
 | Resposta ao complemento, aceite/recusa da proposta, procuração devolvida | Advogado responsável |
-| Proposta publicada, procuração gerada/disponibilizada/conferida ou devolvida para ajuste | Cliente |
-| Minuta interna e nota interna | Apenas advogado responsável |
+| Proposta publicada, procuração disponibilizada/conferida ou devolvida para ajuste | Cliente |
+| Geração de procuração, minuta interna e nota interna | Sem e-mail |
 | Peça publicada, protocolo, movimentação e encerramento | Cliente |
 | Criação, remarcação e conclusão de compromisso | Cliente |
-| Documentos iniciados, recebidos, liberados ou recusados após submissão | Cliente e advogado responsável |
+| Documentos iniciados, recebidos, liberados ou recusados após submissão | Sem e-mail |
 | Mensagem pública | Outra parte da conversa |
 | Lembrete de audiência/compromisso | Cliente e advogado responsável |
 | Lembrete de prazo interno e escalonamento de atraso | Advogado responsável |
 
-Eventos futuros registrados por `changed`/`record` recebem aviso genérico, respeitando a visibilidade pública/interna. Consultas, downloads e marcações de leitura não são movimentações e não geram e-mail. Falhas transitórias de infraestrutura não são movimentações jurídicas.
+Somente os tipos explícitos em `CASE_EMAIL_KINDS` geram e-mail. Eventos técnicos e tipos futuros não aprovados ficam no histórico/painel. O worker também cancela mensagens técnicas antigas ainda pendentes. Consultas, downloads e marcações de leitura não geram e-mail.
 
 O envio respeita e-mail confirmado, conta ativa, preferência `case_email_enabled` e acesso atual ao caso; troca de responsável cancela mensagens pendentes do advogado anterior. Não há envio retroativo automático dos eventos antigos. O transporte tenta até cinco vezes, com intervalo crescente; após esgotar, exige recuperação operacional explícita. Aceitação SMTP não comprova chegada à caixa de entrada.
 
