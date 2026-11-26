@@ -67,9 +67,6 @@ def notify_event(event, item):
         recipients = [item.lawyer_id]
     elif item.state == "RASCUNHO" or event.action.startswith("DRAFT_"):
         recipients = [item.owner_id]
-    elif event.action.startswith("DOCUMENT_"):
-        # The uploader also needs the asynchronous validation result.
-        recipients = [item.owner_id, item.lawyer_id]
     elif event.action in ("INFORMATION_RESPONDED", "LEGAL_SIGN", "PROPOSAL_ACCEPTED", "PROPOSAL_DECLINED"):
         recipients = [item.lawyer_id]
     else:
@@ -84,7 +81,9 @@ def notify_event(event, item):
 def visible_notifications(user):
     # Revalidar a atribuição também nos avisos antigos, inclusive na marcação de leitura.
     from apps.cases.services import accessible
-    return Notification.objects.filter(recipient=user, case__in=accessible(user, administrative=user.role == "ADMIN"))
+    return Notification.objects.filter(
+        recipient=user, case__in=accessible(user, administrative=user.role == "ADMIN")
+    ).exclude(kind__startswith="DOCUMENT_")
 
 
 def notification_data(item):
@@ -101,6 +100,8 @@ def message_data(item):
 
 @transaction.atomic
 def create_notice(*, recipient_id, source_key, case, kind, title, task=None):
+    if kind.startswith("DOCUMENT_"):
+        return None
     notice, created = Notification.objects.get_or_create(recipient_id=recipient_id, source_key=source_key,
                                                        defaults={"case": case, "kind": kind, "title": title})
     if created and kind in CASE_EMAIL_KINDS:

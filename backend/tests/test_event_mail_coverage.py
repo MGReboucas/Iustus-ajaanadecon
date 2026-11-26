@@ -50,6 +50,7 @@ class EventMailCoverageTests(TestCase):
                        'DOCUMENT_AVAILABLE', 'DOCUMENT_REJECTED'):
             with self.subTest(action=action):
                 self.deliver_event(action, self.owner, [])
+        self.assertFalse(Notification.objects.filter(kind__startswith='DOCUMENT_').exists())
 
     def test_drafts_never_send_email(self):
         self.case.state = Case.State.DRAFT

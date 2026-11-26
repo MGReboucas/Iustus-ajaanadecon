@@ -38,6 +38,19 @@ class CommunicationTests(TestCase):
     def notices(self, browser=None):
         return (browser or self.client).get("/api/v1/notifications").json()["results"]
 
+    def test_old_document_notices_are_absent_from_center_and_unread_count(self):
+        for user, browser in ((self.owner, self.client), (self.lawyer_user, self.lawyer)):
+            for kind in ('DOCUMENT_UPLOAD_STARTED', 'DOCUMENT_QUARANTINED', 'DOCUMENT_AVAILABLE',
+                         'DOCUMENT_REJECTED', 'DOCUMENT_REMOVED', 'DOCUMENT_DEMO_RECEIVED'):
+                notice = Notification.objects.create(recipient=user, case=self.case,
+                    source_key='old:' + kind, kind=kind, title='Technical document notice')
+                self.assertEqual(self.post(browser, f'notifications/{notice.pk}/read', {}).status_code, 404)
+            self.assertEqual(self.notices(browser), [])
+            self.assertEqual(self.overview(browser)['unreadCount'], 0)
+        self.send(self.lawyer)
+        self.assertEqual(len(self.notices()), 1)
+        self.assertEqual(self.overview()['unreadCount'], 1)
+
     def test_conversation_is_scoped_and_notes_never_reach_client(self):
         public = self.send(self.lawyer, text="<script>alert('texto')</script>")
         self.assertEqual(public.status_code, 201, public.content)

@@ -6,6 +6,8 @@ O resumo do dashboard aplica o mesmo escopo de casos do domínio. Notificações
 
 ## Destinatários dos e-mails
 
+Avisos `DOCUMENT_*` não são criados na Central de avisos. Os antigos são excluídos da listagem, da contagem de não lidos e da marcação de leitura. O histórico técnico dos documentos permanece na linha do tempo do caso.
+
 | Movimentação | Destinatário |
 | --- | --- |
 | Rascunhos e processamento/verificação de documentos | Sem e-mail |
