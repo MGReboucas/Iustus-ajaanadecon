@@ -180,6 +180,22 @@ class CommunicationTests(TestCase):
         self.assertNotEqual(historical["stateLabel"], Case.State.CLOSED.label)
         self.assertEqual(self.overview(self.other)["recentActivity"], [])
 
+    def test_all_activity_is_paginated_and_excludes_private_events(self):
+        CaseEvent.objects.bulk_create([CaseEvent(case=self.case, actor=self.lawyer_user,
+            action="TRIAGE_STARTED", state=Case.State.TRIAGE, version=i + 1) for i in range(25)])
+        CaseEvent.objects.create(case=self.case, actor=self.lawyer_user,
+            action="DRAFT_UPDATED", state=Case.State.DRAFT, version=26)
+        CaseEvent.objects.create(case=self.case, actor=self.lawyer_user,
+            action="PRIVATE_NOTE", state=Case.State.TRIAGE, version=27, public=False)
+        first = self.client.get("/api/v1/dashboard/overview", {"activity": "all"}).json()
+        second = self.client.get("/api/v1/dashboard/overview", {"activity": "all", "cursor": first["nextCursor"]}).json()
+        rows = first["results"] + second["results"]
+        self.assertEqual(len(first["results"]), 20)
+        self.assertEqual(len({row["id"] for row in rows}), 25)
+        self.assertTrue(all(row["action"] == "TRIAGE_STARTED" for row in rows))
+        self.assertIsNone(second["nextCursor"])
+        self.assertEqual(self.other.get("/api/v1/dashboard/overview", {"activity": "all"}).json()["results"], [])
+
     def test_case_timeline_and_message_wire_contracts(self):
         detail = self.client.get(f"/api/v1/cases/{self.case.pk}").json()
         self.assertEqual(set(detail), {"id", "reference", "category", "categoryLabel", "state", "stateLabel",

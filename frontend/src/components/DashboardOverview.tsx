@@ -1,10 +1,11 @@
 "use client";
 import eventLabels from "../../../contracts/events.json";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiError, Profile } from "@/lib/api/client";
 import type { Overview, Notice, Page } from "../../../contracts/api";
 import CaseStatusChart from "./CaseStatusChart";
+import ActivityDialog from "./ActivityDialog";
 
 type Notices = Page<Notice>;
 const actions: Record<string, string> = eventLabels;
@@ -16,6 +17,7 @@ export default function DashboardOverview({ user, revision, openCase, showCases 
   const [refresh, setRefresh] = useState(0);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState("");
+  const activityDialog = useRef<HTMLDialogElement>(null);
   const admin = user.role === "ADMIN";
   useEffect(() => {
     const timer = setInterval(() => { if (!document.hidden) setRefresh(value => value + 1); }, 30000);
@@ -67,7 +69,8 @@ export default function DashboardOverview({ user, revision, openCase, showCases 
         <section className="dashboard-card"><h3>{admin ? "Para distribuir" : "Próximos passos"}</h3>
           {overview.attentionCases.length === 0 ? <p>Nenhuma ação pendente neste momento.</p> : <><p>{overview.attentionCount > 5 ? "Mostrando os 5 casos que aguardam há mais tempo." : "Abra um caso para continuar o atendimento."}</p><ul className="overview-list">{overview.attentionCases.map(item => <li key={item.id}><button onClick={() => openCase(item.id)}><strong>{item.title || `Caso ${item.reference}`}</strong><small>{item.stateLabel} · {item.reference}</small></button></li>)}</ul></>}
         </section>
-        {!admin && <section className="dashboard-card"><h3>Últimas atualizações</h3>{overview.recentActivity.length === 0 ? <p>As atualizações aparecerão aqui depois do envio de um caso.</p> : <ul className="overview-list">{overview.recentActivity.map(item => <li key={item.id}><button onClick={() => openCase(item.caseId)}><strong>{actions[item.action] || "Caso atualizado"}</strong><small>{item.title || item.reference} · {item.stateLabel}</small><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString("pt-BR")}</time></button></li>)}</ul>}</section>}
+        {!admin && <section className="dashboard-card"><h3>Últimas atualizações</h3>{overview.recentActivity.length === 0 ? <p>As atualizações aparecerão aqui depois do envio de um caso.</p> : <><ul className="overview-list">{overview.recentActivity.slice(0, 3).map(item => <li key={item.id}><button onClick={() => openCase(item.caseId)}><strong>{actions[item.action] || "Caso atualizado"}</strong><small>{item.title || item.reference} · {item.stateLabel}</small><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString("pt-BR")}</time></button></li>)}</ul><button aria-haspopup="dialog" onClick={() => activityDialog.current?.showModal()}>Ver todas</button></>}</section>}
+        {!admin && <ActivityDialog dialogRef={activityDialog} openCase={openCase} />}
       </div>
       <section className="dashboard-card dashboard-notices"><div className="overview-heading"><div><h3>Central de avisos</h3><p>Mensagens e novidades do seu atendimento.</p></div><label className="notice-filter"><input type="checkbox" disabled={busy} checked={unreadOnly} onChange={e => setUnreadOnly(e.target.checked)} />Somente não lidos</label></div>
         {notices.results.length === 0 && <p>{unreadOnly ? "Nenhum aviso não lido." : "Você ainda não tem avisos."}</p>}

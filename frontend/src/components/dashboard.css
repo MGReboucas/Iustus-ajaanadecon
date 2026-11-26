@@ -14,3 +14,4 @@
 .dashboard-welcome{padding-bottom:12px}
 .dashboard-nav{position:sticky;top:0;z-index:20;margin:0 0 24px;padding:16px 0;background:#080f1e;border-bottom:1px solid #273951}
 .dashboard section,.dashboard #resumo,.dashboard #minha-conta{scroll-margin-top:90px}
+.overview-activity-dialog{box-sizing:border-box;width:min(640px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow-y:auto;border:1px solid #354862;border-radius:18px;padding:28px;background:#111e31;color:#edf2f8;box-shadow:0 24px 80px #0008}.overview-activity-dialog::backdrop{background:#020711cc}.overview-activity-dialog .overview-heading{flex-direction:row;align-items:center}.overview-activity-dialog h2{font-size:20px}.overview-activity-dialog small{overflow-wrap:anywhere}html:has(.overview-activity-dialog[open]){overflow:hidden}@media(max-width:600px){.overview-activity-dialog{padding:20px}}

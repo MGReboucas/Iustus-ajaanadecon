@@ -94,6 +94,13 @@ class OverviewView(CaseView):
         else:
             attention = cases.filter(Q(state__in=[Case.State.SUBMITTED, Case.State.TRIAGE, Case.State.ACCEPTED, Case.State.PREPARING]) | Q(state=Case.State.MANDATE, legal_work__signed_mandate__isnull=False) | Q(pk__in=LegalTask.objects.filter(completed_at__isnull=True, due_at__lte=timezone.now()).values("case_id")) | Q(pk__in=pending.values("case_id")))
         events = CaseEvent.objects.filter(case__in=cases, public=True).exclude(action__in=["DRAFT_CREATED", "DRAFT_UPDATED"]).select_related("case").order_by("-created_at", "-id")
+        if request.query_params.get("activity") == "all":
+            return self.listed(request, events.none() if admin else events, lambda event: {
+                "id": str(event.pk), "caseId": str(event.case_id),
+                "reference": str(event.case_id)[:8].upper(), "title": event.case.title,
+                "action": event.action, "stateLabel": dict(Case.State.choices).get(event.state, event.state),
+                "createdAt": event.created_at.isoformat(),
+            })
         return Response({
             "totalCases": sum(counts.values()), "attentionCount": attention.count(),
             "unreadCount": visible_notifications(user).filter(read_at__isnull=True).count(),
